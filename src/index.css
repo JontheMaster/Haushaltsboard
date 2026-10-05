@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+@import './styles/tokens.css';
+@import './styles/components.css';
+
+@utility shadow-tile {
+  box-shadow: var(--shadow-tile);
+}
+@utility shadow-lift {
+  box-shadow: var(--shadow-lift);
+}
+@utility focus-ring {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
