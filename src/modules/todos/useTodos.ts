@@ -7,6 +7,11 @@ import { berlinMidnightISO } from '../../lib/time'
 export type Todo = Tables<'todos'>
 
 const UNDO_MS = 5000
+// So lange bleibt ein abgehaktes Todo an seinem Platz (Haken sichtbar), dann gleitet es nach unten
+const SETTLE_MS = 650
+
+// Letzte Liste im Speicher: beim Wechsel zwischen Start und Todos steht sie sofort da
+let memory: { day: string; todos: Todo[] } | null = null
 
 /**
  * Alle offenen Todos plus die heute erledigten (bleiben bis Mitternacht durchgestrichen sichtbar).
@@ -14,9 +19,10 @@ const UNDO_MS = 5000
  */
 export function useTodos(today: string) {
   const { me } = useMembers()
-  const [todos, setTodos] = useState<Todo[] | null>(null)
+  const [todos, setTodos] = useState<Todo[] | null>(() => (memory?.day === today ? memory.todos : null))
   const [error, setError] = useState(false)
   const [undoable, setUndoable] = useState<Set<string>>(new Set())
+  const [settling, setSettling] = useState<Set<string>>(new Set())
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
 
   const load = useCallback(async () => {
@@ -28,6 +34,7 @@ export function useTodos(today: string) {
     if (error) return setError(true)
     setError(false)
     setTodos(data)
+    memory = { day: today, todos: data }
   }, [today])
 
   useEffect(() => {
@@ -63,6 +70,8 @@ export function useTodos(today: string) {
         return next
       })
       if (done) {
+        setSettling((s) => new Set(s).add(id))
+        setTimeout(() => setSettling((s) => new Set([...s].filter((x) => x !== id))), SETTLE_MS)
         timers.current.set(
           id,
           setTimeout(() => setUndoable((s) => new Set([...s].filter((x) => x !== id))), UNDO_MS),
@@ -78,5 +87,8 @@ export function useTodos(today: string) {
     [me.id, load],
   )
 
-  return { todos, error, undoable, setDone }
+  /** Sortierschlüssel: erledigt (und schon eingereiht) = 1, sonst 0 */
+  const doneRank = useCallback((t: Todo) => Number(!!t.done_at && !settling.has(t.id)), [settling])
+
+  return { todos, error, undoable, setDone, doneRank }
 }

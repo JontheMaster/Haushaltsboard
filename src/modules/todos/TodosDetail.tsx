@@ -4,9 +4,8 @@ import { TaskItem } from '../../components/TaskItem'
 import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
 import { addDays, useToday, weekdayShort } from '../../lib/time'
+import { useFlip } from '../../lib/useFlip'
 import { useTodos, type Todo } from './useTodos'
-
-const byDone = (a: Todo, b: Todo) => Number(!!a.done_at) - Number(!!b.done_at)
 
 /** Alle Todos: heute, die nächsten Tage, diese Woche, ohne Tag */
 export function TodosDetail() {
@@ -14,7 +13,9 @@ export function TodosDetail() {
   const tomorrow = addDays(today, 1)
   const { byId, personKey } = useMembers()
   const { openTodo, removeTodo } = useDevice()
-  const { todos, error, undoable, setDone } = useTodos(today)
+  const { todos, error, undoable, setDone, doneRank } = useTodos(today)
+  const flip = useFlip<HTMLDivElement>()
+  const byDone = (a: Todo, b: Todo) => doneRank(a) - doneRank(b)
 
   if (!todos) return null
 
@@ -35,7 +36,7 @@ export function TodosDetail() {
     t.moved_since ? (t.moved_since === addDays(today, -1) ? 'seit gestern' : `seit ${weekdayShort(t.moved_since)}`) : undefined
 
   return (
-    <div className="flex flex-col gap-5">
+    <div ref={flip} className="relative flex flex-col gap-5">
       {error && (
         <p role="status" className="rounded-md bg-urgent-soft px-3 py-2 text-label text-urgent">
           Verbindung gerade unterbrochen. Die Liste lädt gleich neu.
@@ -44,7 +45,7 @@ export function TodosDetail() {
       {groups
         .filter((g) => g.today || g.items.length)
         .map((g) => (
-          <section key={g.title} className="hb-tile gap-2 p-4">
+          <section key={g.title} className="hb-tile hb-tile-static gap-2 p-4">
             <h2 className="flex items-center gap-2 font-display text-title text-ink">
               {g.title}
               {g.today && g.items.some((t) => !t.done_at) && (
@@ -75,12 +76,10 @@ export function TodosDetail() {
                     )}
                   </div>
                 )
-                return removeTodo ? (
-                  <SwipeToDelete key={t.id} onDelete={() => removeTodo(t)}>
-                    {row}
-                  </SwipeToDelete>
-                ) : (
-                  <div key={t.id}>{row}</div>
+                return (
+                  <div key={t.id} data-flip-id={t.id}>
+                    {removeTodo ? <SwipeToDelete onDelete={() => removeTodo(t)}>{row}</SwipeToDelete> : row}
+                  </div>
                 )
               })
             )}

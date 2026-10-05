@@ -6,17 +6,18 @@ import { TaskItem } from '../../components/TaskItem'
 import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
+import { useFlip } from '../../lib/useFlip'
 import { addDays, useToday, weekdayShort } from '../../lib/time'
 import type { TileProps } from '../types'
 import { useTodos, type Todo } from './useTodos'
 
-// Offene zuerst, Erledigte rutschen ans Ende ihrer Spalte
-const byDone = (a: Todo, b: Todo) => Number(!!a.done_at) - Number(!!b.done_at)
-
 export function TodosTile({ delay }: TileProps) {
   const today = useToday()
   const { people, personKey } = useMembers()
-  const { todos, error, undoable, setDone } = useTodos(today)
+  const { todos, error, undoable, setDone, doneRank } = useTodos(today)
+  const flip = useFlip<HTMLDivElement>()
+  // Offene zuerst; Erledigte gleiten nach kurzer Pause ans Ende ihrer Spalte
+  const byDone = (a: Todo, b: Todo) => doneRank(a) - doneRank(b)
   const { device, openTodo, removeTodo } = useDevice()
   const phone = device === 'phone'
 
@@ -63,6 +64,7 @@ export function TodosTile({ delay }: TileProps) {
 
   return (
     <Tile title="Todos heute" icon={ListChecks} delay={delay}>
+      <div ref={flip} className="relative">
       {error && (
         <p role="status" className="mb-2 rounded-md bg-urgent-soft px-3 py-2 text-label text-urgent">
           Verbindung gerade unterbrochen. Die Liste lädt gleich neu.
@@ -81,7 +83,15 @@ export function TodosTile({ delay }: TileProps) {
                 <div className="mb-2">
                   <PersonChip person={c.key} name={c.name} />
                 </div>
-                {c.items.length ? c.items.map((t) => item(t)) : <p className="text-label text-ink-muted">Nichts für heute.</p>}
+                {c.items.length ? (
+                  c.items.map((t) => (
+                    <div key={t.id} data-flip-id={t.id}>
+                      {item(t)}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-label text-ink-muted">Nichts für heute.</p>
+                )}
               </div>
             ))}
           </div>
@@ -92,7 +102,7 @@ export function TodosTile({ delay }: TileProps) {
               </div>
               <div className={phone ? '' : 'columns-2 gap-5'}>
                 {openToday.map((t) => (
-                  <div key={t.id} className="break-inside-avoid">
+                  <div key={t.id} data-flip-id={t.id} className="break-inside-avoid">
                     {item(t)}
                   </div>
                 ))}
@@ -107,7 +117,7 @@ export function TodosTile({ delay }: TileProps) {
           <h3 className="mb-2 text-label text-ink-muted">Offen, noch ohne Tag</h3>
           <div className={phone ? '' : 'columns-2 gap-5'}>
             {noDay.map((t) => (
-              <div key={t.id} className="flex break-inside-avoid items-center gap-2">
+              <div key={t.id} data-flip-id={t.id} className="flex break-inside-avoid items-center gap-2">
                 <div className="min-w-0 flex-1">{item(t, true)}</div>
                 {t.this_week && !t.done_at && <Badge tone="accent">Diese Woche</Badge>}
               </div>
@@ -115,6 +125,7 @@ export function TodosTile({ delay }: TileProps) {
           </div>
         </div>
       )}
+      </div>
     </Tile>
   )
 }

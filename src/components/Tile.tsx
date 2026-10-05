@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import type { CSSProperties, ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Icon } from './Icon'
 
 type Props = {
@@ -12,11 +12,16 @@ type Props = {
   children: ReactNode
 }
 
+// Kacheln steigen nur beim Start der App auf („Board lädt“). Danach, z. B. beim Wechsel
+// der Reiter am Handy, stehen sie sofort da – sonst wirkt jeder Wechsel wie Laden.
+const APP_START_MS = 2500
+
 // Kachel: Breite kommt vom Raster der Startseite, Inhalt scrollt bei Bedarf
 export function Tile({ title, icon, action, delay = 0, className = '', style, children }: Props) {
+  const [entering] = useState(() => performance.now() < APP_START_MS)
   return (
     <section
-      className={`hb-tile min-h-0 ${className}`}
+      className={`hb-tile min-h-0 ${entering ? '' : 'hb-tile-static'} ${className}`}
       style={{ animationDelay: `${delay}ms`, ...style }}
       aria-label={title}
     >

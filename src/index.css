@@ -31,6 +31,12 @@
   background-size: 100% 2px;
 }
 
+/* Nach dem Start: Kacheln und Termine ohne Einblenden */
+.hb-tile-static,
+.hb-tile-static .hb-event {
+  animation: none;
+}
+
 /* Kachel-Inhalt scrollt per Finger, ohne sichtbaren Balken */
 .hb-tile-body {
   scrollbar-width: none;
