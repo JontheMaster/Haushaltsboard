@@ -15,19 +15,34 @@ type Item = { name: string; specification: string }
 
 const db = adminClient()
 
+// Secret lesen; Leerzeichen und versehentliche Anführungszeichen entfernen
+function secret(name: string): string {
+  const raw = Deno.env.get(name)
+  if (!raw) throw new Error(`Secret ${name} fehlt`)
+  return raw.trim().replace(/^["']|["']$/g, '')
+}
+
 async function login(): Promise<Session> {
+  const email = secret('BRING_EMAIL')
   const resp = await fetch(`${API}bringauth`, {
     method: 'POST',
-    body: new URLSearchParams({ email: Deno.env.get('BRING_EMAIL')!, password: Deno.env.get('BRING_PASSWORD')! }),
+    body: new URLSearchParams({ email, password: secret('BRING_PASSWORD') }),
   })
-  const data = await resp.json()
+  const text = await resp.text()
+  let data: Record<string, string>
+  try {
+    data = JSON.parse(text)
+  } catch {
+    // Diagnose ohne den Inhalt preiszugeben
+    throw new Error(`Bring!-Login fehlgeschlagen (${resp.status}): ${text.slice(0, 80)} · BRING_EMAIL hat ${email.length} Zeichen, enthält @: ${email.includes('@')}`)
+  }
   if (!resp.ok || data.error) throw new Error(`Bring!-Login fehlgeschlagen: ${data.message ?? resp.status}`)
 
   const session: Session = {
     user_uuid: data.uuid,
     access_token: data.access_token,
     // eine Stunde Puffer vor dem Ablauf
-    expires_at: new Date(Date.now() + ((data.expires_in ?? 3600) - 3600) * 1000).toISOString(),
+    expires_at: new Date(Date.now() + ((Number(data.expires_in) || 7200) - 3600) * 1000).toISOString(),
     list_uuid: null,
     list_name: null,
   }
