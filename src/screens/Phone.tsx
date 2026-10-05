@@ -1,6 +1,7 @@
 import { House, ListChecks, LogOut, Plus, ShoppingCart, type LucideIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { Toast } from '../components/Toast'
 import { DeviceProvider } from '../lib/device'
 import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
@@ -34,6 +35,9 @@ function savedTab(): Tab {
 export function Phone({ weather }: { weather: Weather | null }) {
   const [tab, setTab] = useState<Tab>(savedTab)
   const [sheet, setSheet] = useState<{ todo?: Todo } | null>(null)
+  const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
+  const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
+  const hideToast = useCallback(() => setToast(null), [])
 
   const go = (t: Tab) => {
     setTab(t)
@@ -82,7 +86,8 @@ export function Phone({ weather }: { weather: Weather | null }) {
           ))}
         </nav>
 
-        {sheet && <TodoSheet todo={sheet.todo} onClose={() => setSheet(null)} />}
+        {sheet && <TodoSheet todo={sheet.todo} onClose={() => setSheet(null)} onSaved={showToast} />}
+        {toast && <Toast key={toast.id} message={toast.message} onDone={hideToast} />}
       </div>
     </DeviceProvider>
   )

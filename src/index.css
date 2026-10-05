@@ -172,6 +172,26 @@
   }
 }
 
+/* Kurze Bestätigung, z. B. „Für morgen eingetragen“ */
+.hb-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(160px + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--space-4));
+  translate: -50% 0;
+  text-align: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: var(--shadow-lift);
+  animation: hb-pop var(--dur-base) var(--ease-spring) both;
+}
+
 .hb-btn-danger {
   color: var(--urgent);
 }

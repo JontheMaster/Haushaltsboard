@@ -9,15 +9,20 @@ import { addDays, useToday, weekdayShort } from '../../lib/time'
 import { createTodo, deleteTodo, updateTodo, whenOf, type When } from './todoActions'
 import type { Todo } from './useTodos'
 
-type Props = { todo?: Todo; onClose: () => void }
+type Props = {
+  todo?: Todo
+  onClose: () => void
+  /** Nach dem Speichern: kurze Bestätigung, wo das Todo gelandet ist */
+  onSaved?: (message: string) => void
+}
 
 type WhenKey = 'today' | 'tomorrow' | 'week' | 'none' | 'other'
 
 /** Neues Todo (ohne `todo`) oder bestehendes bearbeiten */
-export function TodoSheet({ todo, onClose }: Props) {
+export function TodoSheet({ todo, onClose, onSaved }: Props) {
   const today = useToday()
   const tomorrow = addDays(today, 1)
-  const { me, people, personKey } = useMembers()
+  const { me, people, personKey, byId } = useMembers()
 
   const initialWhen: When = todo ? whenOf(todo) : { kind: 'day', date: today }
   const [title, setTitle] = useState(todo?.title ?? '')
@@ -49,6 +54,19 @@ export function TodoSheet({ todo, onClose }: Props) {
     const ok = todo ? await updateTodo(todo.id, input, todo) : await createTodo(input)
     setBusy(false)
     if (!ok) return setError('Speichern hat nicht geklappt. Prüf die Verbindung und probier es noch mal.')
+
+    const whenText =
+      whenKey === 'today'
+        ? 'Für heute'
+        : whenKey === 'tomorrow'
+          ? 'Für morgen'
+          : whenKey === 'week'
+            ? 'Für diese Woche'
+            : whenKey === 'none'
+              ? 'Ohne Tag'
+              : `Für ${weekdayShort(otherDate)} ${Number(otherDate.slice(8))}.`
+    const who = assignee ? byId.get(assignee)?.name : 'Offen'
+    onSaved?.(`${whenText} ${todo ? 'gespeichert' : 'eingetragen'} · ${who}`)
     onClose()
   }
 
