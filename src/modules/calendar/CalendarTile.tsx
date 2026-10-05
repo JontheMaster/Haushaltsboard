@@ -1,5 +1,4 @@
 import { CalendarDays } from 'lucide-react'
-import { Badge } from '../../components/Badge'
 import { EventPill } from '../../components/EventPill'
 import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
@@ -37,14 +36,14 @@ export function CalendarTile({ size, delay }: TileProps) {
   const tomorrows = events ? eventsOnDay(events, tomorrow) : []
   // Nächster Termin = der erste mit Uhrzeit, der noch nicht vorbei ist
   const nextId = todays.find((e) => !e.allDay && e.end > now)?.id
-  const meta = (e: CalendarEvent) => [e.who, e.label !== e.who ? e.label : null].filter(Boolean).join(' · ')
+  // Die Farbe zeigt den Kalender; als Text reicht die Person (Farbe steht nie allein)
+  const meta = (e: CalendarEvent) => e.who ?? e.label ?? ''
 
   return (
     <Tile
       title="Termine heute"
       icon={CalendarDays}
       delay={delay}
-      action={todays.length > 0 && <Badge>{todays.length}</Badge>}
     >
       {(error || failed.length > 0) && (
         <p role="status" className="mb-2 rounded-md bg-urgent-soft px-3 py-2 text-label text-urgent">

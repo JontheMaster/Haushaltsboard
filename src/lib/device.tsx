@@ -7,13 +7,18 @@ export type Device = 'wall' | 'phone'
 const PHONE_QUERY = '(max-width: 699px)'
 
 export function useIsPhone(): boolean {
+  return useMedia(PHONE_QUERY)
+}
+
+/** Live-Abfrage einer Media Query, z. B. '(max-width: 1023px)' */
+export function useMedia(query: string): boolean {
   return useSyncExternalStore(
     (cb) => {
-      const mq = window.matchMedia(PHONE_QUERY)
+      const mq = window.matchMedia(query)
       mq.addEventListener('change', cb)
       return () => mq.removeEventListener('change', cb)
     },
-    () => window.matchMedia(PHONE_QUERY).matches,
+    () => window.matchMedia(query).matches,
   )
 }
 
