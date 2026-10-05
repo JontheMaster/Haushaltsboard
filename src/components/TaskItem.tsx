@@ -36,8 +36,10 @@ export function TaskItem({ label, detail, done, person, meta, showUndo, compact,
         </svg>
       </button>
       <span className="hb-task-label" onClick={() => onToggle(!done)}>
-        {label}
-        {detail && <span className="text-ink-muted"> · {detail}</span>}
+        <span className="hb-task-text">
+          {label}
+          {detail && <span className="text-ink-muted"> · {detail}</span>}
+        </span>
       </span>
       {meta && !done && <span className="hb-task-meta">{meta}</span>}
       {done && showUndo && (

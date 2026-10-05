@@ -13,6 +13,24 @@
   box-shadow: var(--focus-ring);
 }
 
+/* Durchstreichen nur so weit wie der Text, nicht über die ganze Zeile.
+   Strich sitzt am inneren Text-Span; clone zeichnet ihn bei Umbruch pro Zeile. */
+.hb-task-label {
+  background-image: none;
+}
+.hb-task-text {
+  background-image: linear-gradient(var(--ink-muted), var(--ink-muted));
+  background-repeat: no-repeat;
+  background-position: 0 58%;
+  background-size: 0% 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-size var(--dur-base) var(--ease-out) 120ms;
+}
+.is-done .hb-task-text {
+  background-size: 100% 2px;
+}
+
 html,
 body,
 #root {
