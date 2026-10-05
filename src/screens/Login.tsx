@@ -28,7 +28,9 @@ export function Login() {
       setError(
         error.status === 429
           ? 'Zu viele Versuche. Warte eine Minute und probier es dann noch mal.'
-          : 'Diese Adresse gehört nicht zum Haushalt, oder der Server ist gerade nicht erreichbar.',
+          : error.status === 400 || error.status === 422
+            ? 'Diese Adresse gehört nicht zum Haushalt.'
+            : 'Die Mail konnte gerade nicht verschickt werden. Probier es gleich noch mal.',
       )
       return
     }
