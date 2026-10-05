@@ -22,7 +22,7 @@ Gemeinsames Haushalts-Dashboard von Jonathan und Leviona: ein Android-Tablet an 
 
 - Vite + React + TypeScript, Tailwind CSS, `@dnd-kit` für Drag and Drop, `lucide-react` für Icons, Schriften Bricolage Grotesque + Figtree (Google Fonts).
 - Supabase: Projekt „Haushaltsboard“, Ref `cdfjglisfkhbkrklkxek`, URL `https://cdfjglisfkhbkrklkxek.supabase.co`, Region London. Datenbank, Auth (Magic Link), Realtime, Edge Functions, Cron.
-- Hosting: GitHub-Repo `haushaltsboard` (öffentlich), Deploy per GitHub Action auf GitHub Pages. Vite `base` auf den Repo-Namen setzen.
+- Hosting: GitHub-Repo `haushaltsboard` (öffentlich), Deploy per GitHub Action auf GitHub Pages. Vite `base` auf den Repo-Namen setzen: `/Haushaltsboard/` (großes H). Repo: github.com/JontheMaster/Haushaltsboard, Seite: https://jonthemaster.github.io/Haushaltsboard/
 - Niemals Geheimnisse ins Repo. Publishable Key darf in `.env.local` / Actions-Variablen (`VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`). `.gitignore` mit `.env*` vor dem ersten Commit.
 - Web-App-Manifest, Querformat-Layout fürs Tablet, schmales Layout unter ca. 700 px fürs Handy.
 
