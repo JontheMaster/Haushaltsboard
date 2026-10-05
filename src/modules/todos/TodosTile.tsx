@@ -20,10 +20,13 @@ export function TodosTile({ delay }: TileProps) {
   const dueToday = (todos ?? []).filter((t) => t.due_date && t.due_date <= today).sort(byDone)
   const noDay = (todos ?? []).filter((t) => !t.due_date).sort(byDone)
 
-  const columns: { key: PersonKey; name: string; items: Todo[] }[] = [
-    ...people.map((p) => ({ key: personKey(p.id), name: p.name, items: dueToday.filter((t) => t.assignee === p.id) })),
-    { key: 'open', name: 'Offen', items: dueToday.filter((t) => !t.assignee) },
-  ]
+  // Zwei Spalten pro Person, darunter „Offen“ (heute, wer Zeit hat)
+  const columns: { key: PersonKey; name: string; items: Todo[] }[] = people.map((p) => ({
+    key: personKey(p.id),
+    name: p.name,
+    items: dueToday.filter((t) => t.assignee === p.id),
+  }))
+  const openToday = dueToday.filter((t) => !t.assignee)
 
   const sinceHint = (t: Todo) => {
     if (!t.moved_since) return undefined
@@ -54,16 +57,32 @@ export function TodosTile({ delay }: TileProps) {
       {todos && dueToday.length === 0 ? (
         <p className="text-body-wall text-ink-muted">Heute ist frei. Neues Todo am Handy anlegen.</p>
       ) : (
-        <div className="grid grid-cols-3 gap-5">
-          {columns.map((c) => (
-            <div key={c.key} className="flex min-w-0 flex-col gap-1">
-              <div className="mb-2">
-                <PersonChip person={c.key} name={c.name} />
+        <>
+          <div className="grid grid-cols-2 gap-5">
+            {columns.map((c) => (
+              <div key={c.key} className="flex min-w-0 flex-col gap-1">
+                <div className="mb-2">
+                  <PersonChip person={c.key} name={c.name} />
+                </div>
+                {c.items.length ? c.items.map((t) => item(t)) : <p className="text-label text-ink-muted">Nichts für heute.</p>}
               </div>
-              {c.items.length ? c.items.map((t) => item(t)) : <p className="text-label text-ink-muted">Nichts für heute.</p>}
+            ))}
+          </div>
+          {openToday.length > 0 && (
+            <div className="mt-4 flex flex-col gap-1">
+              <div className="mb-2">
+                <PersonChip person="open" name="Offen, wer Zeit hat" />
+              </div>
+              <div className="columns-2 gap-5">
+                {openToday.map((t) => (
+                  <div key={t.id} className="break-inside-avoid">
+                    {item(t)}
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {noDay.length > 0 && (

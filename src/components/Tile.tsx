@@ -29,7 +29,8 @@ export function Tile({ title, icon, action, delay = 0, className = '', style, ch
         <h2 className="hb-tile-title">{title}</h2>
         {action && <div>{action}</div>}
       </header>
-      <div className="hb-tile-body min-h-0 flex-1 overflow-y-auto">{children}</div>
+      {/* px-2: Platz für den negativen Rand der Zeilen (Hover-Fläche), sonst entsteht seitlicher Überlauf */}
+      <div className="hb-tile-body -mx-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2">{children}</div>
     </section>
   )
 }
