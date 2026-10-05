@@ -1,6 +1,7 @@
 import { ListChecks } from 'lucide-react'
 import { Badge } from '../../components/Badge'
 import { PersonChip } from '../../components/PersonChip'
+import { SwipeToDelete } from '../../components/SwipeToDelete'
 import { TaskItem } from '../../components/TaskItem'
 import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
@@ -16,7 +17,7 @@ export function TodosTile({ delay }: TileProps) {
   const today = useToday()
   const { people, personKey } = useMembers()
   const { todos, error, undoable, setDone } = useTodos(today)
-  const { device, openTodo } = useDevice()
+  const { device, openTodo, removeTodo } = useDevice()
   const phone = device === 'phone'
 
   // Fällig heute (oder überfällig, falls der Nachtjob noch nicht lief)
@@ -36,7 +37,8 @@ export function TodosTile({ delay }: TileProps) {
     return t.moved_since === addDays(today, -1) ? 'seit gestern' : `seit ${weekdayShort(t.moved_since)}`
   }
 
-  const item = (t: Todo, compact = false) => (
+  const item = (t: Todo, compact = false) => {
+    const row = (
     <TaskItem
       key={t.id}
       label={t.title}
@@ -48,7 +50,16 @@ export function TodosTile({ delay }: TileProps) {
       onToggle={(done) => setDone(t.id, done)}
       onOpen={phone && openTodo ? () => openTodo(t.id) : undefined}
     />
-  )
+    )
+    // Löschen per Wischen nur am Handy; an der Wand wird nur abgehakt
+    return phone && removeTodo ? (
+      <SwipeToDelete key={t.id} onDelete={() => removeTodo(t)}>
+        {row}
+      </SwipeToDelete>
+    ) : (
+      row
+    )
+  }
 
   return (
     <Tile title="Todos heute" icon={ListChecks} delay={delay}>

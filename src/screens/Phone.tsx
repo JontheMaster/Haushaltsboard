@@ -9,6 +9,7 @@ import { longDate, useNow } from '../lib/time'
 import { describe, type Weather } from '../modules/clock-weather/weather'
 import { MODULE_BY_ID } from '../modules/registry'
 import { ShoppingTile } from '../modules/shopping/ShoppingTile'
+import { deleteTodo, restoreTodo } from '../modules/todos/todoActions'
 import { TodoSheet } from '../modules/todos/TodoSheet'
 import { TodosDetail } from '../modules/todos/TodosDetail'
 import type { Todo } from '../modules/todos/useTodos'
@@ -35,7 +36,7 @@ function savedTab(): Tab {
 export function Phone({ weather }: { weather: Weather | null }) {
   const [tab, setTab] = useState<Tab>(savedTab)
   const [sheet, setSheet] = useState<{ todo?: Todo } | null>(null)
-  const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
+  const [toast, setToast] = useState<{ id: number; message: string; action?: { label: string; run: () => void } } | null>(null)
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
   const hideToast = useCallback(() => setToast(null), [])
 
@@ -49,13 +50,28 @@ export function Phone({ weather }: { weather: Weather | null }) {
     }
   }
 
+  const removeTodo = useCallback(async (todo: Todo) => {
+    if (!(await deleteTodo(todo.id))) return setToast({ id: Date.now(), message: 'Löschen hat nicht geklappt.' })
+    setToast({
+      id: Date.now(),
+      message: `„${todo.title}“ gelöscht`,
+      action: {
+        label: 'Rückgängig',
+        run: async () => {
+          setToast(null)
+          if (!(await restoreTodo(todo))) setToast({ id: Date.now(), message: 'Wiederherstellen hat nicht geklappt.' })
+        },
+      },
+    })
+  }, [])
+
   const openTodo = useCallback(async (id: string) => {
     const { data } = await supabase.from('todos').select('*').eq('id', id).maybeSingle()
     if (data) setSheet({ todo: data })
   }, [])
 
   return (
-    <DeviceProvider value={{ device: 'phone', openTodo }}>
+    <DeviceProvider value={{ device: 'phone', openTodo, removeTodo }}>
       <div className="min-h-dvh bg-surface pb-[calc(88px+env(safe-area-inset-bottom))]">
         <PhoneHeader weather={weather} />
 
@@ -87,7 +103,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
         </nav>
 
         {sheet && <TodoSheet todo={sheet.todo} onClose={() => setSheet(null)} onSaved={showToast} />}
-        {toast && <Toast key={toast.id} message={toast.message} onDone={hideToast} />}
+        {toast && <Toast key={toast.id} message={toast.message} action={toast.action} onDone={hideToast} />}
       </div>
     </DeviceProvider>
   )

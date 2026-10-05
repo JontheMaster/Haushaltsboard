@@ -1,4 +1,5 @@
 import { Badge } from '../../components/Badge'
+import { SwipeToDelete } from '../../components/SwipeToDelete'
 import { TaskItem } from '../../components/TaskItem'
 import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
@@ -12,7 +13,7 @@ export function TodosDetail() {
   const today = useToday()
   const tomorrow = addDays(today, 1)
   const { byId, personKey } = useMembers()
-  const { openTodo } = useDevice()
+  const { openTodo, removeTodo } = useDevice()
   const { todos, error, undoable, setDone } = useTodos(today)
 
   if (!todos) return null
@@ -55,8 +56,8 @@ export function TodosDetail() {
             ) : (
               g.items.map((t) => {
                 const who = personKey(t.assignee)
-                return (
-                  <div key={t.id} className="flex items-center gap-2">
+                const row = (
+                  <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">
                       <TaskItem
                         label={t.title}
@@ -73,6 +74,13 @@ export function TodosDetail() {
                       <Badge tone={who === 'open' ? undefined : who}>{t.assignee ? byId.get(t.assignee)?.name : 'Offen'}</Badge>
                     )}
                   </div>
+                )
+                return removeTodo ? (
+                  <SwipeToDelete key={t.id} onDelete={() => removeTodo(t)}>
+                    {row}
+                  </SwipeToDelete>
+                ) : (
+                  <div key={t.id}>{row}</div>
                 )
               })
             )}

@@ -49,3 +49,9 @@ export async function deleteTodo(id: string): Promise<boolean> {
   const { error } = await supabase.from('todos').delete().eq('id', id)
   return !error
 }
+
+/** Rückgängig nach dem Löschen: genau die alte Zeile wieder einfügen (gleiche id, gleiche Felder) */
+export async function restoreTodo(todo: Todo): Promise<boolean> {
+  const { error } = await supabase.from('todos').insert(todo)
+  return !error
+}

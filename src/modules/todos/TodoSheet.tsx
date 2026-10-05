@@ -6,6 +6,7 @@ import { Icon } from '../../components/Icon'
 import { Sheet } from '../../components/Sheet'
 import { useMembers } from '../../lib/members'
 import { addDays, useToday, weekdayShort } from '../../lib/time'
+import { useDevice } from '../../lib/device'
 import { createTodo, deleteTodo, updateTodo, whenOf, type When } from './todoActions'
 import type { Todo } from './useTodos'
 
@@ -23,6 +24,7 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
   const today = useToday()
   const tomorrow = addDays(today, 1)
   const { me, people, personKey, byId } = useMembers()
+  const { removeTodo } = useDevice()
 
   const initialWhen: When = todo ? whenOf(todo) : { kind: 'day', date: today }
   const [title, setTitle] = useState(todo?.title ?? '')
@@ -32,7 +34,6 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
   )
   const [assignee, setAssignee] = useState<string | null>(todo ? todo.assignee : me.is_board ? null : me.id)
   const [busy, setBusy] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const whenKey: WhenKey =
@@ -72,7 +73,11 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
 
   async function remove() {
     if (!todo) return
-    if (!confirmDelete) return setConfirmDelete(true)
+    // Am Handy: sofort löschen, „Rückgängig“ kommt als Bestätigung unten
+    if (removeTodo) {
+      removeTodo(todo)
+      return onClose()
+    }
     setBusy(true)
     const ok = await deleteTodo(todo.id)
     setBusy(false)
@@ -152,7 +157,7 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
           </Button>
           {todo && (
             <Button variant="ghost" disabled={busy} onClick={remove} className="hb-btn-danger" icon={<Icon icon={Trash2} size={18} />}>
-              {confirmDelete ? 'Wirklich löschen? Nochmal tippen' : 'Löschen'}
+              Löschen
             </Button>
           )}
         </div>
