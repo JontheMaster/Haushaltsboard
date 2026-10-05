@@ -6,13 +6,37 @@ type BringResponse = { items: BringItem[]; recent: BringItem[] }
 
 const POLL_MS = 30_000
 const UNDO_MS = 5000
+const CACHE_KEY = 'hb-bring-items'
+
+// Letzte bekannte Liste: im Speicher (Wechsel zwischen Reitern) und im Gerät (nächster Start).
+// So steht die Liste sofort da und wird im Hintergrund aktualisiert.
+let memory: BringItem[] | null = null
+
+function readCache(): BringItem[] | null {
+  if (memory) return memory
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    return raw ? (JSON.parse(raw) as BringItem[]) : null
+  } catch {
+    return null
+  }
+}
+
+function writeCache(items: BringItem[]) {
+  memory = items
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(items))
+  } catch {
+    // ohne Gerätespeicher bleibt es beim Zwischenspeicher im Arbeitsspeicher
+  }
+}
 
 /**
- * Bring!-Liste „Zuhause“ über die Edge Function. Alle 30 s neu laden.
+ * Bring!-Liste „Zuhause“ über die Edge Function. Sofort aus dem Zwischenspeicher, alle 30 s neu laden.
  * Abhaken zeigt den Artikel 5 s durchgestrichen mit „Rückgängig“, dann verschwindet er.
  */
 export function useBring() {
-  const [items, setItems] = useState<BringItem[] | null>(null)
+  const [items, setItems] = useState<BringItem[] | null>(readCache)
   const [error, setError] = useState(false)
   const [done, setDone] = useState<Set<string>>(new Set())
   const doneRef = useRef(done)
@@ -20,6 +44,10 @@ export function useBring() {
     doneRef.current = done
   }, [done])
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+
+  useEffect(() => {
+    if (items) writeCache(items)
+  }, [items])
 
   const apply = useCallback((data: BringResponse | null, err: unknown) => {
     if (err || !data) return setError(true)
