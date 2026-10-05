@@ -61,6 +61,61 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
+/* Eigene Kalenderfarben (blue/berry nutzen die Personenfarben) */
+.hb-event.hb-cal-orange {
+  background: var(--cal-orange-soft);
+}
+.hb-event.hb-cal-orange::before {
+  background: var(--cal-orange);
+}
+.hb-cal-orange .hb-event-time {
+  color: var(--cal-orange-ink);
+}
+.hb-event.hb-cal-yellow {
+  background: var(--cal-yellow-soft);
+}
+.hb-event.hb-cal-yellow::before {
+  background: var(--cal-yellow);
+}
+.hb-cal-yellow .hb-event-time {
+  color: var(--cal-yellow-ink);
+}
+.hb-event.hb-cal-lilac {
+  background: var(--cal-lilac-soft);
+}
+.hb-event.hb-cal-lilac::before {
+  background: var(--cal-lilac);
+}
+.hb-cal-lilac .hb-event-time {
+  color: var(--cal-lilac-ink);
+}
+.hb-event.hb-cal-purple {
+  background: var(--cal-purple-soft);
+}
+.hb-event.hb-cal-purple::before {
+  background: var(--cal-purple);
+}
+.hb-cal-purple .hb-event-time {
+  color: var(--cal-purple-ink);
+}
+.hb-event.hb-cal-forest {
+  background: var(--cal-forest-soft);
+}
+.hb-event.hb-cal-forest::before {
+  background: var(--cal-forest);
+}
+.hb-cal-forest .hb-event-time {
+  color: var(--cal-forest-ink);
+}
+.hb-event.hb-cal-lime {
+  background: var(--cal-lime-soft);
+}
+.hb-event.hb-cal-lime::before {
+  background: var(--cal-lime);
+}
+.hb-cal-lime .hb-event-time {
+  color: var(--cal-lime-ink);
+}
 .hb-event.hb-person-open {
   background: var(--surface-sunken);
 }

@@ -21,6 +21,8 @@ type CalendarEvent = {
   who?: string | null
   /** Verschwindet im Besuchsmodus (damit das Board beim Einschalten sofort ausblenden kann) */
   hideInVisit?: boolean
+  /** Farbe des Kalenders (Token cal-*, blue = person-a, berry = person-b) */
+  color?: string
 }
 
 const db = adminClient()
@@ -88,7 +90,7 @@ function expand(ics: string, calendar: string, person: string | null, fromDay: s
       const s = start.toString().slice(0, 10)
       const e = end.toString().slice(0, 10)
       if (s >= toDay || (e > s ? e : addDays(s, 1)) <= fromDay) return
-      out.push({ id: `${item.uid}_${s}`, calendar, person, title: item.summary ?? '', start: s, end: e > s ? e : addDays(s, 1), allDay })
+      out.push({ id: `${item.uid}_${s}`, calendar, person, title: (item.summary ?? '').trim(), start: s, end: e > s ? e : addDays(s, 1), allDay })
     } else {
       const s = start.toJSDate().getTime()
       const e = end.toJSDate().getTime()
@@ -97,7 +99,7 @@ function expand(ics: string, calendar: string, person: string | null, fromDay: s
         id: `${item.uid}_${s}`,
         calendar,
         person,
-        title: item.summary ?? '',
+        title: (item.summary ?? '').trim(),
         start: new Date(s).toISOString(),
         end: new Date(Math.max(e, s)).toISOString(),
         allDay,
@@ -133,7 +135,7 @@ Deno.serve(async (req) => {
 
   const [{ data: settings }, { data: calendars }, { data: members }] = await Promise.all([
     db.from('settings').select('visit_mode').eq('id', 1).single(),
-    db.from('calendars').select('id, owner, label, hide_in_visit'),
+    db.from('calendars').select('id, owner, label, hide_in_visit, color'),
     db.from('members').select('id, name, color'),
   ])
   const visitMode = settings?.visit_mode ?? false
@@ -153,6 +155,7 @@ Deno.serve(async (req) => {
           label: c.label,
           who: owner?.name ?? null,
           hideInVisit: c.hide_in_visit,
+          color: c.color,
         }))
       } catch (e) {
         console.error(c.id, e)

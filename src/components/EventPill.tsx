@@ -2,6 +2,8 @@ import type { PersonKey } from '../lib/members'
 
 type Props = {
   person: PersonKey
+  /** Kalenderfarbe (cal-*); ohne Angabe gilt die Personenfarbe */
+  color?: string
   time: string
   title: string
   /** Kalender und Person, damit Farbe nie allein steht, z. B. „Jonathan · Uni“ */
@@ -14,8 +16,11 @@ type Props = {
 
 // Termin: farbiger Balken links, Fläche in Personenfarbe.
 // Oben Zeit und Kalender, darunter der Titel über die volle Breite (passt auch in schmale Kacheln).
-export function EventPill({ person, time, title, meta, next, past, compact, delay = 0 }: Props) {
-  const cls = ['hb-event', `hb-person-${person}`, next && 'is-next', past && 'is-past', compact && 'hb-event-compact']
+export function EventPill({ person, color, time, title, meta, next, past, compact, delay = 0 }: Props) {
+  // blue und berry sind die Personenfarben, alle anderen eigene Kalenderfarben
+  const tone =
+    color === 'blue' ? 'hb-person-a' : color === 'berry' ? 'hb-person-b' : color ? `hb-cal-${color}` : `hb-person-${person}`
+  const cls = ['hb-event', tone, next && 'is-next', past && 'is-past', compact && 'hb-event-compact']
     .filter(Boolean)
     .join(' ')
   return (

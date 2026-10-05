@@ -22,6 +22,7 @@ Zwei Themes: **Tag** (hell, Standard) und **Abend** (dunkel, ab Sonnenuntergang 
 - Seite auf `surface`, Kacheln auf `surface-raised`, leere Plätze und Eingaben auf `surface-sunken`. Trenner in `line`.
 - Text in `ink`, Nebentext in `ink-muted`. Beide erreichen auf allen drei Flächen in beiden Themes mindestens 4.5:1.
 - `accent` ist die Flamme in Aprikose: primärer Button, aktiver Schalter, Fokus, Modul-Icons. Bewusst weder Rot noch Grün. Höchstens ein accent-Button pro Ansicht. Text auf accent-Fläche immer in `on-accent`.
+- Kalender (Entscheidung Jonathan, 5. Oktober 2026): Jeder Kalender hat eine eigene Farbe, nicht nur die Personenfarbe. Jonathan privat = `person-a` (Blau), Leviona = `person-b` (Beere), EJ = `cal-orange`, Kirchenvorstand = `cal-yellow`, Fokus-Blöcke = `cal-lilac`, Uni = `cal-purple`, Arbeit Termine/Büro = `cal-forest`, Arbeit Spiele/Training = `cal-lime`. Je Farbe Balken (`cal-x`), Fläche (`cal-x-soft`) und Uhrzeit (`cal-x-ink`). Grün und Gelb stehen hier nur für Kalender, Termine tragen immer Name und Kalender als Text.
 - Personen: `person-a` (Jonathan, Blau) und `person-b` (Partnerin, Beere) für Balken, Ringe und Punkte; `person-a-soft` und `person-b-soft` als Fläche für Termine und Spalten; Schrift darauf in `person-a-ink` und `person-b-ink`.
 - Heute: `highlight` mit `highlight-ink` für den heutigen Spaltenkopf und den Countdown.
 - Erledigt ist immer Grün: `success-fill` füllt den Abhak-Kreis, `success` und `success-soft` für Text und Badges.

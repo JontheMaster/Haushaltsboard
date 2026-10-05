@@ -16,6 +16,8 @@ export type CalendarEvent = {
   label?: string
   who?: string | null
   hideInVisit?: boolean
+  /** Kalenderfarbe: blue, berry, orange, yellow, lilac, purple, forest, lime */
+  color?: string
 }
 
 type Response = { events: CalendarEvent[]; errors: string[]; visitMode: boolean }

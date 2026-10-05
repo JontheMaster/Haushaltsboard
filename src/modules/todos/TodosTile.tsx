@@ -11,7 +11,7 @@ import { addDays, useToday, weekdayShort } from '../../lib/time'
 import type { TileProps } from '../types'
 import { useTodos, type Todo } from './useTodos'
 
-export function TodosTile({ delay }: TileProps) {
+export function TodosTile({ size, delay }: TileProps) {
   const today = useToday()
   const { people, personKey } = useMembers()
   const { todos, error, undoable, setDone, doneRank } = useTodos(today)
@@ -20,6 +20,8 @@ export function TodosTile({ delay }: TileProps) {
   const byDone = (a: Todo, b: Todo) => doneRank(a) - doneRank(b)
   const { device, openTodo, removeTodo } = useDevice()
   const phone = device === 'phone'
+  // Nebeneinander nur in der großen Kachel an der Wand, sonst untereinander
+  const stacked = phone || size !== 'l'
 
   // Fällig heute (oder überfällig, falls der Nachtjob noch nicht lief)
   const dueToday = (todos ?? []).filter((t) => t.due_date && t.due_date <= today).sort(byDone)
@@ -77,7 +79,7 @@ export function TodosTile({ delay }: TileProps) {
         </p>
       ) : (
         <>
-          <div className={phone ? 'flex flex-col gap-4' : 'grid grid-cols-2 gap-5'}>
+          <div className={stacked ? 'flex flex-col gap-4' : 'grid grid-cols-2 gap-5'}>
             {columns.map((c) => (
               <div key={c.key} className="flex min-w-0 flex-col gap-1">
                 <div className="mb-2">
@@ -100,7 +102,7 @@ export function TodosTile({ delay }: TileProps) {
               <div className="mb-2">
                 <PersonChip person="open" name="Offen, wer Zeit hat" />
               </div>
-              <div className={phone ? '' : 'columns-2 gap-5'}>
+              <div className={stacked ? '' : 'columns-2 gap-5'}>
                 {openToday.map((t) => (
                   <div key={t.id} data-flip-id={t.id} className="break-inside-avoid">
                     {item(t)}
@@ -115,7 +117,7 @@ export function TodosTile({ delay }: TileProps) {
       {noDay.length > 0 && (
         <div className="mt-5 flex flex-col gap-1 border-t border-line pt-4">
           <h3 className="mb-2 text-label text-ink-muted">Offen, noch ohne Tag</h3>
-          <div className={phone ? '' : 'columns-2 gap-5'}>
+          <div className={stacked ? '' : 'columns-2 gap-5'}>
             {noDay.map((t) => (
               <div key={t.id} data-flip-id={t.id} className="flex break-inside-avoid items-center gap-2">
                 <div className="min-w-0 flex-1">{item(t, true)}</div>

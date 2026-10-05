@@ -40,7 +40,9 @@ Gemeinsames Haushalts-Dashboard von Jonathan und Leviona: ein Android-Tablet an 
 | `ICAL_JONATHAN_ARBEIT_TRAININGS` | Arbeit, Trainings | ausgeblendet |
 | `BRING_EMAIL`, `BRING_PASSWORD` | Bring!-Login | – |
 
-Pro Kalender in der App einstellbar (Tabelle `calendars`, Feld `hide_in_visit`). Kalender-Farbe = Personenfarbe.
+Pro Kalender in der App einstellbar (Tabelle `calendars`, Felder `hide_in_visit`, `color`). Jeder Kalender hat eine eigene Farbe (Tokens `cal-*`, Zuordnung in design/DESIGN.md), Jonathan privat = Blau, Leviona = Beere.
+
+Anzeige-Regeln Kalender (`src/modules/calendar/rules.ts`): Ganztags-Zeiträume über 14 Tage ausblenden; mehrtägige Ganztags-Einträge an Tagen ausblenden, an denen ein Termin mit Uhrzeit aus demselben Kalender oder mit dem Kalendernamen am Titelanfang liegt.
 
 ## Personen und Farben
 
@@ -84,6 +86,7 @@ Tabellen: `members` (id = auth user, name, color, is_board), `calendars`, `todos
 - Erledigte Todos: nach 5 s verschwindet nur „Rückgängig“, das Todo bleibt bis Mitternacht durchgestrichen (Fachlogik vor DESIGN.md). Einkauf-Artikel verschwinden nach 5 s.
 - Tailwind kennt nur Token-Abstände (plus 0 und px). Größen wie h-12 gibt es nicht, dafür Tokens (h-7 = 48 px) oder [arbitrary].
 - Bis zum Tablet-Kauf (Black Friday) läuft das Board testweise auf Jonathans iPad.
+- Wand-Layout: Kalender l (Heute und Morgen nebeneinander), Todos s, Einkauf s.
 - Phase 2, Teil 1 erledigt: Kalender-Kachel (links an der Wand, Morgen-Vorschau nur an der Wand), Besuchsmodus-Schalter in beiden Kopfzeilen (settings.visit_mode, Realtime, sofortiges Ausblenden über hideInVisit).
 - Handy: Todos per Wischen löschen mit Rückgängig; nach dem Speichern Bestätigung „Für morgen eingetragen · …“.
 - Nächster Schritt: Phase 2, Teil 2 (Wochenansicht mit Drag and Drop). Reihenfolge danach: Putzplan (Aufgaben von Jonathan), Alle Funktionen, Startseite bearbeiten, Nachtmodus.

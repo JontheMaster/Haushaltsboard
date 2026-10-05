@@ -5,19 +5,11 @@ import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
 import type { PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
+import { eventsOnDay } from './rules'
 import type { TileProps } from '../types'
 import { useCalendar, type CalendarEvent } from './useCalendar'
 
 const personOf = (e: CalendarEvent): PersonKey => (e.person === 'person-a' ? 'a' : e.person === 'person-b' ? 'b' : 'open')
-
-/** Termine an einem Berliner Tag (auch mehrtägige, die hineinreichen) */
-function onDay(events: CalendarEvent[], day: string): CalendarEvent[] {
-  const from = berlinMidnightISO(day)
-  const to = berlinMidnightISO(addDays(day, 1))
-  return events
-    .filter((e) => (e.allDay ? e.start <= day && e.end > day : e.start < to && e.end > from))
-    .sort((a, b) => Number(b.allDay) - Number(a.allDay) || a.start.localeCompare(b.start))
-}
 
 function timeLabel(e: CalendarEvent, day: string): string {
   if (e.allDay) return 'Ganztags'
@@ -31,16 +23,18 @@ function timeLabel(e: CalendarEvent, day: string): string {
   return `${hh}:${mm}`
 }
 
-export function CalendarTile({ delay }: TileProps) {
+export function CalendarTile({ size, delay }: TileProps) {
   const today = useToday()
   const tomorrow = addDays(today, 1)
   const now = useNow(60_000).toISOString()
   const { device } = useDevice()
   const phone = device === 'phone'
+  // Große Kachel an der Wand: Heute und Morgen nebeneinander
+  const wide = !phone && size === 'l'
   const { events, failed, error } = useCalendar()
 
-  const todays = events ? onDay(events, today) : []
-  const tomorrows = events ? onDay(events, tomorrow) : []
+  const todays = events ? eventsOnDay(events, today) : []
+  const tomorrows = events ? eventsOnDay(events, tomorrow) : []
   // Nächster Termin = der erste mit Uhrzeit, der noch nicht vorbei ist
   const nextId = todays.find((e) => !e.allDay && e.end > now)?.id
   const meta = (e: CalendarEvent) => [e.who, e.label !== e.who ? e.label : null].filter(Boolean).join(' · ')
@@ -63,39 +57,48 @@ export function CalendarTile({ delay }: TileProps) {
       {events === null ? (
         !error && <p className="text-body text-ink-muted">Termine laden …</p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {todays.length === 0 ? (
-            <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>Heute keine Termine.</p>
-          ) : (
-            todays.map((e, i) => (
-              <EventPill
-                key={e.id}
-                person={personOf(e)}
-                time={timeLabel(e, today)}
-                title={e.title}
-                meta={meta(e)}
-                next={e.id === nextId}
-                past={!e.allDay && e.end <= now}
-                delay={i * 40}
-              />
-            ))
-          )}
-
-          {/* Vorschau auf morgen nur an der Wand, am Handy bleibt die Startseite kurz */}
-          {!phone && tomorrows.length > 0 && (
-            <>
-              <h3 className="mt-4 text-label text-ink-muted">Morgen</h3>
-              {tomorrows.map((e) => (
+        <div className={wide ? 'grid grid-cols-2 gap-5' : 'flex flex-col gap-2'}>
+          <div className="flex min-w-0 flex-col gap-2">
+            {wide && <h3 className="text-label text-ink-muted">Heute</h3>}
+            {todays.length === 0 ? (
+              <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>Heute keine Termine.</p>
+            ) : (
+              todays.map((e, i) => (
                 <EventPill
                   key={e.id}
                   person={personOf(e)}
-                  time={timeLabel(e, tomorrow)}
+                  color={e.color}
+                  time={timeLabel(e, today)}
                   title={e.title}
                   meta={meta(e)}
-                  compact
+                  next={e.id === nextId}
+                  past={!e.allDay && e.end <= now}
+                  delay={i * 40}
                 />
-              ))}
-            </>
+              ))
+            )}
+          </div>
+
+          {/* Vorschau auf morgen nur an der Wand, am Handy bleibt die Startseite kurz */}
+          {!phone && (wide || tomorrows.length > 0) && (
+            <div className={`flex min-w-0 flex-col gap-2 ${wide ? '' : 'mt-4'}`}>
+              <h3 className="text-label text-ink-muted">Morgen</h3>
+              {tomorrows.length === 0 ? (
+                <p className="text-body text-ink-muted">Morgen keine Termine.</p>
+              ) : (
+                tomorrows.map((e) => (
+                  <EventPill
+                    key={e.id}
+                    person={personOf(e)}
+                    color={e.color}
+                    time={timeLabel(e, tomorrow)}
+                    title={e.title}
+                    meta={meta(e)}
+                    compact={!wide}
+                  />
+                ))
+              )}
+            </div>
           )}
         </div>
       )}
