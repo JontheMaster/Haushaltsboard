@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js'
 import { LogOut } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from './components/Button'
+import { ConnectionCheck } from './components/ConnectionCheck'
 import type { Tables } from './lib/database.types'
 import { supabase } from './lib/supabase'
 import { useSession } from './lib/useSession'
@@ -36,10 +37,13 @@ function SignedIn({ session }: { session: Session }) {
     <main className="grid min-h-dvh place-items-center bg-surface p-4">
       <div className="hb-tile w-full max-w-[420px]">
         {member ? (
-          <div className="flex flex-col gap-2">
-            <h1 className="font-display text-display text-ink">Hallo {member.name}</h1>
-            <p className="text-body text-ink-muted">Du bist angemeldet. Das Board kommt in Schritt 4.</p>
-          </div>
+          <>
+            <div className="flex flex-col gap-2">
+              <h1 className="font-display text-display text-ink">Hallo {member.name}</h1>
+              <p className="text-body text-ink-muted">Du bist angemeldet. Das Board kommt in Schritt 4.</p>
+            </div>
+            <ConnectionCheck />
+          </>
         ) : (
           <div className="flex flex-col gap-2">
             <h1 className="font-display text-title text-ink">Konto noch nicht freigeschaltet</h1>
