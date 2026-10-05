@@ -77,9 +77,9 @@ Tabellen: `members` (id = auth user, name, color, is_board), `calendars`, `todos
 
 ## Stand (5. Oktober 2026)
 
-- Phase 1, Schritt 1–3 erledigt: Projekt, Deploy auf Pages, Datenbank mit RLS, Login per Code/Magic Link (Gmail-SMTP), Edge Functions `bring` und `calendar`, Cron `roll-over-todos`.
+- Phase 1, Schritt 1–4 erledigt: Projekt, Deploy auf Pages, Datenbank mit RLS, Login per Code/Magic Link (Gmail-SMTP), Edge Functions `bring` und `calendar`, Cron `roll-over-todos`, Board (Kopfzeile Uhr/Wetter, Kacheln Todos und Einkauf, Modul-Registry in `src/modules/registry.ts`).
 - Mitglieder: Jonathan (person-a), Leviona (person-b), Tablet (board, sommererjonathan+board@gmail.com). Kalender-Owner gesetzt.
 - Secrets heißen immer mit Unterstrich (`BRING_EMAIL`, nicht `BRING-EMAIL`).
 - Edge Functions werden per Supabase-MCP deployt (`_shared/http.ts` als `../_shared/http.ts` mitschicken). Migrationen per MCP anwenden und lokal mit derselben Versionsnummer ablegen.
-- `src/components/ConnectionCheck.tsx` ist nur ein Übergang, in Schritt 4 durch das Board ersetzen.
-- Nächster Schritt: Phase 1, Schritt 4 (Board-Oberfläche), danach Schritt 5 (Handy). Tablet-Kauf zum Black Friday.
+- Erledigte Todos: nach 5 s verschwindet nur „Rückgängig“, das Todo bleibt bis Mitternacht durchgestrichen (Fachlogik vor DESIGN.md). Einkauf-Artikel verschwinden nach 5 s.
+- Nächster Schritt: Phase 1, Schritt 5 (Handy-Ansicht, Todos anlegen und bearbeiten). Tablet-Kauf zum Black Friday.
