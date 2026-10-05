@@ -38,7 +38,7 @@ Gemeinsames Haushalts-Dashboard von Jonathan und Leviona: ein Android-Tablet an 
 | `ICAL_JONATHAN_FOCUS` | Fokus-Blöcke | ausgeblendet |
 | `ICAL_JONATHAN_ARBEIT_TERMINE` | Arbeit, Termine | ausgeblendet |
 | `ICAL_JONATHAN_ARBEIT_TRAININGS` | Arbeit, Trainings | ausgeblendet |
-| `BRING_EMAIL`, `BRING_PASSWORD` | Bring!-Login | – (noch nicht angelegt, Jonathan fragen) |
+| `BRING_EMAIL`, `BRING_PASSWORD` | Bring!-Login | – |
 
 Pro Kalender in der App einstellbar (Tabelle `calendars`, Feld `hide_in_visit`). Kalender-Farbe = Personenfarbe.
 
@@ -75,8 +75,11 @@ Jede Funktion ist ein Modul mit Kachel (Größen s/m/l), Detailseite, Einstellun
 
 Tabellen: `members` (id = auth user, name, color, is_board), `calendars`, `todos`, `chore_rules`, `chore_tasks`, `modules` (id, enabled, config jsonb), `layouts` (device / member, tiles jsonb), `settings` (visit_mode, night_from, night_to). RLS auf allen Tabellen, Zugriff nur für Mitglieder über eine `security definer`-Funktion `is_member()`. Registrierung nach dem Anlegen der drei Konten (Jonathan, Leviona, Tablet) abschalten. Realtime für `todos`, `chore_tasks`, `modules`, `layouts`, `settings`.
 
-## Stand bei Übergabe (5. Oktober 2026)
+## Stand (5. Oktober 2026)
 
-- Erledigt: Konzept, Design System, GitHub-Repo angelegt, Supabase-Projekt angelegt, iCal-Secrets angelegt.
-- Offen vor Phase 1: Bring!-Secrets, Mailadressen für die drei Logins, Tablet-Modell (Kauf zum Black Friday, bis dahin im Browser und am Handy entwickeln).
-- Nächster Schritt: Phase 1, Schritt 1–2 des Umsetzungsplans (Projekt aufsetzen, Datenbank, Login).
+- Phase 1, Schritt 1–3 erledigt: Projekt, Deploy auf Pages, Datenbank mit RLS, Login per Code/Magic Link (Gmail-SMTP), Edge Functions `bring` und `calendar`, Cron `roll-over-todos`.
+- Mitglieder: Jonathan (person-a), Leviona (person-b), Tablet (board, sommererjonathan+board@gmail.com). Kalender-Owner gesetzt.
+- Secrets heißen immer mit Unterstrich (`BRING_EMAIL`, nicht `BRING-EMAIL`).
+- Edge Functions werden per Supabase-MCP deployt (`_shared/http.ts` als `../_shared/http.ts` mitschicken). Migrationen per MCP anwenden und lokal mit derselben Versionsnummer ablegen.
+- `src/components/ConnectionCheck.tsx` ist nur ein Übergang, in Schritt 4 durch das Board ersetzen.
+- Nächster Schritt: Phase 1, Schritt 4 (Board-Oberfläche), danach Schritt 5 (Handy). Tablet-Kauf zum Black Friday.
