@@ -83,4 +83,5 @@ Tabellen: `members` (id = auth user, name, color, is_board), `calendars`, `todos
 - Edge Functions werden per Supabase-MCP deployt (`_shared/http.ts` als `../_shared/http.ts` mitschicken). Migrationen per MCP anwenden und lokal mit derselben Versionsnummer ablegen.
 - Erledigte Todos: nach 5 s verschwindet nur „Rückgängig“, das Todo bleibt bis Mitternacht durchgestrichen (Fachlogik vor DESIGN.md). Einkauf-Artikel verschwinden nach 5 s.
 - Tailwind kennt nur Token-Abstände (plus 0 und px). Größen wie h-12 gibt es nicht, dafür Tokens (h-7 = 48 px) oder [arbitrary].
-- Nächster Schritt: Kalender-Kachel als Vorgriff auf Phase 2 (mit Jonathan abgesprochen), danach Phase 2. Schritt 6 (Wand) nach Tablet-Kauf. Tablet-Kauf zum Black Friday.
+- Bis zum Tablet-Kauf (Black Friday) läuft das Board testweise auf Jonathans iPad.
+- Nächster Schritt: Phase 2, streng nach Plan.
