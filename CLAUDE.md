@@ -68,7 +68,7 @@ Jede Funktion ist ein Modul mit Kachel (Größen s/m/l), Detailseite, Einstellun
 | Kalender + Besuchsmodus, Putzplan, Wochenansicht mit Drag and Drop, Startseite bearbeiten, Alle Funktionen, Nachtmodus | 2 |
 | Alexa-Skill für Todos | 3 |
 | Essensplan mit Zutaten → Bring! | 4 |
-| Abfahrten (VAG `start.vag.de/dm`), Countdown (`#countdown` im Kalendertitel), Wochenrückblick, WLAN-QR im Besuchsmodus | 5 |
+| Abfahrten (VAG `start.vag.de/dm`), Countdown (`#countdown` im Kalendertitel), Wochenrückblick, WLAN-QR im Besuchsmodus, Erinnerungen per Push (Todo mit Uhrzeit, Web Push, Details in der Doku) | 5 |
 | Bildschirmschoner mit eigener Fotobibliothek (Supabase Storage) | 6 |
 
 ## Datenbank (Startpunkt, Details im Umsetzungsplan)
