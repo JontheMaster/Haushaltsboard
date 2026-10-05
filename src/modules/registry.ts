@@ -19,3 +19,9 @@ export const DEFAULT_WALL_LAYOUT: LayoutTile[] = [
   { module: 'todos', size: 'l' },
   { module: 'einkauf', size: 'l' },
 ]
+
+// Standard am Handy (pro Person änderbar ab Phase 2). Kacheln stehen untereinander.
+export const DEFAULT_PHONE_LAYOUT: LayoutTile[] = [
+  { module: 'todos', size: 'm' },
+  { module: 'einkauf', size: 'm' },
+]

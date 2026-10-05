@@ -31,6 +31,154 @@
   background-size: 100% 2px;
 }
 
+/* ───────── Handy ───────── */
+
+/* Untere Leiste */
+.hb-tabbar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom));
+  background: var(--surface-raised);
+  border-top: 1px solid var(--line);
+}
+.hb-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 56px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.hb-tab .hb-icon {
+  width: 56px;
+  height: 32px;
+  padding: 4px 16px;
+  border-radius: var(--radius-full);
+  box-sizing: border-box;
+  transition: background-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+}
+.hb-tab.is-active {
+  color: var(--ink);
+}
+.hb-tab.is-active .hb-icon {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.hb-tab:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-md);
+}
+
+/* Plus-Knopf: die eine Hauptaktion am Handy */
+.hb-fab {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 41;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-lift);
+  cursor: pointer;
+  animation: hb-pop var(--dur-base) var(--ease-spring) both;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.hb-fab:active {
+  transform: scale(0.96);
+}
+.hb-fab:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring), var(--shadow-lift);
+}
+
+/* Auswahl-Pillen (Wann, Wer) */
+.hb-choice {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.hb-choice:active {
+  transform: scale(0.96);
+}
+.hb-choice:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-choice.is-on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.hb-choice.hb-person-a.is-on {
+  background: var(--person-a-soft);
+  border-color: var(--person-a);
+  color: var(--person-a-ink);
+}
+.hb-choice.hb-person-b.is-on {
+  background: var(--person-b-soft);
+  border-color: var(--person-b);
+  color: var(--person-b-ink);
+}
+.hb-choice.hb-person-open.is-on {
+  background: var(--surface-sunken);
+  border-color: var(--ink-muted);
+  color: var(--ink);
+}
+
+/* Fenster von unten */
+.hb-sheet {
+  animation: hb-sheet-in var(--dur-base) var(--ease-out) both;
+}
+.hb-sheet-backdrop {
+  /* neutral abdunkeln, in beiden Themes (wie die Schatten-Tokens) */
+  background: #00000066;
+  animation: hb-fade-in var(--dur-base) var(--ease-out) both;
+}
+@keyframes hb-sheet-in {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+@keyframes hb-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.hb-btn-danger {
+  color: var(--urgent);
+}
+.hb-btn-danger:hover {
+  color: var(--urgent);
+}
+
 html,
 body,
 #root {

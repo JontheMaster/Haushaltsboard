@@ -3,6 +3,7 @@ import { Badge } from '../../components/Badge'
 import { PersonChip } from '../../components/PersonChip'
 import { TaskItem } from '../../components/TaskItem'
 import { Tile } from '../../components/Tile'
+import { useDevice } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
 import { addDays, useToday, weekdayShort } from '../../lib/time'
 import type { TileProps } from '../types'
@@ -15,6 +16,8 @@ export function TodosTile({ delay }: TileProps) {
   const today = useToday()
   const { people, personKey } = useMembers()
   const { todos, error, undoable, setDone } = useTodos(today)
+  const { device, openTodo } = useDevice()
+  const phone = device === 'phone'
 
   // Fällig heute (oder überfällig, falls der Nachtjob noch nicht lief)
   const dueToday = (todos ?? []).filter((t) => t.due_date && t.due_date <= today).sort(byDone)
@@ -41,8 +44,9 @@ export function TodosTile({ delay }: TileProps) {
       person={personKey(t.assignee)}
       meta={sinceHint(t)}
       showUndo={undoable.has(t.id)}
-      compact={compact}
+      compact={compact || phone}
       onToggle={(done) => setDone(t.id, done)}
+      onOpen={phone && openTodo ? () => openTodo(t.id) : undefined}
     />
   )
 
@@ -55,10 +59,12 @@ export function TodosTile({ delay }: TileProps) {
       )}
 
       {todos && dueToday.length === 0 ? (
-        <p className="text-body-wall text-ink-muted">Heute ist frei. Neues Todo am Handy anlegen.</p>
+        <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>
+          {phone ? 'Heute ist frei. Tipp auf Plus für ein neues Todo.' : 'Heute ist frei. Neues Todo am Handy anlegen.'}
+        </p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-5">
+          <div className={phone ? 'flex flex-col gap-4' : 'grid grid-cols-2 gap-5'}>
             {columns.map((c) => (
               <div key={c.key} className="flex min-w-0 flex-col gap-1">
                 <div className="mb-2">
@@ -73,7 +79,7 @@ export function TodosTile({ delay }: TileProps) {
               <div className="mb-2">
                 <PersonChip person="open" name="Offen, wer Zeit hat" />
               </div>
-              <div className="columns-2 gap-5">
+              <div className={phone ? '' : 'columns-2 gap-5'}>
                 {openToday.map((t) => (
                   <div key={t.id} className="break-inside-avoid">
                     {item(t)}
@@ -88,7 +94,7 @@ export function TodosTile({ delay }: TileProps) {
       {noDay.length > 0 && (
         <div className="mt-5 flex flex-col gap-1 border-t border-line pt-4">
           <h3 className="mb-2 text-label text-ink-muted">Offen, noch ohne Tag</h3>
-          <div className="columns-2 gap-5">
+          <div className={phone ? '' : 'columns-2 gap-5'}>
             {noDay.map((t) => (
               <div key={t.id} className="flex break-inside-avoid items-center gap-2">
                 <div className="min-w-0 flex-1">{item(t, true)}</div>

@@ -12,9 +12,11 @@ type Props = {
   showUndo?: boolean
   compact?: boolean
   onToggle: (done: boolean) => void
+  /** Tippen auf den Text: am Handy öffnet das „Bearbeiten“, an der Wand hakt es ab */
+  onOpen?: () => void
 }
 
-export function TaskItem({ label, detail, done, person, meta, showUndo, compact, onToggle }: Props) {
+export function TaskItem({ label, detail, done, person, meta, showUndo, compact, onToggle, onOpen }: Props) {
   const classes = ['hb-task', done && 'is-done', person && person !== 'open' && `hb-person-${person}`, compact && 'hb-compact']
     .filter(Boolean)
     .join(' ')
@@ -35,7 +37,14 @@ export function TaskItem({ label, detail, done, person, meta, showUndo, compact,
           <path className="hb-check-mark" d="M7.5 12.5l3 3 6-6.5" />
         </svg>
       </button>
-      <span className="hb-task-label" onClick={() => onToggle(!done)}>
+      <span
+        className="hb-task-label cursor-pointer"
+        onClick={onOpen ?? (() => onToggle(!done))}
+        role={onOpen ? 'button' : undefined}
+        tabIndex={onOpen ? 0 : undefined}
+        aria-label={onOpen ? `Bearbeiten: ${label}` : undefined}
+        onKeyDown={onOpen ? (e) => (e.key === 'Enter' || e.key === ' ') && onOpen() : undefined}
+      >
         <span className="hb-task-text">
           {label}
           {detail && <span className="text-ink-muted"> · {detail}</span>}

@@ -2,11 +2,15 @@ import type { Session } from '@supabase/supabase-js'
 import { LogOut } from 'lucide-react'
 import { Button } from './components/Button'
 import { Icon } from './components/Icon'
+import { useIsPhone } from './lib/device'
 import { MembersProvider, useLoadMembers } from './lib/members'
 import { supabase } from './lib/supabase'
+import { useEveningTheme, useNightlyReload } from './lib/theme'
 import { useSession } from './lib/useSession'
+import { useWeather } from './modules/clock-weather/weather'
 import { Board } from './screens/Board'
 import { Login } from './screens/Login'
+import { Phone } from './screens/Phone'
 
 export default function App() {
   const session = useSession()
@@ -24,9 +28,18 @@ function SignedIn({ session }: { session: Session }) {
 
   return (
     <MembersProvider value={members.value}>
-      <Board />
+      <Shell isBoard={members.value.me.is_board} />
     </MembersProvider>
   )
+}
+
+// Gemeinsam für Wand und Handy: Wetter, Abend-Theme; danach je nach Breite die passende Ansicht
+function Shell({ isBoard }: { isBoard: boolean }) {
+  const weather = useWeather()
+  const phone = useIsPhone()
+  useEveningTheme(weather)
+  useNightlyReload(isBoard)
+  return phone ? <Phone weather={weather} /> : <Board weather={weather} />
 }
 
 function NotMember({ email }: { email?: string }) {

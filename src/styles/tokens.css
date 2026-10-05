@@ -112,6 +112,8 @@
   --shadow-*: initial;
   --font-*: initial;
   --text-*: initial;
+  --spacing-0: 0px;
+  --spacing-px: 1px;
   --spacing-1: 4px;
   --spacing-2: 8px;
   --spacing-3: 12px;

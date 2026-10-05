@@ -32,8 +32,9 @@ export function useTodos(today: string) {
 
   useEffect(() => {
     load()
+    // Eigener Kanal pro Hook-Instanz (Kachel und Todo-Seite können gleichzeitig laufen)
     const channel = supabase
-      .channel('todos')
+      .channel(`todos-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, () => load())
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') load()

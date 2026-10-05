@@ -77,9 +77,10 @@ Tabellen: `members` (id = auth user, name, color, is_board), `calendars`, `todos
 
 ## Stand (5. Oktober 2026)
 
-- Phase 1, Schritt 1–4 erledigt: Projekt, Deploy auf Pages, Datenbank mit RLS, Login per Code/Magic Link (Gmail-SMTP), Edge Functions `bring` und `calendar`, Cron `roll-over-todos`, Board (Kopfzeile Uhr/Wetter, Kacheln Todos und Einkauf, Modul-Registry in `src/modules/registry.ts`).
+- Phase 1, Schritt 1–5 erledigt: Projekt, Deploy auf Pages, Datenbank mit RLS, Login per Code/Magic Link (Gmail-SMTP), Edge Functions `bring` und `calendar`, Cron `roll-over-todos`, Board (Kopfzeile Uhr/Wetter, Kacheln Todos und Einkauf, Modul-Registry in `src/modules/registry.ts`), Handy-Ansicht `src/screens/Phone.tsx` (Start, Todos, Einkauf, Plus → TodoSheet).
 - Mitglieder: Jonathan (person-a), Leviona (person-b), Tablet (board, sommererjonathan+board@gmail.com). Kalender-Owner gesetzt.
 - Secrets heißen immer mit Unterstrich (`BRING_EMAIL`, nicht `BRING-EMAIL`).
 - Edge Functions werden per Supabase-MCP deployt (`_shared/http.ts` als `../_shared/http.ts` mitschicken). Migrationen per MCP anwenden und lokal mit derselben Versionsnummer ablegen.
 - Erledigte Todos: nach 5 s verschwindet nur „Rückgängig“, das Todo bleibt bis Mitternacht durchgestrichen (Fachlogik vor DESIGN.md). Einkauf-Artikel verschwinden nach 5 s.
-- Nächster Schritt: Phase 1, Schritt 5 (Handy-Ansicht, Todos anlegen und bearbeiten). Tablet-Kauf zum Black Friday.
+- Tailwind kennt nur Token-Abstände (plus 0 und px). Größen wie h-12 gibt es nicht, dafür Tokens (h-7 = 48 px) oder [arbitrary].
+- Nächster Schritt: Kalender-Kachel als Vorgriff auf Phase 2 (mit Jonathan abgesprochen), danach Phase 2. Schritt 6 (Wand) nach Tablet-Kauf. Tablet-Kauf zum Black Friday.

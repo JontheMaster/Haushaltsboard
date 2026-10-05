@@ -25,6 +25,8 @@ for (const { name, value } of t.color.tokens) {
 }
 
 // Abstände: --space-N für components.css, im Tailwind-Theme als p-N, gap-N usw.
+// 0 und px sind keine Design-Abstände, werden aber für inset-0, border usw. gebraucht.
+theme.push('  --spacing-0: 0px;', '  --spacing-px: 1px;')
 for (const { name, value } of t.spacing.tokens) {
   add(name, value)
   theme.push(`  --spacing-${name.replace('space-', '')}: ${value};`)
