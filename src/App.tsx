@@ -4,6 +4,7 @@ import { Button } from './components/Button'
 import { Icon } from './components/Icon'
 import { useIsPhone } from './lib/device'
 import { MembersProvider, useLoadMembers } from './lib/members'
+import { SettingsProvider } from './lib/settings'
 import { supabase } from './lib/supabase'
 import { useEveningTheme, useNightlyReload } from './lib/theme'
 import { useSession } from './lib/useSession'
@@ -28,7 +29,9 @@ function SignedIn({ session }: { session: Session }) {
 
   return (
     <MembersProvider value={members.value}>
-      <Shell isBoard={members.value.me.is_board} />
+      <SettingsProvider>
+        <Shell isBoard={members.value.me.is_board} />
+      </SettingsProvider>
     </MembersProvider>
   )
 }

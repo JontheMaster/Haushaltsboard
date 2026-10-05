@@ -1,5 +1,6 @@
 import { LogOut } from 'lucide-react'
 import { Icon } from '../components/Icon'
+import { VisitToggle } from '../components/VisitToggle'
 import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
 import { ClockWeather } from '../modules/clock-weather/ClockWeather'
@@ -26,11 +27,14 @@ export function Board({ weather }: { weather: Weather | null }) {
     <div className="flex h-dvh flex-col bg-surface p-6">
       <header className="mb-7 flex items-start justify-between gap-4">
         {enabled?.has('uhr-wetter') !== false && <ClockWeather weather={weather} />}
-        {!me.is_board && (
-          <button type="button" className="hb-icon-btn" aria-label="Abmelden" onClick={() => supabase.auth.signOut()}>
-            <Icon icon={LogOut} size={20} />
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <VisitToggle />
+          {!me.is_board && (
+            <button type="button" className="hb-icon-btn" aria-label="Abmelden" onClick={() => supabase.auth.signOut()}>
+              <Icon icon={LogOut} size={20} />
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] grid-cols-12 gap-5">

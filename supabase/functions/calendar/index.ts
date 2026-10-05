@@ -15,6 +15,12 @@ type CalendarEvent = {
   start: string // ISO-Zeitpunkt, bei ganztägig YYYY-MM-DD
   end: string // exklusiv
   allDay: boolean
+  /** Name des Kalenders, z. B. „Uni“ */
+  label?: string
+  /** Name der Person, z. B. „Jonathan“ */
+  who?: string | null
+  /** Verschwindet im Besuchsmodus (damit das Board beim Einschalten sofort ausblenden kann) */
+  hideInVisit?: boolean
 }
 
 const db = adminClient()
@@ -127,11 +133,11 @@ Deno.serve(async (req) => {
 
   const [{ data: settings }, { data: calendars }, { data: members }] = await Promise.all([
     db.from('settings').select('visit_mode').eq('id', 1).single(),
-    db.from('calendars').select('id, owner, hide_in_visit'),
-    db.from('members').select('id, color'),
+    db.from('calendars').select('id, owner, label, hide_in_visit'),
+    db.from('members').select('id, name, color'),
   ])
   const visitMode = settings?.visit_mode ?? false
-  const colorOf = new Map((members ?? []).map((m) => [m.id, m.color]))
+  const memberOf = new Map((members ?? []).map((m) => [m.id, m]))
   const visible = (calendars ?? []).filter((c) => !(visitMode && c.hide_in_visit))
 
   const fromDay = berlinDay(new Date())
@@ -141,7 +147,13 @@ Deno.serve(async (req) => {
   const results = await Promise.all(
     visible.map(async (c) => {
       try {
-        return expand(await loadIcs(c.id), c.id, c.owner ? colorOf.get(c.owner) ?? null : null, fromDay, toDay)
+        const owner = c.owner ? memberOf.get(c.owner) : undefined
+        return expand(await loadIcs(c.id), c.id, owner?.color ?? null, fromDay, toDay).map((e) => ({
+          ...e,
+          label: c.label,
+          who: owner?.name ?? null,
+          hideInVisit: c.hide_in_visit,
+        }))
       } catch (e) {
         console.error(c.id, e)
         errors.push(c.id)

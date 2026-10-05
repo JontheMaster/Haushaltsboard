@@ -29,6 +29,13 @@ export function longDate(d = new Date()): string {
   return longDateFmt.format(d)
 }
 
+/** „Mo 5. Oktober“ (Handy-Kopfzeile) */
+export function shortDate(d = new Date()): string {
+  const day = berlinDay(d)
+  const month = new Intl.DateTimeFormat('de-DE', { timeZone: TZ, month: 'long' }).format(d)
+  return `${weekdayShort(day)} ${Number(day.slice(8))}. ${month}`
+}
+
 export function addDays(day: string, n: number): string {
   const [y, m, d] = day.split('-').map(Number)
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)

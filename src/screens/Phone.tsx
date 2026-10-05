@@ -2,10 +2,11 @@ import { House, ListChecks, LogOut, Plus, ShoppingCart, type LucideIcon } from '
 import { useCallback, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Toast } from '../components/Toast'
+import { VisitToggle } from '../components/VisitToggle'
 import { DeviceProvider } from '../lib/device'
 import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
-import { longDate, useNow } from '../lib/time'
+import { shortDate, useNow } from '../lib/time'
 import { describe, type Weather } from '../modules/clock-weather/weather'
 import { MODULE_BY_ID } from '../modules/registry'
 import { ShoppingTile } from '../modules/shopping/ShoppingTile'
@@ -117,7 +118,7 @@ function PhoneHeader({ weather }: { weather: Weather | null }) {
   return (
     <header className="flex items-center gap-3 px-4 pt-[calc(var(--space-5)+env(safe-area-inset-top))] pb-4">
       <div className="flex min-w-0 flex-1 flex-col">
-        <h1 className="font-display text-title text-ink">{longDate(now)}</h1>
+        <h1 className="font-display text-title text-ink">{shortDate(now)}</h1>
         {weather && w && (
           <span className="flex items-center gap-1 text-label text-ink-muted">
             <Icon icon={w.icon} size={18} label={w.label} className="text-accent" />
@@ -125,6 +126,7 @@ function PhoneHeader({ weather }: { weather: Weather | null }) {
           </span>
         )}
       </div>
+      <VisitToggle short />
       <button
         type="button"
         className="hb-icon-btn"
