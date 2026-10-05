@@ -4,6 +4,6 @@ import { defineConfig } from 'vite'
 
 // GitHub Pages liefert die Seite unter /haushaltsboard/ aus
 export default defineConfig({
-  base: '/haushaltsboard/',
+  base: '/Haushaltsboard/',
   plugins: [react(), tailwindcss()],
 })
