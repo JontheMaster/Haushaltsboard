@@ -23,6 +23,56 @@ type CalendarEvent = {
   hideInVisit?: boolean
   /** Farbe des Kalenders (Token cal-*, blue = person-a, berry = person-b) */
   color?: string
+  /** Tage (YYYY-MM-DD), an denen dieser Ganztags-Eintrag nicht angezeigt wird (siehe tidy) */
+  skipDays?: string[]
+}
+
+// ───────── Aufräumen ─────────
+
+/** Ganztägige Einträge, die länger dauern, sind Zeiträume (z. B. „Bachelor Thesis“) und keine Termine */
+const MAX_SPAN_DAYS = 14
+
+function daysBetween(a: string, b: string): number {
+  const [y1, m1, d1] = a.split('-').map(Number)
+  const [y2, m2, d2] = b.split('-').map(Number)
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000)
+}
+
+/**
+ * Regeln, mit ALLEN Kalendern gerechnet (auch denen, die im Besuchsmodus verschwinden):
+ * 1. Ganztags-Zeiträume über 14 Tage fallen weg.
+ * 2. Ein mehrtägiger Ganztags-Eintrag fällt an Tagen weg, an denen ein Termin mit Uhrzeit aus demselben
+ *    Kalender liegt oder einer, dessen Titel mit dem Kalendernamen beginnt („Uni - Livestream“).
+ */
+function tidy(events: CalendarEvent[], fromDay: string, toDay: string): CalendarEvent[] {
+  const timed = events.filter((e) => !e.allDay)
+  const out: CalendarEvent[] = []
+  for (const e of events) {
+    if (!e.allDay) {
+      out.push(e)
+      continue
+    }
+    const span = daysBetween(e.start, e.end)
+    if (span > MAX_SPAN_DAYS) continue
+    if (span > 1) {
+      const prefix = e.label?.toLowerCase()
+      const skipDays: string[] = []
+      for (let d = e.start < fromDay ? fromDay : e.start; d < e.end && d < toDay; d = addDays(d, 1)) {
+        const from = berlinMidnight(d)
+        const to = berlinMidnight(addDays(d, 1))
+        const covered = timed.some(
+          (t) =>
+            Date.parse(t.start) < to &&
+            Date.parse(t.end) > from &&
+            (t.calendar === e.calendar || (!!prefix && t.title.toLowerCase().startsWith(prefix))),
+        )
+        if (covered) skipDays.push(d)
+      }
+      if (skipDays.length) e.skipDays = skipDays
+    }
+    out.push(e)
+  }
+  return out
 }
 
 const db = adminClient()
@@ -140,14 +190,16 @@ Deno.serve(async (req) => {
   ])
   const visitMode = settings?.visit_mode ?? false
   const memberOf = new Map((members ?? []).map((m) => [m.id, m]))
-  const visible = (calendars ?? []).filter((c) => !(visitMode && c.hide_in_visit))
+  // Immer alle Kalender laden: die Aufräum-Regeln brauchen auch die versteckten.
+  // Weggelassen wird erst ganz am Ende, so verlässt nichts Verstecktes den Server.
+  const hidden = new Set((calendars ?? []).filter((c) => visitMode && c.hide_in_visit).map((c) => c.id))
 
   const fromDay = berlinDay(new Date())
   const toDay = addDays(fromDay, DAYS)
 
   const errors: string[] = []
   const results = await Promise.all(
-    visible.map(async (c) => {
+    (calendars ?? []).map(async (c) => {
       try {
         const owner = c.owner ? memberOf.get(c.owner) : undefined
         return expand(await loadIcs(c.id), c.id, owner?.color ?? null, fromDay, toDay).map((e) => ({
@@ -159,12 +211,14 @@ Deno.serve(async (req) => {
         }))
       } catch (e) {
         console.error(c.id, e)
-        errors.push(c.id)
+        if (!hidden.has(c.id)) errors.push(c.id)
         return []
       }
     }),
   )
 
-  const events = results.flat().sort((a, b) => a.start.localeCompare(b.start))
+  const events = tidy(results.flat(), fromDay, toDay)
+    .filter((e) => !hidden.has(e.calendar))
+    .sort((a, b) => a.start.localeCompare(b.start))
   return json(req, { from: fromDay, to: toDay, visitMode, events, errors })
 })

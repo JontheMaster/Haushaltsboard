@@ -42,7 +42,7 @@ Gemeinsames Haushalts-Dashboard von Jonathan und Leviona: ein Android-Tablet an 
 
 Pro Kalender in der App einstellbar (Tabelle `calendars`, Felder `hide_in_visit`, `color`). Jeder Kalender hat eine eigene Farbe (Tokens `cal-*`, Zuordnung in design/DESIGN.md), Jonathan privat = Blau, Leviona = Beere.
 
-Anzeige-Regeln Kalender (`src/modules/calendar/rules.ts`): Ganztags-Zeiträume über 14 Tage ausblenden; mehrtägige Ganztags-Einträge an Tagen ausblenden, an denen ein Termin mit Uhrzeit aus demselben Kalender oder mit dem Kalendernamen am Titelanfang liegt.
+Anzeige-Regeln Kalender (serverseitig in `calendar`, Funktion `tidy`, immer mit allen Kalendern gerechnet, damit sie auch im Besuchsmodus stimmen; Board liest nur `skipDays`): Ganztags-Zeiträume über 14 Tage ausblenden; mehrtägige Ganztags-Einträge an Tagen ausblenden, an denen ein Termin mit Uhrzeit aus demselben Kalender oder mit dem Kalendernamen am Titelanfang liegt.
 
 ## Personen und Farben
 

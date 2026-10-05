@@ -18,6 +18,8 @@ export type CalendarEvent = {
   hideInVisit?: boolean
   /** Kalenderfarbe: blue, berry, orange, yellow, lilac, purple, forest, lime */
   color?: string
+  /** Tage, an denen dieser Ganztags-Eintrag ausgeblendet wird (vom Server berechnet) */
+  skipDays?: string[]
 }
 
 type Response = { events: CalendarEvent[]; errors: string[]; visitMode: boolean }
