@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Laufende Veröffentlichung fertig laufen lassen, die nächste wartet (GitHub-Vorlage für Pages)
+  cancel-in-progress: false
 
 jobs:
   build:
