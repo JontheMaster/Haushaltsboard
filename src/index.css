@@ -1688,3 +1688,86 @@ button.hb-module-open:active {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+
+/* Duo: beide hören gleichzeitig – Cover gefächert, im Wechsel vorn */
+.hb-np-covers {
+  position: relative;
+  flex: none;
+  width: 84px;
+  height: 64px;
+}
+.hb-np-cover-slot {
+  position: absolute;
+  top: 0;
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 2px var(--surface-raised), 0 0 0 4px var(--np-ring, var(--accent));
+  transition:
+    transform var(--dur-slow) var(--ease-spring),
+    left var(--dur-slow) var(--ease-spring),
+    opacity var(--dur-slow) var(--ease-out);
+}
+.hb-np-cover-slot.hb-person-a {
+  --np-ring: var(--person-a);
+}
+.hb-np-cover-slot.hb-person-b {
+  --np-ring: var(--person-b);
+}
+.hb-np-cover-slot.is-front {
+  left: 0;
+  z-index: 2;
+  transform: rotate(-4deg);
+}
+.hb-np-cover-slot.is-back {
+  left: 22px;
+  z-index: 1;
+  transform: rotate(6deg) scale(0.88);
+  opacity: 0.75;
+}
+.hb-np-cover-slot .hb-np-cover {
+  display: block;
+}
+/* Equalizer in beiden Personenfarben */
+.hb-np-eq.is-duo i:nth-child(odd) {
+  background: var(--person-a);
+}
+.hb-np-eq.is-duo i:nth-child(even) {
+  background: var(--person-b);
+}
+.hb-np-eq.is-duo i:nth-child(4) {
+  animation-delay: -0.2s;
+}
+.hb-np-who-duo {
+  color: var(--ink);
+}
+.hb-np-heart {
+  color: var(--person-b);
+  fill: var(--person-b);
+}
+.hb-np-duo-swap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  animation: hb-np-swap var(--dur-slow) var(--ease-out) both;
+}
+@keyframes hb-np-swap {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.hb-np-duo-name {
+  font-weight: 600;
+}
+.hb-np-duo-name.hb-person-a {
+  color: var(--person-a);
+}
+.hb-np-duo-name.hb-person-b {
+  color: var(--person-b);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-np-cover-slot,
+  .hb-np-duo-swap {
+    transition: none;
+    animation: none;
+  }
+}

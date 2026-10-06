@@ -1,5 +1,5 @@
-import { Music } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { Heart, Music } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { useMembers } from '../../lib/members'
 import { useFitLevel } from '../../lib/useFitLevel'
@@ -24,9 +24,8 @@ export function NowPlayingHeader({ variant }: { variant: 'wall' | 'phone' }) {
   if (!playing.length) return null
   return (
     <div className={`hb-np-stack ${variant === 'phone' ? 'is-phone' : ''}`}>
-      {playing.map((p) => (
-        <NowPlayingCard key={p.memberId} p={p} />
-      ))}
+      {/* hören beide gleichzeitig: eine gemeinsame Karte, gleich groß wie eine einzelne */}
+      {playing.length >= 2 ? <DuoCard a={playing[0]} b={playing[1]} /> : <NowPlayingCard p={playing[0]} />}
     </div>
   )
 }
@@ -113,5 +112,93 @@ export function SaverMusic() {
         <span className="hb-saver-music-artist">{p.artists}</span>
       </span>
     </div>
+  )
+}
+
+/** So lange bleibt eine Seite der Duo-Karte vorn, dann tauschen die Cover */
+const DUO_SWAP_MS = 6000
+
+/**
+ * Beide hören gleichzeitig: zwei Cover gefächert übereinander, im Wechsel vorn,
+ * Titel und Name blenden passend über. Gleicher Song: „Ihr hört beide“.
+ */
+function DuoCard({ a, b }: { a: Playing; b: Playing }) {
+  const { byId, personKey } = useMembers()
+  const now = useNow(1000)
+  const [front, setFront] = useState(0)
+  const same = a.title === b.title && a.artists === b.artists
+
+  useEffect(() => {
+    if (same) return
+    const t = setInterval(() => setFront((f) => 1 - f), DUO_SWAP_MS)
+    return () => clearInterval(t)
+  }, [same])
+
+  const pair = [a, b]
+  const p = pair[front]
+  const nameA = byId.get(a.memberId)?.name ?? ''
+  const nameB = byId.get(b.memberId)?.name ?? ''
+  const progress = p.durationMs ? Math.min(1, (p.progressMs + (now.getTime() - p.at)) / p.durationMs) : 0
+  const label = same
+    ? `${nameA} und ${nameB} hören beide ${p.title} von ${p.artists}`
+    : `${nameA} hört ${a.title}, ${nameB} hört ${b.title}`
+
+  return (
+    <div className={`hb-np hb-np-duo hb-person-${personKey(p.memberId)}`} role="status" aria-label={label}>
+      <span className="hb-np-covers" aria-hidden="true">
+        {pair.map((x, i) => (
+          <span key={x.memberId} className={`hb-np-cover-slot hb-person-${personKey(x.memberId)} ${i === front ? 'is-front' : 'is-back'}`}>
+            {x.image ? (
+              <img className="hb-np-cover" src={x.image} alt="" />
+            ) : (
+              <span className="hb-np-cover is-empty">
+                <Icon icon={Music} size={22} />
+              </span>
+            )}
+          </span>
+        ))}
+      </span>
+      <span className="hb-np-text" aria-hidden="true">
+        <span className="hb-np-who hb-np-who-duo">
+          <span className="hb-np-eq is-duo">
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+          {same ? (
+            <>
+              Ihr hört beide <Icon icon={Heart} size={13} className="hb-np-heart" />
+            </>
+          ) : (
+            <>
+              {nameA} & {nameB}
+            </>
+          )}
+        </span>
+        {/* key wechselt mit der vorderen Seite: Titel blendet über */}
+        <span key={same ? 'same' : p.memberId} className="hb-np-duo-swap">
+          <FitTitle title={p.title} />
+          <span className="hb-np-artist">
+            {p.artists}
+            {!same && <span className={`hb-np-duo-name hb-person-${personKey(p.memberId)}`}> · {byId.get(p.memberId)?.name}</span>}
+          </span>
+        </span>
+      </span>
+      <span className="hb-np-progress" style={{ width: `${progress * 100}%` }} aria-hidden="true" />
+    </div>
+  )
+}
+
+/** Songtitel bis zwei Zeilen, nie abgeschnitten: erst ohne Zusätze („Remastered“), dann kleiner */
+function FitTitle({ title }: { title: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const clean = cleanTitle(title)
+  const titles = [title, ...(clean && clean !== title ? [clean] : [])]
+  const level = useFitLevel(ref, titles.length + 1, title)
+  return (
+    <span ref={ref} className={`hb-np-title ${level >= titles.length ? 'is-small' : ''}`}>
+      {titles[Math.min(level, titles.length - 1)]}
+    </span>
   )
 }
