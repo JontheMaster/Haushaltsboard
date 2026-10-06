@@ -226,9 +226,10 @@ async function efaTrips(stop: Stop, place: Place, arriveBy: string): Promise<Tri
   return trips
 }
 
-// Ein letztes kurzes Stück mit Bus/Tram (bis 6 Min Fahrt) zu Fuß gehen, wenn das Ziel von dort bis ~18 Min entfernt ist
+// Ein letztes kurzes Stück mit Bus/Tram (bis 6 Min Fahrt) zu Fuß gehen, wenn das Ziel von dort höchstens ~7 Min entfernt ist
+// (Entscheidung Jonathan: alles über 7 Min Fußweg lieber mit dem Bus)
 const SHORT_RIDE_MAX_MIN = 6
-const WALK_INSTEAD_MAX_MIN = 18
+const WALK_INSTEAD_MAX_MIN = 7
 const WALK_M_PER_MIN = 80
 const DETOUR = 1.2
 

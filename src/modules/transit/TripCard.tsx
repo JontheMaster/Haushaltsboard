@@ -40,13 +40,11 @@ function LegRow({ leg }: { leg: Leg }) {
       </li>
     )
   }
-  // Ankunft dieser Fahrt (Verspätung der Abfahrt mitgerechnet)
-  const arr = new Date(Date.parse(leg.arr) + (leg.delay ?? 0) * 60000).toISOString()
   return (
     <li className="hb-leg">
       <LineChip line={leg.line} product={leg.product} />
       <span className="hb-leg-text">
-        <b>{hm(depRt(leg))}</b> {leg.from} → {leg.to} <span className="hb-leg-arr">an {hm(arr)}</span>
+        <b>{hm(depRt(leg))}</b> {leg.from} → {leg.to}
       </span>
       {/* nur Verspätung zeigen, „pünktlich“ steht schon oben */}
       {leg.delay !== null && leg.delay > 0 && <DelayBadge delay={leg.delay} />}
