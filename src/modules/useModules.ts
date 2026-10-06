@@ -4,9 +4,16 @@ import { supabase } from '../lib/supabase'
 import { DEFAULT_PHONE_LAYOUT, DEFAULT_WALL_LAYOUT, MODULE_BY_ID } from './registry'
 import type { LayoutTile } from './types'
 
+// Letzter bekannter Stand: neue Ansichten starten damit statt mit „alles aus“ (sonst springen Schalter sichtbar um)
+let lastEnabled: Set<string> | null = null
+
 /** Welche Module eingeschaltet sind (Tabelle modules), live */
 export function useEnabledModules(): Set<string> | null {
-  const [enabled, setEnabled] = useState<Set<string> | null>(null)
+  const [enabled, setEnabledState] = useState<Set<string> | null>(lastEnabled)
+  const setEnabled = (s: Set<string>) => {
+    lastEnabled = s
+    setEnabledState(s)
+  }
 
   useEffect(() => {
     const load = () =>

@@ -1345,8 +1345,9 @@ button.hb-module-open:active {
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-out);
 }
+/* Auswahlring innen im Kreis, damit er die Nachbarfarben nicht berührt */
 .hb-swatch[aria-checked="true"] {
-  box-shadow: 0 0 0 3px var(--surface-raised), 0 0 0 5px var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 5px var(--surface-raised);
 }
 .hb-swatch:active {
   transform: scale(0.92);

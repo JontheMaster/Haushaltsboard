@@ -32,37 +32,50 @@ export function AllModules({ onBack, open }: { onBack: () => void; open: (id: st
       <p className="text-body text-ink-muted">
         Ausgeschaltetes verschwindet auf dem Board und am Handy, für euch beide. Antippen öffnet die Einstellungen.
       </p>
-      <section className="hb-tile hb-tile-static hb-list-tile">
-        {MODULES.map((m) => {
-          const on = m.toggle === false || isOn(m.id)
-          const body = (
-            <>
-              <span className={`hb-tile-icon ${on ? '' : 'is-off'}`}>
-                <Icon icon={m.icon} size={20} />
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col text-left">
-                <span className={`text-body font-semibold ${on ? 'text-ink' : 'text-ink-muted'}`}>{m.title}</span>
-                <span className="text-label text-ink-muted">{m.description}</span>
-              </span>
-            </>
-          )
-          return (
-            <div key={m.id} className="hb-module-row">
-              {m.Settings ? (
-                <button type="button" className="hb-module-open" onClick={() => open(m.id)} aria-label={`${m.title}: Einstellungen`}>
-                  {body}
-                  <Icon icon={ChevronRight} size={20} className="shrink-0 text-ink-muted" />
-                </button>
-              ) : (
-                <div className="hb-module-open">{body}</div>
-              )}
-              {m.toggle !== false && (
-                <Toggle hideLabel label={`${m.title} ${on ? 'ausschalten' : 'einschalten'}`} checked={on} onChange={(v) => toggle(m.id, v)} />
-              )}
-            </div>
-          )
-        })}
-      </section>
+      {/* erst zeigen, wenn der Stand bekannt ist – sonst gleiten alle Schalter sichtbar von Aus nach An */}
+      {enabled && (
+        <section className="hb-tile hb-tile-static hb-list-tile">
+          {MODULES.map((m) => {
+            const on = m.toggle === false || isOn(m.id)
+            const body = (
+              <>
+                <span className={`hb-tile-icon ${on ? '' : 'is-off'}`}>
+                  <Icon icon={m.icon} size={20} />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col text-left">
+                  <span className={`text-body font-semibold ${on ? 'text-ink' : 'text-ink-muted'}`}>{m.title}</span>
+                  <span className="text-label text-ink-muted">{m.description}</span>
+                </span>
+              </>
+            )
+            return (
+              <div key={m.id} className="hb-module-row">
+                {m.Settings ? (
+                  <button
+                    type="button"
+                    className="hb-module-open"
+                    onClick={() => open(m.id)}
+                    aria-label={`${m.title}: Einstellungen`}
+                  >
+                    {body}
+                    <Icon icon={ChevronRight} size={20} className="shrink-0 text-ink-muted" />
+                  </button>
+                ) : (
+                  <div className="hb-module-open">{body}</div>
+                )}
+                {m.toggle !== false && (
+                  <Toggle
+                    hideLabel
+                    label={`${m.title} ${on ? 'ausschalten' : 'einschalten'}`}
+                    checked={on}
+                    onChange={(v) => toggle(m.id, v)}
+                  />
+                )}
+              </div>
+            )
+          })}
+        </section>
+      )}
     </div>
   )
 }
