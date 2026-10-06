@@ -1,4 +1,4 @@
-import { CalendarRange, House, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { CalendarRange, House, LayoutGrid, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 import { CookMode } from '../modules/meals/CookMode'
 import { MealsTab } from '../modules/meals/MealsTab'
 import { Sheet } from '../components/Sheet'
@@ -22,6 +22,7 @@ import { CHORE_PREFIX, isChoreId, type Todo } from '../modules/todos/useTodos'
 import { PutzplanPage } from '../modules/chores/Putzplan'
 import { Button } from '../components/Button'
 import { AllModules } from './AllModules'
+import { PhoneLayoutEditor } from './PhoneLayoutEditor'
 import { useEnabledModules, useLayout } from '../modules/useModules'
 
 type Tab = 'start' | 'woche' | 'todos' | 'einkauf' | 'essen'
@@ -51,7 +52,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
   const [sheet, setSheet] = useState<{ todo?: Todo } | null>(null)
   // Eigene Seiten über den Reitern: Alle Funktionen (Kopfzeile), deren Einstellungen,
   // Putzplan auch direkt (Todo-Seite oder Antippen einer Putzaufgabe)
-  const [page, setPage] = useState<null | { kind: 'all' } | { kind: 'module'; id: string } | { kind: 'spotify'; notice?: string | null } | { kind: 'putzplan'; ruleId?: string }>(
+  const [page, setPage] = useState<null | { kind: 'all' } | { kind: 'layout' } | { kind: 'module'; id: string } | { kind: 'spotify'; notice?: string | null } | { kind: 'putzplan'; ruleId?: string }>(
     // Rückkehr von der Spotify-Anmeldung: gleich die Spotify-Seite mit Rückmeldung zeigen
     () => {
       const notice = takeSpotifyResult()
@@ -120,11 +121,20 @@ export function Phone({ weather }: { weather: Weather | null }) {
             <ModuleSettings id={page.id} onBack={() => setPage({ kind: 'all' })} />
           ) : page?.kind === 'spotify' ? (
             <SpotifyPage onBack={() => setPage({ kind: 'all' })} notice={page.notice} />
+          ) : page?.kind === 'layout' ? (
+            <PhoneLayoutEditor onBack={() => setPage(null)} showToast={showToast} />
           ) : page?.kind === 'putzplan' ? (
             <PutzplanPage onBack={() => setPage(null)} openRuleId={page.ruleId} />
           ) : (
             <>
-          {tab === 'start' && <StartTab />}
+          {tab === 'start' && (
+            <StartTab
+              onEdit={() => {
+                setPage({ kind: 'layout' })
+                window.scrollTo({ top: 0 })
+              }}
+            />
+          )}
           {tab === 'woche' && <WeekView variant="phone" />}
           {tab === 'todos' && (
             <>
@@ -206,7 +216,7 @@ function PhoneHeader({ weather, onMore }: { weather: Weather | null; onMore: () 
   )
 }
 
-function StartTab() {
+function StartTab({ onEdit }: { onEdit: () => void }) {
   const enabled = useEnabledModules()
   const layout = useLayout('phone')
   return (
@@ -221,6 +231,9 @@ function StartTab() {
           const mod = MODULE_BY_ID.get(t.module)!
           return mod.Tile && <mod.Tile key={t.module} size={t.size} delay={i * 40} />
         })}
+      <Button variant="ghost" icon={<Icon icon={LayoutGrid} size={18} />} onClick={onEdit}>
+        Startseite anpassen
+      </Button>
     </>
   )
 }

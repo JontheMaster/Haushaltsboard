@@ -1356,6 +1356,35 @@ button.hb-module-open:active {
 .hb-swatch:active {
   transform: scale(0.92);
 }
+/* Startseite anpassen: Zeile mit Griff zum Ziehen */
+.hb-layout-row {
+  position: relative;
+  padding-left: var(--space-1);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+.hb-layout-row.is-dragging {
+  z-index: 1;
+  box-shadow: var(--shadow-lift);
+}
+.hb-layout-grip {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 48px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--ink-muted);
+  cursor: grab;
+  touch-action: none;
+}
+.hb-layout-grip:active {
+  cursor: grabbing;
+  background: var(--surface-sunken);
+}
+
 /* Kachel als Liste (Alle Funktionen): Zeilen bringen ihren Innenabstand selbst mit */
 .hb-tile.hb-list-tile {
   gap: 0;

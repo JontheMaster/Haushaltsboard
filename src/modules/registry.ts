@@ -49,9 +49,13 @@ export const DEFAULT_WALL_LAYOUT: LayoutTile[] = [
   { module: 'einkauf', size: 's' },
 ]
 
-// Standard am Handy (pro Person änderbar ab Phase 2). Kacheln stehen untereinander.
+// Standard am Handy, pro Person änderbar („Startseite anpassen“). Kacheln stehen untereinander.
 export const DEFAULT_PHONE_LAYOUT: LayoutTile[] = [
   { module: 'kalender', size: 'm' },
   { module: 'todos', size: 'm' },
   { module: 'einkauf', size: 'm' },
 ]
+
+// Was am Handy als Kachel auf die Startseite darf: Module mit Kachel, außer zeitweisen (stackOn)
+// und solchen, die schon oben auf der Startseite stehen (Header, z. B. Läuft gerade)
+export const PHONE_TILE_MODULES = MODULES.filter((m) => m.Tile && m.sizes.length && !m.stackOn && !m.Header)
