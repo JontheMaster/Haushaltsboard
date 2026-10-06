@@ -48,6 +48,8 @@ type Leg = {
   minutes?: number
   /** EFA-ID der Abfahrtshaltestelle (für die Echtzeit) */
   fromId?: string
+  /** Koordinaten der Abfahrtshaltestelle [lat, lon] (für „lieber laufen“) */
+  fromCoord?: [number, number]
 }
 type Trip = {
   /** wann zuhause los (ISO, mit Echtzeit) */
@@ -197,6 +199,7 @@ async function efaTrips(stop: Stop, place: Place, arriveBy: string): Promise<Tri
         direction: l.transportation?.destination?.name ?? '',
         from: stopName(l.origin),
         fromId: l.origin?.id,
+        fromCoord: Array.isArray(l.origin?.coord) ? [Number(l.origin.coord[0]), Number(l.origin.coord[1])] : undefined,
         to: stopName(l.destination),
         dep: l.origin?.departureTimePlanned,
         arr: l.destination?.arrivalTimePlanned,
@@ -205,6 +208,7 @@ async function efaTrips(stop: Stop, place: Place, arriveBy: string): Promise<Tri
         minutes: walk ? minutes((l.duration ?? 0) * 1000) : undefined,
       }
     })
+    walkInsteadOfLastRide(legs, place)
     const transit = legs.filter((l) => !l.walk)
     if (!transit.length) continue
     // Fußweg ab der Haltestelle zuhause gehört zum eigenen Fußweg
@@ -220,6 +224,51 @@ async function efaTrips(stop: Stop, place: Place, arriveBy: string): Promise<Tri
     })
   }
   return trips
+}
+
+// Ein letztes kurzes Stück mit Bus/Tram (bis 6 Min Fahrt) zu Fuß gehen, wenn das Ziel von dort bis ~18 Min entfernt ist
+const SHORT_RIDE_MAX_MIN = 6
+const WALK_INSTEAD_MAX_MIN = 18
+const WALK_M_PER_MIN = 80
+const DETOUR = 1.2
+
+function distanceM(a: [number, number], b: [number, number]): number {
+  const rad = Math.PI / 180
+  const dLat = (b[0] - a[0]) * rad
+  const dLon = (b[1] - a[1]) * rad
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLon / 2) ** 2
+  return 2 * 6371000 * Math.asin(Math.sqrt(h))
+}
+
+/**
+ * „Lieber laufen“: Ist die letzte Fahrt nur ein kurzes Stück und das Ziel von ihrer Abfahrtshaltestelle
+ * aus zu Fuß gut erreichbar, wird aus Fahrt + Fußweg ein einziger Fußweg (ändert legs direkt).
+ */
+function walkInsteadOfLastRide(legs: Leg[], place: Place) {
+  let i = legs.length - 1
+  while (i >= 0 && legs[i].walk) i--
+  // nur wenn es davor noch eine Fahrt gibt (die erste Fahrt ab zuhause bleibt)
+  if (i <= 0 || !legs.slice(0, i).some((l) => !l.walk)) return
+  const ride = legs[i]
+  if (!ride.fromCoord) return
+  if ((Date.parse(ride.arr) - Date.parse(ride.dep)) / 60000 > SHORT_RIDE_MAX_MIN) return
+  const walkMin = Math.ceil((distanceM(ride.fromCoord, [place.lat, place.lon]) * DETOUR) / WALK_M_PER_MIN)
+  if (walkMin > WALK_INSTEAD_MAX_MIN) return
+  // ab Ankunft an der Haltestelle (nach der Fahrt davor und einem Umstiegsweg)
+  const start = legs[i - 1].arr
+  legs.splice(i, legs.length - i, {
+    walk: true,
+    line: '',
+    product: 'Fußweg',
+    direction: '',
+    from: ride.from,
+    to: place.name,
+    dep: start,
+    arr: addMin(start, walkMin),
+    delay: null,
+    platform: null,
+    minutes: walkMin,
+  })
 }
 
 /** Echtzeit der VAG in die Fahrten eintragen (nur für die nächsten 90 Minuten) und Umstiege prüfen */
@@ -430,6 +479,8 @@ async function planFor(member: string, events: CalendarEvent[], unknown: Unknown
       found = old.value
     }
     const { trip, earlier } = found
+    // keine Verbindung mehr, weil es schon zu spät ist (Termin in unter 90 Min): einfach nichts zeigen
+    if (!trip && Date.parse(c.target.start) - Date.now() < 90 * 60_000) continue
     if (trip && Date.parse(trip.leaveAt) < Date.now() - 2 * 60_000) {
       // Losgehzeit vorbei: solange die erste Bahn noch nicht weg ist, weiter zeigen
       const first = trip.legs.find((l) => !l.walk)!

@@ -40,13 +40,16 @@ function LegRow({ leg }: { leg: Leg }) {
       </li>
     )
   }
+  // Ankunft dieser Fahrt (Verspätung der Abfahrt mitgerechnet)
+  const arr = new Date(Date.parse(leg.arr) + (leg.delay ?? 0) * 60000).toISOString()
   return (
     <li className="hb-leg">
       <LineChip line={leg.line} product={leg.product} />
       <span className="hb-leg-text">
-        <b>{hm(depRt(leg))}</b> {leg.from} → {leg.to}
+        <b>{hm(depRt(leg))}</b> {leg.from} → {leg.to} <span className="hb-leg-arr">an {hm(arr)}</span>
       </span>
-      <DelayBadge delay={leg.delay} />
+      {/* nur Verspätung zeigen, „pünktlich“ steht schon oben */}
+      {leg.delay !== null && leg.delay > 0 && <DelayBadge delay={leg.delay} />}
     </li>
   )
 }
@@ -73,13 +76,15 @@ export function TripCard({ plan, wall }: { plan: Plan; wall?: boolean }) {
   return (
     <article className={`hb-trip hb-person-${person} ${wall ? 'is-wall' : ''}`} aria-label={`Weg für ${name} nach ${plan.target.place.name}`}>
       <header className="hb-trip-head">
-        <span className="hb-trip-target">
-          <Icon icon={MapPinned} size={16} />
-          {wall ? `${name} · ${plan.target.place.name}` : plan.target.place.name}
-          <span className="text-ink-muted"> · {hm(plan.target.start)}</span>
+        <span className="hb-trip-event">
+          {hm(plan.target.start)} · {wall ? name : plan.target.title}
         </span>
         <span className={`hb-trip-status ${status.cls}`}>{status.text}</span>
       </header>
+      <span className="hb-trip-target">
+        <Icon icon={MapPinned} size={16} className="shrink-0" />
+        {plan.target.place.name}
+      </span>
       {trip ? (
         <>
           <div className="hb-trip-leave">
@@ -88,7 +93,6 @@ export function TripCard({ plan, wall }: { plan: Plan; wall?: boolean }) {
           </div>
           <p className="hb-trip-sub">
             {trip.walk} Min zu Fuß zur {trip.stop} · an {hm(trip.arrivalRt)}
-            {!wall && plan.target.source === 'calendar' && <> · {plan.target.title}</>}
           </p>
           <ul className="hb-legs">
             {trip.legs.map((l, i) => (
