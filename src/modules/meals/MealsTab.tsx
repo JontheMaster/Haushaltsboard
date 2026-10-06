@@ -9,6 +9,7 @@ import { hm, useMeals, type Meal } from './mealStore'
 import { PlanSheet } from './PlanSheet'
 import { RecipeDetail } from './RecipeDetail'
 import { RecipeEditor } from './RecipeEditor'
+import { RecipeDice } from './RecipeDice'
 import { RecipeImage, RecipeLibrary } from './RecipeLibrary'
 import { useRecipes, type Recipe } from './recipeStore'
 
@@ -122,6 +123,7 @@ export function MealsTab({ showToast }: { showToast: (m: string) => void }) {
           <Planned onOpen={(meal) => flow.setPlan({ meal })} />
           <RecipeLibrary
             onOpen={(r) => openRecipe(r.id)}
+            headerAction={(shown) => <RecipeDice recipes={shown} onPlan={(r) => flow.setPlan({ recipe: r })} />}
             cardAction={(r) => (
               <button type="button" className="hb-icon-btn hb-recipe-plan" aria-label={`${r.title} einplanen`} onClick={() => flow.setPlan({ recipe: r })}>
                 <Icon icon={CalendarPlus} size={22} />

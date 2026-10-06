@@ -1050,3 +1050,218 @@ button.hb-meal-card:focus-visible {
   color: var(--ink);
   word-break: break-all;
 }
+
+/* ───────── Was koche ich? (Würfel) ───────── */
+
+.hb-dice-btn {
+  flex: none;
+  color: var(--ink-muted);
+}
+.hb-dice-btn:disabled {
+  opacity: 0.4;
+}
+.hb-dice-result {
+  animation: hb-dice-in var(--dur-slow) var(--ease-spring) both;
+}
+.hb-dice-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+}
+@keyframes hb-dice-in {
+  from { opacity: 0; transform: rotate(-3deg) scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ───────── Münzwurf ───────── */
+
+.hb-coin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+.hb-coin-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 380px;
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lift);
+  animation: hb-rise var(--dur-base) var(--ease-out) both;
+}
+.hb-coin-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 200px;
+  height: 230px;
+  perspective: 800px;
+}
+.hb-coin {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  transform-style: preserve-3d;
+  animation: hb-coin-flip 1.8s cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+.hb-coin.lands-a { --coin-end: 1800deg; }
+.hb-coin.lands-b { --coin-end: 1980deg; }
+.hb-coin-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  font-family: var(--font-display);
+  font-size: 72px;
+  font-weight: 700;
+  backface-visibility: hidden;
+  box-shadow: inset 0 0 0 6px rgb(255 255 255 / 0.25), inset 0 0 0 10px rgb(0 0 0 / 0.08);
+}
+.hb-coin-a {
+  background: var(--person-a-soft);
+  color: var(--person-a-ink);
+}
+.hb-coin-b {
+  background: var(--person-b-soft);
+  color: var(--person-b-ink);
+  transform: rotateY(180deg);
+}
+.hb-coin-shadow {
+  position: absolute;
+  bottom: 6px;
+  width: 110px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.25);
+  filter: blur(4px);
+  animation: hb-coin-shadow 1.8s cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+/* hoch, viele Drehungen, landet auf der richtigen Seite */
+@keyframes hb-coin-flip {
+  0% { transform: translateY(40px) rotateY(0deg); }
+  45% { transform: translateY(-50px) rotateY(calc(var(--coin-end) * 0.6)); }
+  85% { transform: translateY(40px) rotateY(calc(var(--coin-end) - 20deg)); }
+  92% { transform: translateY(30px) rotateY(var(--coin-end)); }
+  100% { transform: translateY(40px) rotateY(var(--coin-end)); }
+}
+@keyframes hb-coin-shadow {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  45% { transform: scale(0.55); opacity: 0.4; }
+}
+.hb-coin-result {
+  min-height: 32px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 650;
+  color: var(--ink-muted);
+  text-align: center;
+}
+.hb-coin-result.is-shown {
+  color: var(--ink);
+  animation: hb-dice-in var(--dur-slow) var(--ease-spring) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-coin, .hb-coin-shadow { animation-duration: 1ms; }
+}
+
+/* ───────── Jubiläen ───────── */
+
+.hb-jubilee-card {
+  border-color: var(--person-b);
+}
+.hb-jubilee-card .hb-meal-card-when {
+  color: var(--person-b-ink);
+}
+.hb-jubilee-heart {
+  position: relative;
+  overflow: visible;
+  background: var(--person-b-soft);
+  color: var(--person-b);
+}
+.hb-jubilee-heart > svg {
+  animation: hb-heartbeat 1.6s ease-in-out infinite;
+}
+/* kleine Herzen, die aufsteigen */
+.hb-jubilee-heart i {
+  position: absolute;
+  bottom: 40%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--person-b);
+  transform: rotate(45deg);
+  opacity: 0;
+  animation: hb-heart-float 3s ease-out infinite;
+}
+.hb-jubilee-heart i::before,
+.hb-jubilee-heart i::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: inherit;
+}
+.hb-jubilee-heart i::before { left: -4px; }
+.hb-jubilee-heart i::after { top: -4px; }
+.hb-jubilee-heart i:nth-of-type(2) { left: 25%; animation-delay: 1s; }
+.hb-jubilee-heart i:nth-of-type(3) { left: 72%; animation-delay: 2s; }
+@keyframes hb-heartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.18); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.12); }
+}
+@keyframes hb-heart-float {
+  0% { opacity: 0; transform: translateY(0) rotate(45deg) scale(0.6); }
+  20% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(-36px) rotate(45deg) scale(1); }
+}
+.hb-jubilee-big {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-full);
+  background: var(--person-b-soft);
+  color: var(--person-b);
+}
+.hb-jubilee-big svg {
+  animation: hb-heartbeat 1.6s ease-in-out infinite;
+}
+.hb-jubilee-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2) var(--space-4);
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+.hb-jubilee-stats b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.hb-jubilee-when {
+  flex: none;
+  width: 130px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-jubilee-heart > svg, .hb-jubilee-heart i, .hb-jubilee-big svg { animation: none; }
+}

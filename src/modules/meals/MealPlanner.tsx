@@ -11,6 +11,7 @@ import { useCalendar } from '../calendar/useCalendar'
 import { startCooking } from './cookStore'
 import { formatDuration } from './ingredients'
 import { MEAL_PREFIX, useMeals, useWithMeals } from './mealStore'
+import { RecipeDice } from './RecipeDice'
 import { usePlanFlow } from './MealsTab'
 import { DEFAULT_TIME } from './PlanSheet'
 import { RecipeDetail } from './RecipeDetail'
@@ -123,7 +124,12 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
     >
       <div className="hb-planner">
         <section className="hb-planner-library" aria-label="Rezepte">
-          <RecipeFilters {...filter} categories={categories} />
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <RecipeFilters {...filter} categories={categories} />
+            </div>
+            {recipes?.length ? <RecipeDice recipes={filter.list} onPlan={(r) => flow.setPlan({ recipe: r })} /> : null}
+          </div>
           <div className="hb-planner-cards hb-scroll-quiet">
             {recipes?.length === 0 && <p className="text-body text-ink-muted">Noch keine Rezepte. Leg sie am Handy an (Reiter Essen).</p>}
             {filter.list.map((r) => (

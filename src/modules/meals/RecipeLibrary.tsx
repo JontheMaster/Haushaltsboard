@@ -120,7 +120,7 @@ export function RecipeFilters({
 }
 
 /** Rezeptbibliothek am Handy */
-export function RecipeLibrary({ onOpen, cardAction }: { onOpen: (r: Recipe) => void; cardAction?: (r: Recipe) => ReactNode }) {
+export function RecipeLibrary({ onOpen, cardAction, headerAction }: { onOpen: (r: Recipe) => void; cardAction?: (r: Recipe) => ReactNode; headerAction?: (shown: Recipe[]) => ReactNode }) {
   const { recipes, error } = useRecipes()
   const categories = useCategories()
   const filter = useRecipeFilter(recipes)
@@ -128,7 +128,10 @@ export function RecipeLibrary({ onOpen, cardAction }: { onOpen: (r: Recipe) => v
   return (
     <div className="flex flex-col gap-4">
       {/* Kategorien und Vorräte: Alle Funktionen → Essensplan */}
-      <h2 className="font-display text-title text-ink">Rezepte</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="flex-1 font-display text-title text-ink">Rezepte</h2>
+        {recipes?.length ? headerAction?.(filter.list) : null}
+      </div>
       <RecipeFilters {...filter} categories={categories} />
       {error && (
         <p role="alert" className="rounded-md bg-urgent-soft px-4 py-3 text-label text-urgent">

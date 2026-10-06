@@ -2,6 +2,7 @@ import { CalendarRange, House, LayoutGrid, ListChecks, Plus, Settings2, Shopping
 import { CookMode } from '../modules/meals/CookMode'
 import { WeekRecap } from '../modules/recap/WeekRecap'
 import { WifiButton } from '../modules/wlan/Wifi'
+import { CoinButton } from '../modules/coin/CoinFlip'
 import { MealsTab } from '../modules/meals/MealsTab'
 import { Sheet } from '../components/Sheet'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
@@ -236,9 +237,12 @@ function StartTab({ onEdit }: { onEdit: () => void }) {
           const mod = MODULE_BY_ID.get(t.module)!
           return mod.Tile && <mod.Tile key={t.module} size={t.size} delay={i * 40} />
         })}
-      <Button variant="ghost" icon={<Icon icon={LayoutGrid} size={18} />} onClick={onEdit}>
-        Startseite anpassen
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="ghost" icon={<Icon icon={LayoutGrid} size={18} />} onClick={onEdit}>
+          Startseite anpassen
+        </Button>
+        <CoinButton variant="phone" />
+      </div>
     </>
   )
 }

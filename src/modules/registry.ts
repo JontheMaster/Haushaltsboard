@@ -1,4 +1,5 @@
-import { Bell, CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, TrainFront, Trophy, UtensilsCrossed, Wifi } from 'lucide-react'
+import { Bell, CalendarDays, Clock, Coins, Heart, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, TrainFront, Trophy, UtensilsCrossed, Wifi } from 'lucide-react'
+import { JubileeHeader, JubileeSettings } from './jubilee/Jubilee'
 import { RecapHeader } from './recap/RecapHeader'
 import { RecapSettings } from './recap/RecapSettings'
 import { WifiSettings } from './wlan/Wifi'
@@ -40,6 +41,10 @@ export const MODULES: ModuleDef[] = [
   { id: 'wochenrueckblick', title: 'Wochenrückblick', description: 'Sonntags: was ihr in der Woche geschafft habt', icon: Trophy, phase: 5, sizes: [], Header: RecapHeader, Settings: RecapSettings },
   // WLAN für Gäste: Knopf in der Kopfzeile nur im Besuchsmodus (WifiButton), Einstellungen hier
   { id: 'wlan', title: 'WLAN für Gäste', description: 'QR-Code fürs WLAN, wenn der Besuchsmodus an ist', icon: Wifi, phase: 5, sizes: [], Settings: WifiSettings },
+  // Jubiläen: nur an besonderen Tagen eine Karte oben (Jahre, Monate, runde Tage, Schnapszahlen)
+  { id: 'jubilaeum', title: 'Jubiläen', description: 'Besondere Tage, seit ihr zusammen seid', icon: Heart, phase: 5, sizes: [], Header: JubileeHeader, Settings: JubileeSettings },
+  // Münzwurf: Knopf an der Wand in der Kopfzeile, am Handy unten auf Start (CoinButton)
+  { id: 'muenzwurf', title: 'Münzwurf', description: 'J oder L: wer ist dran mit Müll, Abwasch …', icon: Coins, phase: 5, sizes: [] },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary },
   { id: 'nachtmodus', title: 'Nachtmodus', description: 'Nachts nur eine gedimmte Uhr an der Wand', icon: Moon, phase: 2, sizes: [], Settings: NightSettings },
   { id: 'alexa', title: 'Alexa', description: 'Todos per Sprache eintragen und vorlesen lassen', icon: Mic, phase: 3, sizes: [], Settings: AlexaHelp, toggle: false },
