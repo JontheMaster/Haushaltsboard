@@ -74,7 +74,9 @@ export function WeekView({ variant }: Props) {
   const byDone = (a: Todo, b: Todo) => doneRank(a) - doneRank(b)
   const onDay = (day: string) => list.filter((t) => dueOn(t, day, today)).sort(byDone)
   // Putzplan-Aufgaben „irgendwann in der Woche“ gehören zu ihrer Woche; Todos „diese Woche“ immer
-  const thisWeek = list.filter((t) => !t.due_date && t.this_week && (!t.chore || t.chore.weekStart === monday)).sort(byDone)
+  const thisWeek = list
+    .filter((t) => !t.due_date && t.this_week && (!t.chore || t.chore.weekStart === monday || (offset === 0 && t.chore.weekStart < monday)))
+    .sort(byDone)
   const noDay = list.filter((t) => !t.due_date && !t.this_week).sort(byDone)
   const active = list.find((t) => t.id === activeId)
 

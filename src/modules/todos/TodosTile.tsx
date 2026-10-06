@@ -12,7 +12,7 @@ import { useMembers } from '../../lib/members'
 import { useFlip } from '../../lib/useFlip'
 import { addDays, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import type { TileProps } from '../types'
-import { dueOn, unplannedNow, useTodos, type Todo } from './useTodos'
+import { dueOn, sinceLabel, unplannedNow, useTodos, type Todo } from './useTodos'
 
 // Ablagen auf „Heute“: eine Person (heute), „Offen“ (heute, wer Zeit hat) oder „noch ohne Tag“
 const OPEN = 'open'
@@ -40,10 +40,7 @@ export function TodosTile({ size, delay }: TileProps) {
   const openToday = dueToday.filter((t) => !t.assignee)
   const active = list.find((t) => t.id === activeId)
 
-  const sinceHint = (t: Todo) => {
-    if (!t.moved_since) return undefined
-    return t.moved_since === addDays(today, -1) ? 'seit gestern' : `seit ${weekdayShort(t.moved_since)}`
-  }
+  const sinceHint = (t: Todo) => sinceLabel(t, today, weekdayShort, addDays(today, -1))
 
   function onDragEnd(e: DragEndEvent) {
     setActiveId(null)

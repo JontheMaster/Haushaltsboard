@@ -8,7 +8,7 @@ import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
 import { addDays, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import { useFlip } from '../../lib/useFlip'
-import { dueOn, unplannedNow, useTodos, type Todo } from './useTodos'
+import { dueOn, sinceLabel, unplannedNow, useTodos, type Todo } from './useTodos'
 
 // Ablagen: ein Tag, „Diese Woche“ oder „Ohne Tag“
 type Group = { id: string; title: string; today?: boolean; items: Todo[] }
@@ -61,8 +61,7 @@ export function TodosDetail() {
     patchTodo(todo.id, { ...patch, moved_since: null })
   }
 
-  const sinceHint = (t: Todo) =>
-    t.moved_since ? (t.moved_since === addDays(today, -1) ? 'seit gestern' : `seit ${weekdayShort(t.moved_since)}`) : undefined
+  const sinceHint = (t: Todo) => sinceLabel(t, today, weekdayShort, addDays(today, -1))
 
   return (
     <DndContext

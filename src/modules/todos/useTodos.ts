@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Tables } from '../../lib/database.types'
 import { useMembers } from '../../lib/members'
 import { supabase } from '../../lib/supabase'
-import { berlinMidnightISO } from '../../lib/time'
+import { berlinMidnightISO, mondayOf } from '../../lib/time'
 
 type ChoreTask = Tables<'chore_tasks'>
 
@@ -30,8 +30,9 @@ const SETTLE_MS = 650
 // Letzte Liste im Speicher: beim Wechsel zwischen Start und Todos steht sie sofort da
 let memory: { day: string; todos: Todo[] } | null = null
 
-function fromChore(t: ChoreTask & { chore_rules: { title: string } | null }): Todo {
+function fromChore(t: ChoreTask & { chore_rules: { title: string } | null }, today: string): Todo {
   const { chore_rules, ...raw } = t
+  const overdue = !t.done_at && !!t.due_date && t.due_date < today
   return {
     id: CHORE_PREFIX + t.id,
     title: chore_rules?.title ?? 'Putzplan',
@@ -39,12 +40,32 @@ function fromChore(t: ChoreTask & { chore_rules: { title: string } | null }): To
     // ohne Tag = „irgendwann in dieser Woche“ (nur Putzplan-Aufgaben mit „Woche“)
     this_week: !t.due_date,
     assignee: t.assignee,
-    moved_since: null,
+    // liegengeblieben: Hinweis „seit …“ wie bei Todos
+    moved_since: overdue ? t.due_date : null,
     done_at: t.done_at,
     done_by: t.done_by,
     created_at: t.occurs_on,
     chore: { ruleId: t.rule_id, weekStart: t.week_start, raw },
   }
+}
+
+/**
+ * Liegengebliebenes bleibt, bis es erledigt ist – aber pro Regel steht nur die älteste offene,
+ * schon fällige Aufgabe da (keine doppelten „Bad putzen“). Spätere Termine bleiben in der Zukunft sichtbar.
+ */
+function onlyOldestOpen(items: Todo[], today: string): Todo[] {
+  const monday = mondayOf(today)
+  // schon fällig (heute, liegengeblieben oder „irgendwann“ in dieser/einer früheren Woche)
+  const current = (t: Todo) => (t.due_date ? t.due_date <= today : t.chore!.weekStart <= monday)
+  // je Regel und Zustand (offen/erledigt) nur die älteste – mit abgehakt werden die späteren automatisch mit erledigt
+  const key = (t: Todo) => `${t.chore!.ruleId}|${t.done_at ? 'done' : 'open'}`
+  const oldest = new Map<string, string>()
+  for (const t of items) {
+    if (!current(t)) continue
+    const prev = oldest.get(key(t))
+    if (!prev || t.created_at < prev) oldest.set(key(t), t.created_at)
+  }
+  return items.filter((t) => !current(t) || oldest.get(key(t)) === t.created_at)
 }
 
 /** Nur die Felder, die es bei Putzplan-Aufgaben gibt */
@@ -91,7 +112,7 @@ export function useTodos(today: string) {
     ])
     if (todoRes.error || choreRes.error) return setError(true)
     setError(false)
-    const list = [...todoRes.data, ...choreRes.data.map(fromChore)]
+    const list = [...todoRes.data, ...onlyOldestOpen(choreRes.data.map((c) => fromChore(c, today)), today)]
     setTodos(list)
     memory = { day: today, todos: list }
   }, [today])
@@ -173,11 +194,18 @@ export function useTodos(today: string) {
   return { todos, error, undoable, setDone, doneRank, patchTodo }
 }
 
-/** Fällig an diesem Tag; Überfälliges (Todos, die der Nachtjob noch nicht verschoben hat) zählt zu heute. Putzplan rutscht nie. */
+/** Fällig an diesem Tag; Überfälliges (Todos vor dem Nachtjob, liegengebliebene Putzaufgaben) zählt zu heute */
 export function dueOn(t: Todo, day: string, today: string): boolean {
   if (!t.due_date) return false
   if (t.due_date === day) return true
-  return day === today && !t.chore && t.due_date < today
+  return day === today && t.due_date < today
+}
+
+/** Hinweis „seit …“; Putzaufgaben „irgendwann in der Woche“ aus der Vorwoche: „seit letzter Woche“ */
+export function sinceLabel(t: Todo, today: string, weekday: (day: string) => string, yesterday: string): string | undefined {
+  if (t.chore && !t.due_date && !t.done_at && t.chore.weekStart < mondayOf(today)) return 'seit letzter Woche'
+  if (!t.moved_since) return undefined
+  return t.moved_since === yesterday ? 'seit gestern' : `seit ${weekday(t.moved_since)}`
 }
 
 /** Ohne Tag und in der aktuellen Woche relevant (Putzplan-Aufgaben späterer Wochen erst dann zeigen) */
