@@ -1137,7 +1137,17 @@ body {
   min-width: 240px;
   max-width: 400px;
 }
+/* Schmaleres Tablet: Uhr, Datum und Knöpfe brauchen die Zeile, die Karte bekommt eine eigene darunter */
+@media (max-width: 1100px) {
+  .hb-np-stack:not(.is-phone) {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+/* Handy: steht in einer Spalte untereinander, also nur so hoch wie die Karte (flex-basis 260px gilt nur in der Kopfzeile) */
 .hb-np-stack.is-phone {
+  flex: none;
   min-width: 0;
   max-width: none;
 }
