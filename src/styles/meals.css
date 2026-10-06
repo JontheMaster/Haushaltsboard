@@ -3,6 +3,7 @@
 /* Essen in Kalender und Woche sind keine Termine: eigene schmale Zeile unter dem Tag
    und im Zeitplan ein zartes Band ohne eigene Spalte (Entscheidung Jonathan 6.10.2026) */
 .hb-meal-line {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -43,6 +44,55 @@
   font-size: 12px;
   line-height: 18px;
   font-weight: 700;
+}
+
+/* Filter in der Woche: kleiner Knopf, Ebenen im Aufklapp-Fenster */
+.hb-filter-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.hb-filter-btn[aria-expanded='true'] {
+  color: var(--ink);
+  border-color: var(--ink-muted);
+}
+.hb-filter-btn.is-filtered {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.hb-filter-btn.is-filtered::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+.hb-filter-btn:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-filter-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 30;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--space-4));
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lift);
+  animation: hb-fade-in var(--dur-fast) var(--ease-out) both;
 }
 
 /* Ebenen-Schalter in der Woche */

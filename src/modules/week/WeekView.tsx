@@ -11,10 +11,10 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EventPill } from '../../components/EventPill'
 import { Icon } from '../../components/Icon'
-import { Eye, EyeOff, Sparkles } from 'lucide-react'
+import { Eye, EyeOff, SlidersHorizontal, Sparkles } from 'lucide-react'
 import { ScrollList } from '../../components/ScrollList'
 import { WithIcon } from '../../components/WithIcon'
 import { useDevice, useMedia } from '../../lib/device'
@@ -25,7 +25,7 @@ import { liveInfo } from '../calendar/live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from '../calendar/Timeline'
 import { useCalendar, type CalendarEvent } from '../calendar/useCalendar'
 import { dueOn, useTodos, type Todo } from '../todos/useTodos'
-import { mealBands, MealLine, useMealsByDay } from '../meals/MealLine'
+import { byTime, mealBands, MealLine, useMealsByDay } from '../meals/MealLine'
 import { useEnabledModules } from '../useModules'
 
 // Ablagen: ein Tag, „Diese Woche“ oder „Ohne Tag“
@@ -116,7 +116,10 @@ export function WeekView({ variant }: Props) {
   const onDay = (day: string) => list.filter((t) => dueOn(t, day, today)).sort(byDone)
   // Putzplan-Aufgaben „irgendwann in der Woche“ gehören zu ihrer Woche; Todos „diese Woche“ immer
   const thisWeek = list
-    .filter((t) => !t.due_date && t.this_week && (!t.chore || t.chore.weekStart === monday || (offset === 0 && t.chore.weekStart < monday)))
+    .filter(
+      (t) =>
+        !t.due_date && t.this_week && (!t.chore || t.chore.weekStart === monday || (offset === 0 && t.chore.weekStart < monday)),
+    )
     .sort(byDone)
   const noDay = list.filter((t) => !t.due_date && !t.this_week).sort(byDone)
   const active = list.find((t) => t.id === activeId)
@@ -131,9 +134,7 @@ export function WeekView({ variant }: Props) {
     if (!todo || !e.over) return
     const zone = zoneOf(String(e.over.id))
     const patch =
-      zone.kind === 'day'
-        ? { due_date: zone.day, this_week: false }
-        : { due_date: null, this_week: zone.kind === 'week' }
+      zone.kind === 'day' ? { due_date: zone.day, this_week: false } : { due_date: null, this_week: zone.kind === 'week' }
     if (patch.due_date === todo.due_date && patch.this_week === todo.this_week) return
     // Neu eingeplant: „seit …“ fällt weg, die Rutsch-Regel beginnt von vorn
     patchTodo(todo.id, { ...patch, moved_since: null })
@@ -164,19 +165,24 @@ export function WeekView({ variant }: Props) {
     </header>
   )
 
+  // Liste: Termine und Essen nach Uhrzeit gemischt
   const eventList = (day: string) =>
-    (events ? eventsOnDay(events, day) : []).map((e) => (
-      <EventPill
-        key={e.id}
-        person={e.person === 'person-a' ? 'a' : e.person === 'person-b' ? 'b' : 'open'}
-        color={e.color}
-        time={timeLabel(e, day)}
-        title={e.title}
-        week
-        live={day === today ? liveInfo(e, new Date()) : undefined}
-        past={!e.allDay && e.end <= new Date().toISOString()}
-      />
-    ))
+    byTime(events ? eventsOnDay(events, day) : [], mealsOn(day), day).map((s) => {
+      if (s.kind === 'meal') return <MealLine key={s.meal.id} meals={[s.meal]} wall={wall} />
+      const e = s.event
+      return (
+        <EventPill
+          key={e.id}
+          person={e.person === 'person-a' ? 'a' : e.person === 'person-b' ? 'b' : 'open'}
+          color={e.color}
+          time={timeLabel(e, day)}
+          title={e.title}
+          week
+          live={day === today ? liveInfo(e, new Date()) : undefined}
+          past={!e.allDay && e.end <= new Date().toISOString()}
+        />
+      )
+    })
 
   // Handy: ein Block pro Tag – oben Termine, darunter abgesetzt die Todos
   const phoneDay = (day: string) => {
@@ -185,18 +191,29 @@ export function WeekView({ variant }: Props) {
     return (
       <DropZone key={day} zone={{ kind: 'day', day }} disabled={past}>
         {dayHeader(day)}
-        <MealLine meals={mealsOn(day)} />
+        {/* ohne Termine stehen die Essen allein unter dem Tag; sonst in der Liste bzw. als Band */}
+        {!layers.events && <MealLine meals={mealsOn(day)} />}
         {!layers.events ? null : plan ? (
           <div className="grid grid-cols-[44px_minmax(0,1fr)] gap-2">
             <TimeLabels range={range} hourPx={36} allDaySlots={eventsOnDay(events ?? [], day).filter((e) => e.allDay).length} />
-            <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} bands={mealBands(mealsOn(day))} range={range} hourPx={36} />
+            <DayTimeline
+              day={day}
+              events={events ? eventsOnDay(events, day) : []}
+              bands={mealBands(mealsOn(day))}
+              range={range}
+              hourPx={36}
+            />
           </div>
         ) : (
           eventList(day)
         )}
         {!past && showTodos && (
           <div className="hb-week-todos">
-            {dayTodos.length ? dayTodos.map(card) : <p className="px-1 text-label text-ink-muted">Keine Todos. Karte hierher ziehen.</p>}
+            {dayTodos.length ? (
+              dayTodos.map(card)
+            ) : (
+              <p className="px-1 text-label text-ink-muted">Keine Todos. Karte hierher ziehen.</p>
+            )}
           </div>
         )}
       </DropZone>
@@ -241,20 +258,42 @@ export function WeekView({ variant }: Props) {
         return [
           <div key={`h${day}`} className="flex min-w-0 flex-col gap-1" style={{ gridColumn: col, gridRow: 1 }}>
             {dayHeader(day)}
-            <MealLine meals={mealsOn(day)} wall />
+            {!layers.events && <MealLine meals={mealsOn(day)} wall />}
           </div>,
           layers.events && (
-            <DropZone key={`e${day}`} zone={{ kind: 'day', day }} idSuffix=":t" disabled={past} plain style={{ gridColumn: col, gridRow: 2 }}>
+            <DropZone
+              key={`e${day}`}
+              zone={{ kind: 'day', day }}
+              idSuffix=":t"
+              disabled={past}
+              plain
+              style={{ gridColumn: col, gridRow: 2 }}
+            >
               {plan ? (
-                <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} bands={mealBands(mealsOn(day))} range={range} allDaySlots={allDaySlots} />
+                <DayTimeline
+                  day={day}
+                  events={events ? eventsOnDay(events, day) : []}
+                  bands={mealBands(mealsOn(day))}
+                  range={range}
+                  allDaySlots={allDaySlots}
+                />
               ) : (
-                <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">{eventList(day)}</ScrollList>
+                <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">
+                  {eventList(day)}
+                </ScrollList>
               )}
             </DropZone>
           ),
           showTodos && (
-            <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: layers.events ? 4 : '2 / 5' }}>
-              <ScrollList fit dense className="hb-day-todos flex min-h-0 flex-1 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
+            <DropZone
+              key={`t${day}`}
+              zone={{ kind: 'day', day }}
+              disabled={past}
+              style={{ gridColumn: col, gridRow: layers.events ? 4 : '2 / 5' }}
+            >
+              <ScrollList fit dense className="hb-day-todos flex min-h-0 flex-1 flex-col gap-2">
+                {past ? null : onDay(day).map(card)}
+              </ScrollList>
             </DropZone>
           ),
         ]
@@ -269,7 +308,10 @@ export function WeekView({ variant }: Props) {
           <header className="hb-week-day" style={{ gridColumn: plan ? 9 : 8, gridRow: 1 }}>
             Ungeplant
           </header>
-          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto hb-scroll-quiet" style={{ gridColumn: plan ? 9 : 8, gridRow: '2 / 5' }}>
+          <div
+            className="flex min-h-0 flex-col gap-3 overflow-y-auto hb-scroll-quiet"
+            style={{ gridColumn: plan ? 9 : 8, gridRow: '2 / 5' }}
+          >
             {unplannedZones}
           </div>
         </>
@@ -277,28 +319,42 @@ export function WeekView({ variant }: Props) {
     </div>
   )
 
-
   const sunday = addDays(monday, 6)
   const rangeLabel = `${Number(monday.slice(8))}.${Number(monday.slice(5, 7))}. – ${Number(sunday.slice(8))}.${Number(sunday.slice(5, 7))}.`
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
-      <div className={wall ? `flex h-full min-h-0 flex-col gap-4 ${stacked ? 'overflow-y-auto hb-scroll-quiet' : ''}` : 'flex flex-col gap-4'}>
+      <div
+        className={
+          wall ? `flex h-full min-h-0 flex-col gap-4 ${stacked ? 'overflow-y-auto hb-scroll-quiet' : ''}` : 'flex flex-col gap-4'
+        }
+      >
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex gap-2" role="group" aria-label="Woche wählen">
-            <button type="button" className={`hb-choice ${offset === 0 ? 'is-on' : ''}`} aria-pressed={offset === 0} onClick={() => setOffset(0)}>
+            <button
+              type="button"
+              className={`hb-choice ${offset === 0 ? 'is-on' : ''}`}
+              aria-pressed={offset === 0}
+              onClick={() => setOffset(0)}
+            >
               Diese Woche
             </button>
-            <button type="button" className={`hb-choice ${offset === 1 ? 'is-on' : ''}`} aria-pressed={offset === 1} onClick={() => setOffset(1)}>
+            <button
+              type="button"
+              className={`hb-choice ${offset === 1 ? 'is-on' : ''}`}
+              aria-pressed={offset === 1}
+              onClick={() => setOffset(1)}
+            >
               Nächste Woche
             </button>
           </div>
           <span className="text-label text-ink-muted">{rangeLabel}</span>
-          <div className="ml-auto">
-            <ModeSwitch mode={mode} onChange={setMode} />
+          {/* relative: das Filter-Fenster richtet sich am rechten Rand dieser Gruppe aus */}
+          <div className="relative ml-auto flex items-center gap-2">
+            <LayerMenu layers={layers} set={setLayers} meals={mealsModule} names={people.map((p) => p.name)} />
+            <ModeSwitch mode={mode} onChange={setMode} compact={!wall} />
           </div>
         </div>
-        <LayerBar layers={layers} set={setLayers} meals={mealsModule} names={people.map((p) => p.name)} />
 
         {!stacked ? (
           wallGrid
@@ -322,10 +378,57 @@ export function WeekView({ variant }: Props) {
   )
 }
 
+/** Filter-Knopf neben „Liste | Zeitplan“: öffnet die Ebenen, belegt also keine eigene Zeile. Punkt = etwas ist ausgeblendet. */
+function LayerMenu(props: { layers: Layers; set: (p: Partial<Layers>) => void; meals: boolean; names: string[] }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const { layers, meals } = props
+  const filtered = !layers.events || !layers.todos || (meals && !layers.meals) || layers.person !== 'all'
+  useEffect(() => {
+    if (!open) return
+    const close = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+    window.addEventListener('pointerdown', close, true)
+    return () => window.removeEventListener('pointerdown', close, true)
+  }, [open])
+  return (
+    <div ref={ref}>
+      <button
+        type="button"
+        className={`hb-filter-btn ${filtered ? 'is-filtered' : ''}`}
+        aria-label={filtered ? 'Filter (etwas ist ausgeblendet)' : 'Filter'}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Icon icon={SlidersHorizontal} size={18} />
+      </button>
+      {open && (
+        <div className="hb-filter-menu" role="dialog" aria-label="Was die Woche zeigt">
+          <LayerBar {...props} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Ebenen ein/aus und Person: Termine · Todos · Essen | Beide · Jonathan · Leviona */
-function LayerBar({ layers, set, meals, names }: { layers: Layers; set: (p: Partial<Layers>) => void; meals: boolean; names: string[] }) {
+function LayerBar({
+  layers,
+  set,
+  meals,
+  names,
+}: {
+  layers: Layers
+  set: (p: Partial<Layers>) => void
+  meals: boolean
+  names: string[]
+}) {
   const toggle = (key: 'events' | 'todos' | 'meals', label: string) => (
-    <button type="button" className={`hb-layer ${layers[key] ? 'is-on' : ''}`} aria-pressed={layers[key]} onClick={() => set({ [key]: !layers[key] })}>
+    <button
+      type="button"
+      className={`hb-layer ${layers[key] ? 'is-on' : ''}`}
+      aria-pressed={layers[key]}
+      onClick={() => set({ [key]: !layers[key] })}
+    >
       <Icon icon={layers[key] ? Eye : EyeOff} size={16} />
       {label}
     </button>
@@ -336,13 +439,13 @@ function LayerBar({ layers, set, meals, names }: { layers: Layers; set: (p: Part
     { value: 'b', label: names[1] ?? 'Person b' },
   ]
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Was die Woche zeigt">
         {toggle('events', 'Termine')}
         {toggle('todos', 'Todos')}
         {meals && toggle('meals', 'Essen')}
       </div>
-      <div className="hb-seg ml-auto" role="group" aria-label="Für wen">
+      <div className="hb-seg self-start" role="group" aria-label="Für wen">
         {persons.map((p) => (
           <button
             key={p.value}
@@ -394,7 +497,13 @@ function DropZone({
   children: ReactNode
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: zoneId(zone) + idSuffix, disabled })
-  const cls = ['hb-drop flex min-h-0 flex-col gap-2', isOver && 'is-over', disabled && 'is-disabled', plain && 'hb-drop-plain', sunken && 'hb-drop-sunken']
+  const cls = [
+    'hb-drop flex min-h-0 flex-col gap-2',
+    isOver && 'is-over',
+    disabled && 'is-disabled',
+    plain && 'hb-drop-plain',
+    sunken && 'hb-drop-sunken',
+  ]
     .filter(Boolean)
     .join(' ')
   return (
@@ -477,9 +586,7 @@ function WeekCard({
 
 function CardBody({ todo, person, lifted }: { todo: Todo; person: PersonKey; lifted?: boolean }) {
   return (
-    <div
-      className={`hb-card hb-person-${person} ${todo.done_at ? 'is-done' : ''} ${lifted ? 'is-lifted' : ''}`}
-    >
+    <div className={`hb-card hb-person-${person} ${todo.done_at ? 'is-done' : ''} ${lifted ? 'is-lifted' : ''}`}>
       <span className="hb-card-title">
         {todo.chore ? (
           <WithIcon icon={<Icon icon={Sparkles} size={15} label="Putzplan" className="hb-chore-icon" />} text={todo.title} />
