@@ -144,9 +144,10 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEven
           const bottom = Math.min(100, pct(minutesOn(b.end, day)))
           return (
             <div key={b.id} className="hb-tl-band" style={{ top: `${top}%`, height: `${Math.max(bottom - top, 2)}%` }} title={`${berlinHHMMOf(b.start)} ${b.title}`}>
-              <span className="hb-tl-band-label">
-                <Icon icon={UtensilsCrossed} size={13} label="Essen" />
-                <span className="truncate">{b.title}</span>
+              <Icon icon={UtensilsCrossed} size={13} label="Essen" />
+              <span className="min-w-0 truncate">
+                <span className="hb-tl-band-time">{berlinHHMMOf(b.start)} </span>
+                {b.title}
               </span>
             </div>
           )

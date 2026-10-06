@@ -20,30 +20,33 @@
   font-size: 14px;
   line-height: 20px;
 }
+/* Zeitplan: derselbe gestrichelte Kasten wie in der Liste, über den Terminen (sonst verdeckt) */
 .hb-tl-band {
   position: absolute;
-  left: 0;
-  right: 0;
-  border-top: 2px dashed var(--accent);
-  background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
-  pointer-events: none;
-}
-.hb-tl-band-label {
-  position: absolute;
-  top: -11px;
+  left: 2px;
   right: 2px;
   z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  max-width: calc(100% - 4px);
-  padding: 0 5px;
-  border-radius: var(--radius-full);
-  background: var(--accent);
-  color: var(--on-accent);
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 22px;
+  padding: 2px 6px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--accent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--accent);
   font-size: 12px;
-  line-height: 18px;
-  font-weight: 700;
+  line-height: 16px;
+  font-weight: 650;
+  pointer-events: none;
+}
+.hb-tl-band .hb-icon {
+  flex: none;
+  margin-top: 1px;
+}
+.hb-tl-band-time {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Filter in der Woche: kleiner Knopf, Ebenen im Aufklapp-Fenster */
