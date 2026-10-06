@@ -1,4 +1,4 @@
-import { ChefHat, Clock, Search, Settings2, Users, UtensilsCrossed } from 'lucide-react'
+import { ChefHat, Clock, Search, Users, UtensilsCrossed } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Icon } from '../../components/Icon'
 import { formatDuration } from './ingredients'
@@ -120,19 +120,15 @@ export function RecipeFilters({
 }
 
 /** Rezeptbibliothek am Handy */
-export function RecipeLibrary({ onOpen, onSettings, cardAction }: { onOpen: (r: Recipe) => void; onSettings: () => void; cardAction?: (r: Recipe) => ReactNode }) {
+export function RecipeLibrary({ onOpen, cardAction }: { onOpen: (r: Recipe) => void; cardAction?: (r: Recipe) => ReactNode }) {
   const { recipes, error } = useRecipes()
   const categories = useCategories()
   const filter = useRecipeFilter(recipes)
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <h2 className="flex-1 font-display text-title text-ink">Rezepte</h2>
-        <button type="button" className="hb-icon-btn" aria-label="Kategorien und Vorräte" onClick={onSettings}>
-          <Icon icon={Settings2} size={22} />
-        </button>
-      </div>
+      {/* Kategorien und Vorräte: Alle Funktionen → Essensplan */}
+      <h2 className="font-display text-title text-ink">Rezepte</h2>
       <RecipeFilters {...filter} categories={categories} />
       {error && (
         <p role="alert" className="rounded-md bg-urgent-soft px-4 py-3 text-label text-urgent">

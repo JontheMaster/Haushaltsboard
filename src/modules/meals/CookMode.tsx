@@ -190,17 +190,17 @@ function CookScreen() {
         </div>
       )}
       <div className="mt-auto flex gap-3 pt-4">
-        <button type="button" className="hb-btn hb-btn-lg flex-1" disabled={step === 0} onClick={() => go(step - 1)}>
+        <button type="button" className="hb-btn hb-btn-lg flex-1 whitespace-nowrap" disabled={step === 0} onClick={() => go(step - 1)}>
           <Icon icon={ChevronLeft} size={24} />
           Zurück
         </button>
         {last ? (
-          <button type="button" className="hb-btn hb-btn-lg hb-btn-primary flex-[2]" onClick={close}>
+          <button type="button" className="hb-btn hb-btn-lg hb-btn-primary flex-[2] whitespace-nowrap" aria-label="Fertig, guten Appetit" onClick={close}>
             <Icon icon={Check} size={24} />
-            Fertig, guten Appetit
+            {wide ? 'Fertig, guten Appetit' : 'Fertig'}
           </button>
         ) : (
-          <button type="button" className="hb-btn hb-btn-lg hb-btn-primary flex-[2]" onClick={() => go(step + 1)}>
+          <button type="button" className="hb-btn hb-btn-lg hb-btn-primary flex-[2] whitespace-nowrap" onClick={() => go(step + 1)}>
             Weiter
             <Icon icon={ChevronRight} size={24} />
           </button>

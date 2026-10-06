@@ -5,7 +5,6 @@ import { Icon } from '../../components/Icon'
 import { addDays, useToday, weekdayShort } from '../../lib/time'
 import { BringSheet } from './BringSheet'
 import { startCooking } from './cookStore'
-import { MealSettings } from './MealSettings'
 import { hm, useMeals, type Meal } from './mealStore'
 import { PlanSheet } from './PlanSheet'
 import { RecipeDetail } from './RecipeDetail'
@@ -13,7 +12,7 @@ import { RecipeEditor } from './RecipeEditor'
 import { RecipeImage, RecipeLibrary } from './RecipeLibrary'
 import { useRecipes, type Recipe } from './recipeStore'
 
-type View = { kind: 'list' } | { kind: 'recipe'; id: string } | { kind: 'edit'; id?: string } | { kind: 'settings' }
+type View = { kind: 'list' } | { kind: 'recipe'; id: string } | { kind: 'edit'; id?: string }
 
 /** Gemeinsamer Ablauf Einplanen → Einkaufen (Handy und Wand) */
 export function usePlanFlow(showToast: (m: string) => void) {
@@ -88,9 +87,7 @@ export function MealsTab({ showToast }: { showToast: (m: string) => void }) {
 
   return (
     <>
-      {view.kind === 'settings' ? (
-        <MealSettings onBack={() => go({ kind: 'list' })} />
-      ) : view.kind === 'edit' ? (
+      {view.kind === 'edit' ? (
         <RecipeEditor
           key={view.id ?? 'neu'}
           recipe={current}
@@ -125,7 +122,6 @@ export function MealsTab({ showToast }: { showToast: (m: string) => void }) {
           <Planned onOpen={(meal) => flow.setPlan({ meal })} />
           <RecipeLibrary
             onOpen={(r) => openRecipe(r.id)}
-            onSettings={() => go({ kind: 'settings' })}
             cardAction={(r) => (
               <button type="button" className="hb-icon-btn hb-recipe-plan" aria-label={`${r.title} einplanen`} onClick={() => flow.setPlan({ recipe: r })}>
                 <Icon icon={CalendarPlus} size={22} />

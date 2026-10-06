@@ -1,22 +1,29 @@
 /* ───────── Essensplan: Rezepte, Einplanen, Kochmodus, Wand-Planer ───────── */
 
-/* Geplante Essen im Kalender: Aprikose (accent), in der Liste mit Besteck-Symbol */
+/* Geplante Essen im Kalender: umgekehrt (dunkle Fläche, helle Schrift, Aprikose-Balken),
+   damit sie sich klar von allen Kalenderfarben abheben (Entscheidung Jonathan 6.10.2026) */
 .hb-event.hb-cal-meal {
   --ev-bar: var(--accent);
-  background: var(--accent-soft);
+  background: var(--ink);
+  color: var(--surface);
 }
 .hb-event.hb-cal-meal::before {
   background: var(--accent);
 }
+.hb-cal-meal .hb-event-title,
+.hb-cal-meal .hb-tl-title {
+  color: var(--surface);
+}
 .hb-cal-meal .hb-event-time,
 .hb-cal-meal .hb-event-kind {
-  color: var(--accent);
+  color: var(--accent-soft);
 }
 .hb-tl-event.hb-cal-meal,
 .hb-tl-allday.hb-cal-meal {
-  --tl-soft: var(--accent-soft);
+  --tl-soft: var(--ink);
   --tl-bar: var(--accent);
-  --tl-ink: var(--accent);
+  --tl-ink: var(--accent-soft);
+  color: var(--surface);
 }
 .is-tappable {
   cursor: pointer;
@@ -604,7 +611,18 @@
   --tl-ink: var(--ink-muted);
   color: var(--ink-muted);
 }
+.hb-planner-day .hb-tl-allday.hb-cal-meal {
+  color: var(--surface);
+}
 .hb-planner-day .hb-tl-event.hb-cal-meal {
   box-shadow: var(--shadow-tile);
   z-index: 1;
+}
+
+/* Fieldsets wachsen sonst mit der Tagesreihe mit und das Fenster scrollt seitlich */
+.hb-sheet fieldset {
+  min-width: 0;
+}
+.hb-sheet {
+  overflow-x: hidden;
 }
