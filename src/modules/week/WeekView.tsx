@@ -13,7 +13,8 @@ import {
 } from '@dnd-kit/core'
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EventPill } from '../../components/EventPill'
-import { useDevice } from '../../lib/device'
+import { ScrollList } from '../../components/ScrollList'
+import { useDevice, useMedia } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, dayLabel, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import { eventsOnDay } from '../calendar/rules'
@@ -39,6 +40,9 @@ type Props = { variant: 'wall' | 'phone' }
  */
 export function WeekView({ variant }: Props) {
   const wall = variant === 'wall'
+  // Hochkant / schmal: Tage untereinander statt 8 Spalten (Bedienung bleibt wie an der Wand)
+  const narrow = useMedia('(max-width: 1023px)')
+  const stacked = !wall || narrow
   const today = useToday()
   const [offset, setOffset] = useState(0) // 0 = diese Woche, 1 = nächste
   const monday = addDays(mondayOf(today), 7 * offset)
@@ -181,13 +185,11 @@ export function WeekView({ variant }: Props) {
             {plan ? (
               <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} range={range} allDaySlots={allDaySlots} />
             ) : (
-              <div className="flex min-h-0 flex-col gap-2 overflow-y-auto hb-scroll-quiet">{eventList(day)}</div>
+              <ScrollList className="flex min-h-0 flex-col gap-2 pb-2">{eventList(day)}</ScrollList>
             )}
           </DropZone>,
           <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: 4 }}>
-            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto hb-scroll-quiet">
-              {past ? null : onDay(day).map(card)}
-            </div>
+            <ScrollList className="flex min-h-0 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
           </DropZone>,
         ]
       })}
@@ -209,7 +211,7 @@ export function WeekView({ variant }: Props) {
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
-      <div className={wall ? 'flex h-full min-h-0 flex-col gap-4' : 'flex flex-col gap-4'}>
+      <div className={wall ? `flex h-full min-h-0 flex-col gap-4 ${stacked ? 'overflow-y-auto hb-scroll-quiet' : ''}` : 'flex flex-col gap-4'}>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex gap-2" role="group" aria-label="Woche wählen">
             <button type="button" className={`hb-choice ${offset === 0 ? 'is-on' : ''}`} aria-pressed={offset === 0} onClick={() => setOffset(0)}>
@@ -225,7 +227,7 @@ export function WeekView({ variant }: Props) {
           </div>
         </div>
 
-        {wall ? (
+        {!stacked ? (
           wallGrid
         ) : (
           <div className="flex flex-col gap-4">

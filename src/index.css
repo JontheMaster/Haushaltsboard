@@ -61,6 +61,11 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
+/* Termine nie zusammendrücken (overflow: hidden würde sonst Schrumpfen erlauben), die Liste scrollt stattdessen */
+.hb-event {
+  flex-shrink: 0;
+}
+
 /* Eigene Kalenderfarben (blue/berry nutzen die Personenfarben) */
 .hb-event.hb-cal-orange {
   background: var(--cal-orange-soft);
@@ -380,7 +385,8 @@
 .hb-week-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(0, 1.2fr);
-  grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  /* Termine so hoch wie nötig (max. 2/3), Todos bekommen den Rest, mind. 120 px */
+  grid-template-rows: auto fit-content(66%) auto minmax(120px, 1fr);
   gap: var(--space-2) var(--space-3);
 }
 /* Zeitplan: Stundenleiste als erste Spalte, Terminbereich bekommt mehr Höhe */
@@ -466,6 +472,25 @@
   line-clamp: 3;
   overflow-wrap: break-word;
   hyphens: auto;
+}
+/* Hinweis „mehr“ unten in einer Liste, die weiter scrollt */
+.hb-more {
+  position: sticky;
+  bottom: 0;
+  align-self: center;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: calc(var(--space-1) * -1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile), inset 0 0 0 1px var(--line);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  pointer-events: none;
 }
 .hb-scroll-quiet {
   scrollbar-width: none;

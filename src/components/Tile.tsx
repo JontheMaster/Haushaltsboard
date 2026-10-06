@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Icon } from './Icon'
+import { ScrollList } from './ScrollList'
 
 type Props = {
   title: string
@@ -35,7 +36,7 @@ export function Tile({ title, icon, action, delay = 0, className = '', style, ch
         {action && <div>{action}</div>}
       </header>
       {/* px-2: Platz für den negativen Rand der Zeilen (Hover-Fläche), sonst entsteht seitlicher Überlauf */}
-      <div className="hb-tile-body -mx-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2">{children}</div>
+      <ScrollList className="hb-tile-body -mx-2 min-h-0 flex-1 overflow-x-hidden px-2">{children}</ScrollList>
     </section>
   )
 }
