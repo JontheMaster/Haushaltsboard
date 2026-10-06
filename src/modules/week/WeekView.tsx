@@ -185,11 +185,11 @@ export function WeekView({ variant }: Props) {
             {plan ? (
               <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} range={range} allDaySlots={allDaySlots} />
             ) : (
-              <ScrollList className="flex min-h-0 flex-col gap-2 pb-2">{eventList(day)}</ScrollList>
+              <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">{eventList(day)}</ScrollList>
             )}
           </DropZone>,
           <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: 4 }}>
-            <ScrollList className="flex min-h-0 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
+            <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
           </DropZone>,
         ]
       })}

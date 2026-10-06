@@ -361,6 +361,21 @@
   box-shadow: var(--focus-ring);
 }
 
+/* Ablagen auf „Heute“: beim Ziehen sichtbar, Ziel hervorgehoben */
+.hb-todo-zone {
+  margin-inline: calc(var(--space-2) * -1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.hb-todo-zone.is-dragging {
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+.hb-todo-zone.is-over {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
 /* ───────── Woche ───────── */
 
 .hb-week-day {
@@ -489,6 +504,25 @@
   overflow-wrap: break-word;
   hyphens: auto;
 }
+/* „+2 weitere“ unter einer Liste, die nicht ganz passt (antippen klappt auf) */
+.hb-more-btn {
+  flex-shrink: 0;
+  width: 100%;
+  min-height: 30px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.hb-more-btn:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+
 /* Hinweis „mehr“ unten in einer Liste, die weiter scrollt */
 .hb-more {
   position: sticky;

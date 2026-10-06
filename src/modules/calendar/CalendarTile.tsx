@@ -1,5 +1,6 @@
 import { CalendarDays } from 'lucide-react'
 import { EventPill } from '../../components/EventPill'
+import { ScrollList } from '../../components/ScrollList'
 import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
 import type { PersonKey } from '../../lib/members'
@@ -60,13 +61,15 @@ export function CalendarTile({ size, delay }: TileProps) {
           hourPx={phone ? 40 : undefined}
         />
       ) : (
-        <div className={wide ? 'grid grid-cols-2 gap-5' : 'flex flex-col gap-2'}>
-          <div className="flex min-w-0 flex-col gap-2">
+        // An der Wand füllen die Listen die Kachel; was nicht ganz passt, wird zu „+N weitere“
+        <div className={wide ? 'grid min-h-0 flex-1 grid-cols-2 gap-5' : `flex flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
+          <div className={`flex min-w-0 flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
             {wide && <h3 className="text-label text-ink-muted">Heute</h3>}
             {todays.length === 0 ? (
               <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>Heute keine Termine.</p>
             ) : (
-              todays.map((e, i) => (
+              <ScrollList fit={!phone} className={`flex flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
+              {todays.map((e, i) => (
                 <EventPill
                   key={e.id}
                   person={personOf(e)}
@@ -78,18 +81,20 @@ export function CalendarTile({ size, delay }: TileProps) {
                   past={!e.allDay && e.end <= now}
                   delay={i * 40}
                 />
-              ))
+              ))}
+              </ScrollList>
             )}
           </div>
 
           {/* Vorschau auf morgen nur an der Wand, am Handy bleibt die Startseite kurz */}
           {!phone && (wide || tomorrows.length > 0) && (
-            <div className={`flex min-w-0 flex-col gap-2 ${wide ? '' : 'mt-4'}`}>
+            <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${wide ? '' : 'mt-4'}`}>
               <h3 className="text-label text-ink-muted">Morgen</h3>
               {tomorrows.length === 0 ? (
                 <p className="text-body text-ink-muted">Morgen keine Termine.</p>
               ) : (
-                tomorrows.map((e) => (
+                <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">
+                {tomorrows.map((e) => (
                   <EventPill
                     key={e.id}
                     person={personOf(e)}
@@ -99,7 +104,8 @@ export function CalendarTile({ size, delay }: TileProps) {
                     meta={meta(e)}
                     compact={!wide}
                   />
-                ))
+                ))}
+                </ScrollList>
               )}
             </div>
           )}

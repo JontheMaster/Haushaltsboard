@@ -17,12 +17,12 @@ export function SwipeToDelete({ onDelete, children }: Props) {
   const [phase, setPhase] = useState<'idle' | 'leaving' | 'gone'>('idle')
   const [height, setHeight] = useState<number | undefined>(undefined)
   const box = useRef<HTMLDivElement>(null)
-  const start = useRef<{ x: number; y: number; dir?: 'h' | 'v' } | null>(null)
+  const start = useRef<{ x: number; y: number; t: number; dir?: 'h' | 'v' } | null>(null)
   const swiped = useRef(false)
 
   const down = (e: PointerEvent) => {
     if (phase !== 'idle') return
-    start.current = { x: e.clientX, y: e.clientY }
+    start.current = { x: e.clientX, y: e.clientY, t: Date.now() }
     swiped.current = false
   }
 
@@ -32,6 +32,11 @@ export function SwipeToDelete({ onDelete, children }: Props) {
     const ddx = e.clientX - s.x
     const ddy = e.clientY - s.y
     if (!s.dir) {
+      // Wer erst hält, will ziehen (Todo verschieben) – Wischen zählt nur direkt nach dem Antippen
+      if (Date.now() - s.t > 200) {
+        s.dir = 'v'
+        return
+      }
       if (Math.abs(ddx) > 8 && Math.abs(ddx) > Math.abs(ddy)) {
         s.dir = 'h'
         setDragging(true)

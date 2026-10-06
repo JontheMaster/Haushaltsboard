@@ -55,8 +55,9 @@ export function Board({ weather }: { weather: Weather | null }) {
   return (
     <div className="flex h-dvh flex-col bg-surface p-6">
       <header className="mb-7 flex items-start justify-between gap-4">
-        {enabled?.has('uhr-wetter') !== false && <ClockWeather weather={weather} />}
-        <div className="flex items-center gap-4">
+        {/* Uhr behält ihre Breite; rechts darf bei wenig Platz umbrechen */}
+        <div className="shrink-0">{enabled?.has('uhr-wetter') !== false && <ClockWeather weather={weather} />}</div>
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           <div className="flex gap-2" role="group" aria-label="Ansicht">
             <button type="button" className={`hb-choice ${view === 'heute' ? 'is-on' : ''}`} aria-pressed={view === 'heute'} onClick={() => setView('heute')}>
               Heute
