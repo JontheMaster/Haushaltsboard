@@ -9,10 +9,11 @@ const ROTATE_MS = 8000
  * - nur Musik: die normale Karte
  * - Weg + Musik: Weg-Karte oben, Musik als schmale Zeile darunter (beides gleichzeitig)
  * - zwei Wege: untereinander; zwei Wege + Musik: die Wege wechseln sich ab, die Musikzeile bleibt
+ * - Essen („meal“): allein eine normale Karte, mit anderen eine schmale Zeile; bei Weg + Musik zugleich weicht es
  */
 export function HeaderSlot({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [kinds, setKinds] = useState({ trips: 0, music: 0 })
+  const [kinds, setKinds] = useState({ trips: 0, music: 0, meals: 0 })
   const [index, setIndex] = useState(0)
   const rotate = kinds.music > 0 && kinds.trips > 1
 
@@ -24,6 +25,7 @@ export function HeaderSlot({ children }: { children: ReactNode }) {
       setKinds({
         trips: el.querySelectorAll('.hb-slot-item[data-kind="trip"]').length,
         music: el.querySelectorAll('.hb-slot-item[data-kind="music"]').length,
+        meals: el.querySelectorAll('.hb-slot-item[data-kind="meal"]').length,
       })
     update()
     const mo = new MutationObserver(update)
@@ -44,11 +46,26 @@ export function HeaderSlot({ children }: { children: ReactNode }) {
       if (!rotate || i === index % trips.length) delete item.dataset.hidden
       else item.dataset.hidden = '1'
     })
+    // Weg und Musik zugleich: kein Platz mehr fürs Essen
+    ref.current?.querySelectorAll<HTMLElement>('.hb-slot-item[data-kind="meal"]').forEach((item) => {
+      if (kinds.trips && kinds.music) item.dataset.hidden = '1'
+      else delete item.dataset.hidden
+    })
   })
 
-  const empty = kinds.trips + kinds.music === 0
+  const empty = kinds.trips + kinds.music + kinds.meals === 0
+  const cls = [
+    'hb-header-slot',
+    empty && 'is-empty',
+    kinds.trips && kinds.music && 'is-mixed',
+    !kinds.music && kinds.trips > 1 && 'is-dense',
+    // Essen neben anderem: schmale Zeile
+    kinds.meals && kinds.trips + kinds.music > 0 && 'has-others',
+  ]
+    .filter(Boolean)
+    .join(' ')
   return (
-    <div ref={ref} className={`hb-header-slot ${empty ? 'is-empty' : ''} ${kinds.trips && kinds.music ? 'is-mixed' : ''} ${!kinds.music && kinds.trips > 1 ? 'is-dense' : ''}`}>
+    <div ref={ref} className={cls}>
       {children}
       {rotate && (
         <span className="hb-slot-dots" aria-hidden="true">

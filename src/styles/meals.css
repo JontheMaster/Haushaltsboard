@@ -795,3 +795,98 @@
 .hb-recipe-drag img {
   pointer-events: none;
 }
+
+/* Wand-Kopfzeile: was heute gekocht wird (antippen = Kochmodus) */
+.hb-meal-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  width: 100%;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  animation: hb-rise var(--dur-slow) var(--ease-out) both;
+}
+button.hb-meal-card {
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+button.hb-meal-card:active {
+  transform: scale(0.98);
+}
+button.hb-meal-card:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-meal-card-img {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+}
+.hb-meal-card-when {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 650;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hb-meal-card-title {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 650;
+}
+.hb-meal-card-go {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 650;
+}
+/* neben Weg oder Musik: schmale Zeile */
+.hb-header-slot.has-others .hb-meal-card {
+  order: 3;
+  gap: var(--space-2);
+  padding: 4px var(--space-2) 4px 4px;
+  border-radius: var(--radius-md);
+}
+.hb-header-slot.has-others .hb-meal-card-img {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+.hb-header-slot.has-others .hb-meal-card > span:nth-child(2) {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+.hb-header-slot.has-others .hb-meal-card-title {
+  -webkit-line-clamp: 1;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 18px;
+}
+.hb-header-slot.has-others .hb-meal-card-go {
+  height: 32px;
+  font-size: 14px;
+}
