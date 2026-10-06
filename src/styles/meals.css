@@ -781,3 +781,14 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+
+/* Rezeptkarte an der Wand: senkrecht wischen scrollt, langes Halten startet das Ziehen (ohne Text-Auswahl oder Bild-Menü) */
+.hb-recipe-drag {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.hb-recipe-drag img {
+  pointer-events: none;
+}

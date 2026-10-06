@@ -1,4 +1,4 @@
-import { DndContext, DragOverlay, PointerSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragMoveEvent } from '@dnd-kit/core'
+import { DndContext, DragOverlay, MouseSensor, pointerWithin, TouchSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragMoveEvent } from '@dnd-kit/core'
 import { CalendarPlus, ChefHat, Clock } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../../components/Button'
@@ -35,7 +35,12 @@ function slotAt(day: string, y: number): SlotId {
   return frac < 1 / 3 ? 'frueh' : frac < 2 / 3 ? 'mittag' : 'abend'
 }
 
-const fingerY = (e: { activatorEvent: Event | null; delta: { y: number } }) => ((e.activatorEvent as PointerEvent | null)?.clientY ?? 0) + e.delta.y
+/** Fingerhöhe jetzt = Startpunkt (Maus oder Finger) + bisherige Bewegung */
+function fingerY(e: { activatorEvent: Event | null; delta: { y: number } }): number {
+  const a = e.activatorEvent
+  const startY = a && 'touches' in a ? ((a as TouchEvent).touches[0]?.clientY ?? 0) : ((a as MouseEvent | null)?.clientY ?? 0)
+  return startY + e.delta.y
+}
 
 /**
  * Essen planen an der Wand: links die Rezepte (groß, mit Bild), rechts die Woche als Zeitplan.
@@ -62,7 +67,11 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
   const range = hourRange(weekEvents)
   const allDaySlots = Math.max(0, ...weekEvents.map((d) => d.events.filter((e) => e.allDay).length))
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  // Finger: kurz halten, dann ziehen (Wischen scrollt die Rezepte). Maus: ziehen ab 6 px.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  )
 
   function onDragMove(e: DragMoveEvent) {
     if (!e.over) return setHover(null)
@@ -103,7 +112,7 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
       <div className="hb-planner">
         <section className="hb-planner-library" aria-label="Rezepte">
           <RecipeFilters {...filter} categories={categories} />
-          <p className="text-label text-ink-muted">Rezept auf einen Tag ziehen: oben Früh, Mitte Mittag, unten Abend. Antippen zeigt das Rezept.</p>
+          <p className="text-label text-ink-muted">Rezept kurz halten und auf einen Tag ziehen: oben Früh, Mitte Mittag, unten Abend. Antippen zeigt das Rezept.</p>
           <div className="hb-planner-cards hb-scroll-quiet">
             {recipes?.length === 0 && <p className="text-body text-ink-muted">Noch keine Rezepte. Leg sie am Handy an (Reiter Essen).</p>}
             {filter.list.map((r) => (
@@ -247,8 +256,8 @@ function DraggableRecipe({ recipe, categories, onTap }: { recipe: Recipe; catego
       {...attributes}
       {...listeners}
       role="button"
-      aria-label={`${recipe.title}, ziehen zum Einplanen, antippen zum Ansehen`}
-      className={`touch-none ${isDragging ? 'opacity-35' : ''}`}
+      aria-label={`${recipe.title}, halten und ziehen zum Einplanen, antippen zum Ansehen`}
+      className={`hb-recipe-drag ${isDragging ? 'opacity-35' : ''}`}
       onClick={onTap}
     >
       <RecipeTile recipe={recipe} categories={categories} />
