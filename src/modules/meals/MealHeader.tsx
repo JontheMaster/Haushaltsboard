@@ -34,16 +34,16 @@ function when(meal: Meal, now: number, today: string): string {
 }
 
 /**
- * Wand-Kopfzeile: was heute gekocht wird. Antippen startet gleich den Kochmodus.
- * Nur an der Wand (am Handy steht es im Reiter Essen unter „Geplant“).
+ * Was heute gekocht wird: an der Wand in der Kopfzeile, am Handy oben auf der Startseite.
+ * Antippen startet gleich den Kochmodus.
  */
-export function MealHeader({ variant }: { variant: 'wall' | 'phone' }) {
+export function MealHeader(_: { variant: 'wall' | 'phone' }) {
   const meal = useNextMeal()
   const { recipes } = useRecipes()
   const today = useToday()
   const now = useNow(60_000).getTime()
   const cooking = useCook().session !== null
-  if (variant !== 'wall' || !meal || cooking) return null
+  if (!meal || cooking) return null
   const recipe = recipes?.find((r) => r.id === meal.recipe_id) ?? null
 
   const body = (
