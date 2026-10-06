@@ -90,4 +90,5 @@ Tabellen: `members` (id = auth user, name, color, is_board), `calendars`, `todos
 - Phase 2, Teil 1 erledigt: Kalender-Kachel (links an der Wand, Morgen-Vorschau nur an der Wand), Besuchsmodus-Schalter in beiden Kopfzeilen (settings.visit_mode, Realtime, sofortiges Ausblenden über hideInVisit).
 - Handy: Todos per Wischen löschen mit Rückgängig; nach dem Speichern Bestätigung „Für morgen eingetragen · …“.
 - Phase 2, Teil 2 erledigt: Wochenansicht `src/modules/week/WeekView.tsx` (Wand: Umschalter Heute|Woche, nach 2 min zurück; Handy: Reiter Woche). Ablagen: Tag, „Diese Woche“, „Ohne Tag“; vergangene Tage nicht. Wand: Antippen = abhaken, lange halten = Person wechseln, ziehen = verschieben. Handy: halten + ziehen, Antippen = Bearbeiten. Kalender-Function liefert Montag dieser Woche bis Ende nächster Woche.
+- Zeitplan-Ansicht (`src/modules/calendar/Timeline.tsx`): Umschalter „Liste | Zeitplan“ in Termine-Kachel und Woche, Standard Liste, Wahl pro Gerät in localStorage. Woche ist getrennt: Termine oben, Todos unten.
 - Nächster Schritt: Phase 2, Teil 3 Putzplan (Aufgaben von Jonathan). Danach Alle Funktionen, Startseite bearbeiten, Nachtmodus.

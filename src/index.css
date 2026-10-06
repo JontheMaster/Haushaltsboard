@@ -144,6 +144,202 @@
   font-size: 14px;
 }
 
+/* ───────── Zeitplan ───────── */
+
+/* Luft oben und unten, damit die erste und letzte Uhrzeit nicht abgeschnitten werden */
+.hb-tl-day,
+.hb-tl-labels {
+  margin-block: var(--space-2);
+}
+.hb-tl-day {
+  position: relative;
+}
+.hb-tl-hour {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--line);
+}
+.hb-tl-labels {
+  position: relative;
+  width: 44px;
+}
+.hb-tl-labels span {
+  position: absolute;
+  left: 0;
+  translate: 0 -50%;
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.hb-tl-event.hb-cal-orange, .hb-tl-allday.hb-cal-orange {
+  --tl-soft: var(--cal-orange-soft);
+  --tl-bar: var(--cal-orange);
+  --tl-ink: var(--cal-orange-ink);
+}
+.hb-tl-event.hb-cal-yellow, .hb-tl-allday.hb-cal-yellow {
+  --tl-soft: var(--cal-yellow-soft);
+  --tl-bar: var(--cal-yellow);
+  --tl-ink: var(--cal-yellow-ink);
+}
+.hb-tl-event.hb-cal-lilac, .hb-tl-allday.hb-cal-lilac {
+  --tl-soft: var(--cal-lilac-soft);
+  --tl-bar: var(--cal-lilac);
+  --tl-ink: var(--cal-lilac-ink);
+}
+.hb-tl-event.hb-cal-purple, .hb-tl-allday.hb-cal-purple {
+  --tl-soft: var(--cal-purple-soft);
+  --tl-bar: var(--cal-purple);
+  --tl-ink: var(--cal-purple-ink);
+}
+.hb-tl-event.hb-cal-forest, .hb-tl-allday.hb-cal-forest {
+  --tl-soft: var(--cal-forest-soft);
+  --tl-bar: var(--cal-forest);
+  --tl-ink: var(--cal-forest-ink);
+}
+.hb-tl-event.hb-cal-lime, .hb-tl-allday.hb-cal-lime {
+  --tl-soft: var(--cal-lime-soft);
+  --tl-bar: var(--cal-lime);
+  --tl-ink: var(--cal-lime-ink);
+}
+.hb-tl-event.hb-person-a, .hb-tl-allday.hb-person-a {
+  --tl-soft: var(--person-a-soft);
+  --tl-bar: var(--person-a);
+  --tl-ink: var(--person-a-ink);
+}
+.hb-tl-event.hb-person-b, .hb-tl-allday.hb-person-b {
+  --tl-soft: var(--person-b-soft);
+  --tl-bar: var(--person-b);
+  --tl-ink: var(--person-b-ink);
+}
+.hb-tl-event.hb-person-open, .hb-tl-allday.hb-person-open {
+  --tl-soft: var(--surface-sunken);
+  --tl-bar: var(--ink-muted);
+  --tl-ink: var(--ink-muted);
+}
+.hb-tl-event {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--tl-soft);
+  overflow: hidden;
+  /* kurze Termine bleiben lesbar, auch wenn der Plan wenig Höhe hat */
+  min-height: 22px;
+}
+.hb-tl-event::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--tl-bar);
+}
+.hb-tl-event.is-past {
+  opacity: 0.55;
+}
+.hb-tl-title {
+  font-size: 15px;
+  line-height: 19px;
+  font-weight: 650;
+  color: var(--ink);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.hb-tl-event.is-short .hb-tl-title {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  font-size: 14px;
+}
+.hb-tl-time {
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--tl-ink);
+  font-variant-numeric: tabular-nums;
+}
+.hb-tl-allday {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 26px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--tl-soft);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hb-tl-allday::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--tl-bar);
+}
+/* Jetzt-Linie mit Punkt */
+.hb-tl-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 1;
+}
+.hb-tl-now::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+/* Umschalter „Liste | Zeitplan“ */
+.hb-seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+}
+.hb-seg button {
+  height: 38px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.hb-seg button.is-on {
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-tile);
+}
+.hb-seg button:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+
 /* ───────── Woche ───────── */
 
 .hb-week-day {
@@ -186,6 +382,11 @@
   grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(0, 1.2fr);
   grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
   gap: var(--space-2) var(--space-3);
+}
+/* Zeitplan: Stundenleiste als erste Spalte, Terminbereich bekommt mehr Höhe */
+.hb-week-grid.is-plan {
+  grid-template-columns: 44px repeat(7, minmax(0, 1fr)) minmax(0, 1.2fr);
+  grid-template-rows: auto minmax(0, 3fr) auto minmax(0, 1fr);
 }
 /* Handy: Todos pro Tag abgesetzt unter den Terminen */
 .hb-week-todos {

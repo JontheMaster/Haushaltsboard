@@ -17,6 +17,7 @@ import { useDevice } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, dayLabel, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import { eventsOnDay } from '../calendar/rules'
+import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from '../calendar/Timeline'
 import { useCalendar, type CalendarEvent } from '../calendar/useCalendar'
 import { useTodos, type Todo } from '../todos/useTodos'
 
@@ -48,6 +49,12 @@ export function WeekView({ variant }: Props) {
   const { todos, setDone, patchTodo, doneRank } = useTodos(today)
   const { events } = useCalendar()
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [mode, setMode] = useCalendarMode(`week-${variant}`)
+  const plan = mode === 'plan'
+  // Zeitplan: gemeinsamer Stundenbereich und gleich viele Ganztags-Plätze für alle Tage der Woche
+  const weekEvents = days.map((day) => ({ day, events: events ? eventsOnDay(events, day) : [] }))
+  const range = hourRange(weekEvents)
+  const allDaySlots = Math.max(0, ...weekEvents.map((d) => d.events.filter((e) => e.allDay).length))
 
   // Wand: Ziehen startet nach 8 px Bewegung (Stillhalten bleibt frei fürs lange Drücken).
   // Handy: kurz halten, dann ziehen – so bleibt normales Scrollen möglich.
@@ -127,7 +134,14 @@ export function WeekView({ variant }: Props) {
     return (
       <DropZone key={day} zone={{ kind: 'day', day }} disabled={past}>
         {dayHeader(day)}
-        {eventList(day)}
+        {plan ? (
+          <div className="grid grid-cols-[44px_minmax(0,1fr)] gap-2">
+            <TimeLabels range={range} hourPx={36} allDaySlots={eventsOnDay(events ?? [], day).filter((e) => e.allDay).length} />
+            <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} range={range} hourPx={36} />
+          </div>
+        ) : (
+          eventList(day)
+        )}
         {!past && (
           <div className="hb-week-todos">
             {dayTodos.length ? dayTodos.map(card) : <p className="px-1 text-label text-ink-muted">Keine Todos. Karte hierher ziehen.</p>}
@@ -150,16 +164,25 @@ export function WeekView({ variant }: Props) {
 
   // Wand: Raster mit Zeilen Kopf · Termine · „Todos“ · Todos, damit alle Todo-Bereiche auf einer Höhe beginnen
   const wallGrid = (
-    <div className="hb-week-grid min-h-0 flex-1">
+    <div className={`hb-week-grid min-h-0 flex-1 ${plan ? 'is-plan' : ''}`}>
+      {plan && (
+        <div style={{ gridColumn: 1, gridRow: 2 }} className="flex min-h-0 flex-col">
+          <TimeLabels range={range} allDaySlots={allDaySlots} />
+        </div>
+      )}
       {days.map((day, i) => {
         const past = day < today
-        const col = i + 1
+        const col = i + 1 + (plan ? 1 : 0)
         return [
           <div key={`h${day}`} style={{ gridColumn: col, gridRow: 1 }}>
             {dayHeader(day)}
           </div>,
           <DropZone key={`e${day}`} zone={{ kind: 'day', day }} idSuffix=":t" disabled={past} plain style={{ gridColumn: col, gridRow: 2 }}>
-            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto hb-scroll-quiet">{eventList(day)}</div>
+            {plan ? (
+              <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} range={range} allDaySlots={allDaySlots} />
+            ) : (
+              <div className="flex min-h-0 flex-col gap-2 overflow-y-auto hb-scroll-quiet">{eventList(day)}</div>
+            )}
           </DropZone>,
           <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: 4 }}>
             <div className="flex min-h-0 flex-col gap-2 overflow-y-auto hb-scroll-quiet">
@@ -168,13 +191,13 @@ export function WeekView({ variant }: Props) {
           </DropZone>,
         ]
       })}
-      <h3 className="px-1 text-label text-ink-muted" style={{ gridColumn: '1 / 8', gridRow: 3 }}>
+      <h3 className="px-1 text-label text-ink-muted" style={{ gridColumn: plan ? '2 / 9' : '1 / 8', gridRow: 3 }}>
         Todos
       </h3>
-      <header className="hb-week-day" style={{ gridColumn: 8, gridRow: 1 }}>
+      <header className="hb-week-day" style={{ gridColumn: plan ? 9 : 8, gridRow: 1 }}>
         Ungeplant
       </header>
-      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto hb-scroll-quiet" style={{ gridColumn: 8, gridRow: '2 / 5' }}>
+      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto hb-scroll-quiet" style={{ gridColumn: plan ? 9 : 8, gridRow: '2 / 5' }}>
         {unplannedZones}
       </div>
     </div>
@@ -182,7 +205,7 @@ export function WeekView({ variant }: Props) {
 
 
   const sunday = addDays(monday, 6)
-  const range = `${Number(monday.slice(8))}.${Number(monday.slice(5, 7))}. – ${Number(sunday.slice(8))}.${Number(sunday.slice(5, 7))}.`
+  const rangeLabel = `${Number(monday.slice(8))}.${Number(monday.slice(5, 7))}. – ${Number(sunday.slice(8))}.${Number(sunday.slice(5, 7))}.`
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
@@ -196,7 +219,10 @@ export function WeekView({ variant }: Props) {
               Nächste Woche
             </button>
           </div>
-          <span className="text-label text-ink-muted">{range}</span>
+          <span className="text-label text-ink-muted">{rangeLabel}</span>
+          <div className="ml-auto">
+            <ModeSwitch mode={mode} onChange={setMode} />
+          </div>
         </div>
 
         {wall ? (

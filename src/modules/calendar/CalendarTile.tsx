@@ -5,6 +5,7 @@ import { useDevice } from '../../lib/device'
 import type { PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
 import { eventsOnDay } from './rules'
+import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from './Timeline'
 import type { TileProps } from '../types'
 import { useCalendar, type CalendarEvent } from './useCalendar'
 
@@ -31,6 +32,7 @@ export function CalendarTile({ size, delay }: TileProps) {
   // Große Kachel an der Wand: Heute und Morgen nebeneinander
   const wide = !phone && size === 'l'
   const { events, failed, error } = useCalendar()
+  const [mode, setMode] = useCalendarMode(phone ? 'phone' : 'wall')
 
   const todays = events ? eventsOnDay(events, today) : []
   const tomorrows = events ? eventsOnDay(events, tomorrow) : []
@@ -40,11 +42,7 @@ export function CalendarTile({ size, delay }: TileProps) {
   const meta = (e: CalendarEvent) => e.who ?? e.label ?? ''
 
   return (
-    <Tile
-      title="Termine heute"
-      icon={CalendarDays}
-      delay={delay}
-    >
+    <Tile title="Termine heute" icon={CalendarDays} delay={delay} action={<ModeSwitch mode={mode} onChange={setMode} />}>
       {(error || failed.length > 0) && (
         <p role="status" className="mb-2 rounded-md bg-urgent-soft px-3 py-2 text-label text-urgent">
           {error
@@ -55,6 +53,12 @@ export function CalendarTile({ size, delay }: TileProps) {
 
       {events === null ? (
         !error && <p className="text-body text-ink-muted">Termine laden …</p>
+      ) : mode === 'plan' ? (
+        <Plan
+          days={wide ? [today, tomorrow] : [today]}
+          events={events}
+          hourPx={phone ? 40 : undefined}
+        />
       ) : (
         <div className={wide ? 'grid grid-cols-2 gap-5' : 'flex flex-col gap-2'}>
           <div className="flex min-w-0 flex-col gap-2">
@@ -102,5 +106,32 @@ export function CalendarTile({ size, delay }: TileProps) {
         </div>
       )}
     </Tile>
+  )
+}
+
+/** Zeitplan für einen oder zwei Tage, gemeinsame Stundenleiste links */
+function Plan({ days, events, hourPx }: { days: string[]; events: CalendarEvent[]; hourPx?: number }) {
+  const perDay = days.map((day) => ({ day, events: eventsOnDay(events, day) }))
+  const range = hourRange(perDay)
+  const slots = Math.max(...perDay.map((d) => d.events.filter((e) => e.allDay).length))
+  const two = days.length > 1
+  return (
+    <div className={`flex flex-col gap-2 ${hourPx ? '' : 'min-h-0 flex-1'}`}>
+      {two && (
+        <div className="grid grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)] gap-3">
+          <span />
+          <h3 className="text-label text-ink-muted">Heute</h3>
+          <h3 className="text-label text-ink-muted">Morgen</h3>
+        </div>
+      )}
+      <div
+        className={`grid gap-3 ${two ? 'grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)]' : 'grid-cols-[44px_minmax(0,1fr)]'} ${hourPx ? '' : 'min-h-0 flex-1'}`}
+      >
+        <TimeLabels range={range} allDaySlots={slots} hourPx={hourPx} />
+        {perDay.map((d) => (
+          <DayTimeline key={d.day} day={d.day} events={d.events} range={range} allDaySlots={slots} hourPx={hourPx} />
+        ))}
+      </div>
+    </div>
   )
 }
