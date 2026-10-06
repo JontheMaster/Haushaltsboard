@@ -35,8 +35,20 @@ function slotAt(day: string, y: number): SlotId {
   return frac < 1 / 3 ? 'frueh' : frac < 2 / 3 ? 'mittag' : 'abend'
 }
 
-/** Fingerhöhe jetzt = Startpunkt (Maus oder Finger) + bisherige Bewegung */
+// Letzte bekannte Finger- bzw. Mausposition. Wird direkt mitgelesen: auf dem iPad kommt die Startposition
+// des Ziehens leer an, Hochrechnen (Start + Bewegung) landete dort immer oben („Früh“).
+let lastY: number | null = null
+function trackPointer(e: TouchEvent | PointerEvent | MouseEvent) {
+  const y = 'touches' in e ? (e.touches[0] ?? e.changedTouches[0])?.clientY : e.clientY
+  if (typeof y === 'number') lastY = y
+}
+for (const type of ['touchstart', 'touchmove', 'pointerdown', 'pointermove', 'mousemove'] as const) {
+  window.addEventListener(type, trackPointer as EventListener, { passive: true, capture: true })
+}
+
+/** Fingerhöhe jetzt; Reserve: Startpunkt + bisherige Bewegung */
 function fingerY(e: { activatorEvent: Event | null; delta: { y: number } }): number {
+  if (lastY !== null) return lastY
   const a = e.activatorEvent
   const startY = a && 'touches' in a ? ((a as TouchEvent).touches[0]?.clientY ?? 0) : ((a as MouseEvent | null)?.clientY ?? 0)
   return startY + e.delta.y
