@@ -1,17 +1,8 @@
-import {
-  DndContext,
-  DragOverlay,
-  MouseSensor,
-  TouchSensor,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
+import { DndContext, DragOverlay, useDroppable, type DragEndEvent } from '@dnd-kit/core'
 import { ListChecks } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Badge } from '../../components/Badge'
+import { DragItem, useTodoDragSensors } from '../../components/DragItem'
 import { PersonChip } from '../../components/PersonChip'
 import { SwipeToDelete } from '../../components/SwipeToDelete'
 import { TaskItem } from '../../components/TaskItem'
@@ -40,11 +31,7 @@ export function TodosTile({ size, delay }: TileProps) {
   const stacked = phone || size !== 'l'
   const [activeId, setActiveId] = useState<string | null>(null)
 
-  // Finger: kurz halten, dann ziehen (schnelles Wischen scrollt weiter, Antippen hakt ab bzw. öffnet).
-  // Maus: ziehen ab 6 px Bewegung.
-  const mouse = useSensor(MouseSensor, { activationConstraint: { distance: 6 } })
-  const touch = useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 6 } })
-  const sensors = useSensors(mouse, touch)
+  const sensors = useTodoDragSensors()
 
   const list = todos ?? []
   // Fällig heute (oder überfällig, falls der Nachtjob noch nicht lief)
@@ -189,24 +176,5 @@ function Zone({ id, dragging, className = '', children }: { id: string; dragging
     >
       {children}
     </section>
-  )
-}
-
-/** Ziehbare Zeile; die Zeile selbst bleibt antippbar (abhaken bzw. bearbeiten) */
-function DragItem({ id, className = '', children }: { id: string; className?: string; children: ReactNode }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id })
-  return (
-    <div
-      ref={setNodeRef}
-      data-flip-id={id}
-      {...attributes}
-      {...listeners}
-      // Rolle/Tabindex der Zeile bleiben beim Abhak-Kreis und Text, nicht beim Wrapper
-      role={undefined}
-      tabIndex={undefined}
-      className={`select-none ${isDragging ? 'opacity-35' : ''} ${className}`}
-    >
-      {children}
-    </div>
   )
 }
