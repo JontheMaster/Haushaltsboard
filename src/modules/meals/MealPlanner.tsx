@@ -112,7 +112,6 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
       <div className="hb-planner">
         <section className="hb-planner-library" aria-label="Rezepte">
           <RecipeFilters {...filter} categories={categories} />
-          <p className="text-label text-ink-muted">Rezept kurz halten und auf einen Tag ziehen: oben Früh, Mitte Mittag, unten Abend. Antippen zeigt das Rezept.</p>
           <div className="hb-planner-cards hb-scroll-quiet">
             {recipes?.length === 0 && <p className="text-body text-ink-muted">Noch keine Rezepte. Leg sie am Handy an (Reiter Essen).</p>}
             {filter.list.map((r) => (
