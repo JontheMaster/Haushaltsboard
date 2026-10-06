@@ -1789,3 +1789,16 @@ button.hb-module-open:active {
     animation: none;
   }
 }
+
+/* Einkauf am Handy: Plus neben dem Eingabefeld in Akzentfarbe (Hauptaktion) */
+.hb-add-btn {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  color: #fff;
+}
+.hb-add-btn:disabled {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}

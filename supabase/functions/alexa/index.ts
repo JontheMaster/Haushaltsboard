@@ -1,7 +1,8 @@
-// Alexa-Skill „Haushaltsboard“: Todos per Sprache anlegen und vorlesen, was heute ansteht.
+// Alexa-Skill „Haushaltsboard“: Todos per Sprache anlegen, Einkauf auf die Bring!-Liste setzen, vorlesen, was heute ansteht.
 // Alexa ruft diese Function direkt auf (ohne Supabase-Login, daher verify_jwt aus).
 // Schutz: nur Anfragen mit unserer Skill-ID (Secret ALEXA_SKILL_ID) und frischem Zeitstempel.
 import { addDays, berlinDay, eventsOnDay, loadEvents, mondayOf } from '../_shared/calendar.ts'
+import { addItems, parseItems } from '../_shared/bring.ts'
 import { adminClient } from '../_shared/http.ts'
 
 const db = adminClient()
@@ -119,8 +120,28 @@ function whenText(when: When, today: string): string {
 
 // ───────── Intents ─────────
 
+// „… auf die Einkaufsliste“ am Ende: das ist Einkauf, kein Todo (falls Alexa den falschen Intent wählt)
+const SHOPPING = /\s+(auf|zur|in die|zu der)\s+(die\s+)?(einkaufsliste|einkaufs liste|bring( liste)?|liste)$/i
+
+/** Artikel auf die Bring!-Liste „Zuhause“ */
+async function addShopping(raw: string | undefined): Promise<Response> {
+  const text = raw?.trim().replace(SHOPPING, '')
+  if (!text) return speak('Was soll auf die Einkaufsliste?', { end: false, reprompt: 'Sag zum Beispiel: setz Milch auf die Einkaufsliste.' })
+  const items = parseItems(text)
+  try {
+    await addItems(items)
+  } catch (e) {
+    console.error(e)
+    return speak('Bring ist gerade nicht erreichbar. Versuch es bitte gleich noch einmal.')
+  }
+  const names = items.map((i) => i.name)
+  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} und ${names[names.length - 1]}` : names[0]
+  return speak(`Okay, ${list} ${names.length > 1 ? 'stehen' : 'steht'} auf der Einkaufsliste.`)
+}
+
 async function addTodo(slots: Record<string, { value?: string }> | undefined): Promise<Response> {
   const raw = slots?.titel?.value?.trim()
+  if (raw && SHOPPING.test(raw)) return addShopping(raw)
   if (!raw) return speak('Was soll ich eintragen? Sag zum Beispiel: trag Müll rausbringen für morgen ein.', { end: false, reprompt: 'Was soll ich eintragen?' })
 
   const today = berlinDay(new Date())
@@ -242,9 +263,11 @@ Deno.serve(async (req) => {
         return await addTodo(r.intent.slots)
       case 'WasStehtAn':
         return await whatsUp()
+      case 'EinkaufHinzufuegen':
+        return await addShopping(r.intent.slots?.artikel?.value)
       case 'AMAZON.HelpIntent':
         return speak(
-          'Du kannst ein Todo eintragen, zum Beispiel: trag Müll rausbringen für morgen ein. Ohne Tag landet es unter Ohne Tag. Oder frag: was steht heute an?',
+          'Du kannst ein Todo eintragen, zum Beispiel: trag Müll rausbringen für morgen ein. Oder etwas auf die Einkaufsliste setzen: setz Milch auf die Einkaufsliste. Oder frag: was steht heute an?',
           { end: false, reprompt: 'Was möchtest du tun?' },
         )
       case 'AMAZON.StopIntent':

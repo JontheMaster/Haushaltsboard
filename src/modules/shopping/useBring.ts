@@ -108,5 +108,18 @@ export function useBring() {
     [send, load],
   )
 
-  return { items, error, done, toggle }
+  /** Freier Text aufs Handy-Eingabefeld: „Milch“, „Milch, 2 Liter“ oder „Milch und Eier“. Sofort sichtbar, dann aus Bring! neu. */
+  const add = useCallback(async (text: string): Promise<boolean> => {
+    const names = text
+      .split(/\s+und\s+|\s*;\s*/i)
+      .map((p) => p.split(',')[0].trim())
+      .filter(Boolean)
+      .map((n) => n.charAt(0).toUpperCase() + n.slice(1))
+    setItems((list) => [...names.filter((n) => !list?.some((i) => i.name === n)).map((name) => ({ name, specification: '' })), ...(list ?? [])])
+    const { data, error } = await supabase.functions.invoke<BringResponse>('bring', { method: 'POST', body: { action: 'addText', text } })
+    apply(data, error)
+    return !error
+  }, [apply])
+
+  return { items, error, done, toggle, add }
 }
