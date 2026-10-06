@@ -11,15 +11,17 @@ import { useRecipes } from './recipeStore'
 const BEFORE_MIN = 30
 // So lange nach dem geplanten Beginn bleibt die Karte noch stehen (Kochzeit + Puffer)
 const AFTER_MIN = 30
+// Essen ohne Uhrzeit erst ab dieser Uhrzeit zeigen (Entscheidung Jonathan 7.10.2026)
+const NO_TIME_FROM = '11:00'
 
-/** Essen von heute, das gerade dran ist: ab 30 Min vor Kochbeginn bis Kochzeit + 30 Min (ohne Uhrzeit: den ganzen Tag) */
+/** Essen von heute, das gerade dran ist: ab 30 Min vor Kochbeginn bis Kochzeit + 30 Min (ohne Uhrzeit: ab 11 Uhr bis Tagesende) */
 function useNextMeal(): Meal | null {
   const today = useToday()
   const now = useNow(60_000).getTime()
   const meals = useMealsByDay()(today)
   const open = meals.filter((m) => {
     const t = hm(m.start_time)
-    if (!t) return true
+    if (!t) return Date.parse(berlinAtISO(today, NO_TIME_FROM)) <= now
     const start = Date.parse(berlinAtISO(today, t))
     return start - BEFORE_MIN * 60_000 <= now && start + ((m.duration_min ?? 45) + AFTER_MIN) * 60_000 > now
   })
