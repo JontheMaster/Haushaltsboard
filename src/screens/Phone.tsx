@@ -1,4 +1,4 @@
-import { CalendarRange, House, Images, ListChecks, Sparkles, LogOut, Plus, ShoppingCart, type LucideIcon } from 'lucide-react'
+import { CalendarRange, House, Images, ListChecks, Sparkles, LogOut, Plus, ShoppingCart, type LucideIcon, Music, Ellipsis, ChevronRight, ArrowLeft } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Toast } from '../components/Toast'
@@ -8,7 +8,8 @@ import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
 import { shortDate, useNow } from '../lib/time'
 import { describe, type Weather } from '../modules/clock-weather/weather'
-import { MODULE_BY_ID } from '../modules/registry'
+import { MODULE_BY_ID, MODULES } from '../modules/registry'
+import { SpotifyPage, takeSpotifyResult } from '../modules/spotify/SpotifyPage'
 import { ShoppingTile } from '../modules/shopping/ShoppingTile'
 import { deleteTodo, restoreTodo } from '../modules/todos/todoActions'
 import { TodoSheet } from '../modules/todos/TodoSheet'
@@ -44,7 +45,13 @@ export function Phone({ weather }: { weather: Weather | null }) {
   const [sheet, setSheet] = useState<{ todo?: Todo } | null>(null)
   // Fotobibliothek als eigene Seite (über den Fotos-Knopf in der Kopfzeile)
   // Eigene Seiten über den Reitern: Fotos (Kopfzeile) und Putzplan (Todo-Seite oder Antippen einer Putzaufgabe)
-  const [page, setPage] = useState<null | { kind: 'photos' } | { kind: 'putzplan'; ruleId?: string }>(null)
+  const [page, setPage] = useState<null | { kind: 'more' } | { kind: 'photos' } | { kind: 'spotify'; notice?: string | null } | { kind: 'putzplan'; ruleId?: string }>(
+    // Rückkehr von der Spotify-Anmeldung: gleich die Spotify-Seite mit Rückmeldung zeigen
+    () => {
+      const notice = takeSpotifyResult()
+      return notice ? { kind: 'spotify', notice } : null
+    },
+  )
   const [toast, setToast] = useState<{ id: number; message: string; action?: { label: string; run: () => void } } | null>(null)
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
   const hideToast = useCallback(() => setToast(null), [])
@@ -90,11 +97,15 @@ export function Phone({ weather }: { weather: Weather | null }) {
   return (
     <DeviceProvider value={{ device: 'phone', openTodo, removeTodo }}>
       <div className="min-h-dvh bg-surface pb-[calc(88px+env(safe-area-inset-bottom))]">
-        <PhoneHeader weather={weather} onPhotos={() => setPage({ kind: 'photos' })} />
+        <PhoneHeader weather={weather} onMore={() => setPage({ kind: 'more' })} />
 
         <main className="flex flex-col gap-4 px-4">
-          {page?.kind === 'photos' ? (
-            <PhotoLibrary onBack={() => setPage(null)} />
+          {page?.kind === 'more' ? (
+            <MorePage onBack={() => setPage(null)} open={(kind) => setPage({ kind })} />
+          ) : page?.kind === 'photos' ? (
+            <PhotoLibrary onBack={() => setPage({ kind: 'more' })} />
+          ) : page?.kind === 'spotify' ? (
+            <SpotifyPage onBack={() => setPage({ kind: 'more' })} notice={page.notice} />
           ) : page?.kind === 'putzplan' ? (
             <PutzplanPage onBack={() => setPage(null)} openRuleId={page.ruleId} />
           ) : (
@@ -142,7 +153,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
   )
 }
 
-function PhoneHeader({ weather, onPhotos }: { weather: Weather | null; onPhotos: () => void }) {
+function PhoneHeader({ weather, onMore }: { weather: Weather | null; onMore: () => void }) {
   const now = useNow(60_000)
   const { me } = useMembers()
   const w = weather && describe(weather.now.code, weather.now.isDay)
@@ -159,8 +170,8 @@ function PhoneHeader({ weather, onPhotos }: { weather: Weather | null; onPhotos:
         )}
       </div>
       <VisitToggle short />
-      <button type="button" className="hb-icon-btn" aria-label="Fotos für den Bildschirmschoner" onClick={onPhotos}>
-        <Icon icon={Images} size={20} />
+      <button type="button" className="hb-icon-btn" aria-label="Mehr: Fotos, Spotify, Putzplan" onClick={onMore}>
+        <Icon icon={Ellipsis} size={22} />
       </button>
       <button
         type="button"
@@ -179,6 +190,10 @@ function StartTab() {
   const layout = useLayout('phone')
   return (
     <>
+      {MODULES.filter((m) => m.Header && enabled?.has(m.id)).map((m) => {
+        const Header = m.Header!
+        return <Header key={m.id} variant="phone" />
+      })}
       {layout
         .filter((t) => enabled?.has(t.module))
         .map((t, i) => {
@@ -186,5 +201,38 @@ function StartTab() {
           return <mod.Tile key={t.module} size={t.size} delay={i * 40} />
         })}
     </>
+  )
+}
+
+/** Handy: weitere Einstellungen (bis „Alle Funktionen“ kommt) */
+function MorePage({ onBack, open }: { onBack: () => void; open: (kind: 'photos' | 'spotify' | 'putzplan') => void }) {
+  const items = [
+    { kind: 'photos', icon: Images, title: 'Fotos', text: 'Bilder für den Bildschirmschoner' },
+    { kind: 'spotify', icon: Music, title: 'Spotify', text: 'Läuft gerade auf dem Board zeigen' },
+    { kind: 'putzplan', icon: Sparkles, title: 'Putzplan', text: 'Wiederkehrende Aufgaben' },
+  ] as const
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <button type="button" className="hb-icon-btn" aria-label="Zurück" onClick={onBack}>
+          <Icon icon={ArrowLeft} size={22} />
+        </button>
+        <h2 className="flex-1 font-display text-title text-ink">Mehr</h2>
+      </div>
+      <section className="hb-tile hb-tile-static gap-1 p-2">
+        {items.map((it) => (
+          <button key={it.kind} type="button" className="hb-more-row" onClick={() => open(it.kind)}>
+            <span className="hb-tile-icon">
+              <Icon icon={it.icon} size={20} />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col text-left">
+              <span className="text-body font-semibold text-ink">{it.title}</span>
+              <span className="text-label text-ink-muted">{it.text}</span>
+            </span>
+            <Icon icon={ChevronRight} size={20} className="text-ink-muted" />
+          </button>
+        ))}
+      </section>
+    </div>
   )
 }

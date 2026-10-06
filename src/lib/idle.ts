@@ -1,18 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Tables } from './database.types'
 import { berlinTime, useNow } from './time'
 
 const ACTIVITY = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const
 
-/** true, sobald `ms` lang niemand das Gerät berührt hat; jede Berührung setzt zurück */
+/**
+ * true, sobald `ms` lang niemand das Gerät berührt hat; jede Berührung setzt zurück.
+ * Ist es einmal `true`, bleibt es so, bis `reset()` kommt: sonst würde schon das Aufsetzen des Fingers
+ * den Bildschirmschoner schließen und das Loslassen auf dem Board landen (versehentlich abgehakt).
+ */
 export function useIdle(ms: number, enabled = true): [boolean, () => void] {
-  const [idle, setIdle] = useState(false)
+  const [idle, setIdleState] = useState(false)
   const [epoch, setEpoch] = useState(0)
+  const idleRef = useRef(false)
+  const setIdle = (v: boolean) => {
+    idleRef.current = v
+    setIdleState(v)
+  }
 
   useEffect(() => {
     if (!enabled) return
     let t = setTimeout(() => setIdle(true), ms)
     const touch = () => {
+      if (idleRef.current) return
       setIdle(false)
       clearTimeout(t)
       t = setTimeout(() => setIdle(true), ms)
@@ -22,6 +32,7 @@ export function useIdle(ms: number, enabled = true): [boolean, () => void] {
       clearTimeout(t)
       for (const e of ACTIVITY) window.removeEventListener(e, touch, { capture: true })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ms, enabled, epoch])
 
   // von außen zurücksetzen (z. B. nach dem Schließen des Bildschirmschoners)

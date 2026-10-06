@@ -44,3 +44,17 @@ export async function requireMember(req: Request): Promise<Response | null> {
   if (!data) return json(req, { error: 'Kein Mitglied' }, 403)
   return null
 }
+
+// Wie requireMember, gibt aber die ID des Mitglieds zurück (oder null)
+export async function memberId(req: Request): Promise<string | null> {
+  const auth = req.headers.get('Authorization')
+  if (!auth) return null
+  const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    global: { headers: { Authorization: auth } },
+    auth: { persistSession: false },
+  })
+  const { data: user } = await userClient.auth.getUser()
+  if (!user.user) return null
+  const { data } = await userClient.from('members').select('id').eq('id', user.user.id).maybeSingle()
+  return data?.id ?? null
+}

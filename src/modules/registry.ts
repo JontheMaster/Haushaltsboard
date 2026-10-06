@@ -1,7 +1,8 @@
-import { CalendarDays, Clock, ListChecks, ShoppingCart } from 'lucide-react'
+import { CalendarDays, Clock, ListChecks, Music, ShoppingCart } from 'lucide-react'
 import { CalendarTile } from './calendar/CalendarTile'
 import { ClockWeatherTile } from './clock-weather/ClockWeatherTile'
 import { ShoppingTile } from './shopping/ShoppingTile'
+import { NowPlayingHeader, NowPlayingTile } from './spotify/NowPlaying'
 import { TodosTile } from './todos/TodosTile'
 import type { LayoutTile, ModuleDef } from './types'
 
@@ -11,6 +12,8 @@ export const MODULES: ModuleDef[] = [
   { id: 'todos', title: 'Todos', icon: ListChecks, phase: 1, sizes: ['s', 'm', 'l'], Tile: TodosTile },
   { id: 'einkauf', title: 'Einkauf', icon: ShoppingCart, phase: 1, sizes: ['s', 'm', 'l'], Tile: ShoppingTile },
   { id: 'kalender', title: 'Kalender', icon: CalendarDays, phase: 2, sizes: ['s', 'm', 'l'], Tile: CalendarTile },
+  // Spotify: nur sichtbar, solange etwas läuft (Kopfzeile statt fester Kachel)
+  { id: 'spotify', title: 'Läuft gerade', icon: Music, phase: 5, sizes: ['m'], Tile: NowPlayingTile, Header: NowPlayingHeader },
 ]
 
 export const MODULE_BY_ID = new Map(MODULES.map((m) => [m.id, m]))

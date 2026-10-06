@@ -535,6 +535,53 @@
   font-size: 24px;
   font-weight: 650;
 }
+/* Läuft gerade: unten rechts, gleiche Fläche wie die Uhr */
+.hb-saver-music {
+  position: absolute;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: min(44vw, 520px);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: #00000059;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  animation: hb-rise var(--dur-slow) var(--ease-out) both;
+  --np: #fff;
+}
+.hb-saver-music-cover {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+.hb-saver-music-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.hb-saver-music-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 650;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.hb-saver-music-artist {
+  font-size: 18px;
+  line-height: 24px;
+  opacity: 0.9;
+  overflow-wrap: break-word;
+}
 .hb-saver-next {
   font-size: 18px;
   font-weight: 500;
@@ -1078,4 +1125,162 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ───────── Spotify: Läuft gerade ───────── */
+
+.hb-np-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1 1 260px;
+  min-width: 240px;
+  max-width: 400px;
+}
+.hb-np-stack.is-phone {
+  min-width: 0;
+  max-width: none;
+}
+.hb-np {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  animation: hb-rise var(--dur-slow) var(--ease-out) both;
+  --np: var(--accent);
+}
+.hb-np.hb-person-a {
+  --np: var(--person-a);
+}
+.hb-np.hb-person-b {
+  --np: var(--person-b);
+}
+.hb-np-cover {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--surface-sunken);
+}
+.hb-np-cover.is-empty {
+  display: grid;
+  place-items: center;
+  color: var(--ink-muted);
+}
+.hb-np-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.hb-np-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--np);
+}
+/* Titel bis zwei Zeilen; passt er nicht, wählt die Karte eine knappere Fassung */
+.hb-np-title {
+  max-height: 44px;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 650;
+  color: var(--ink);
+  overflow-wrap: normal;
+  hyphens: auto;
+}
+.hb-np-title.is-small {
+  max-height: 36px;
+  font-size: 14px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+.hb-np-artist {
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-muted);
+}
+.hb-np-artist.is-small {
+  max-height: 32px;
+  white-space: normal;
+  font-size: 13px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+}
+/* Fortschritt als feine Linie unten in der Personenfarbe */
+.hb-np-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--np);
+  transition: width 1s linear;
+}
+/* Kleiner Equalizer: zeigt, dass gerade Musik läuft */
+.hb-np-eq {
+  display: inline-flex;
+  flex: none;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+.hb-np-eq i {
+  width: 3px;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--np);
+  transform-origin: bottom;
+  animation: hb-np-eq 1.1s var(--ease-out) infinite;
+}
+.hb-np-eq i:nth-child(2) {
+  animation-delay: -0.4s;
+}
+.hb-np-eq i:nth-child(3) {
+  animation-delay: -0.75s;
+}
+@keyframes hb-np-eq {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-np-eq i {
+    animation: none;
+    transform: scaleY(0.7);
+  }
+  .hb-np-progress {
+    transition: none;
+  }
+}
+
+/* Handy „Mehr“: Zeile pro Einstellungsseite */
+.hb-more-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.hb-more-row:active {
+  background: var(--surface-sunken);
 }

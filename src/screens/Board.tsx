@@ -11,7 +11,7 @@ import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
 import { ClockWeather } from '../modules/clock-weather/ClockWeather'
 import type { Weather } from '../modules/clock-weather/weather'
-import { MODULE_BY_ID } from '../modules/registry'
+import { MODULE_BY_ID, MODULES } from '../modules/registry'
 import type { TileSize } from '../modules/types'
 import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useModules'
 import { WeekView } from '../modules/week/WeekView'
@@ -55,10 +55,19 @@ export function Board({ weather }: { weather: Weather | null }) {
   const [idle, resetIdle] = useIdle(saverConfig.idle_minutes * 60_000, me.is_board && saverEnabled && !nightActive)
   const [manualSaver, setManualSaver] = useState(false)
   const saverOn = !nightActive && (manualSaver || idle)
+  // Nach dem Schließen (Bildschirmschoner, Nachtmodus) fängt kurz eine unsichtbare Fläche alle Berührungen ab,
+  // damit ein nachlaufender Tipp kein Todo abhakt
+  const [shield, setShield] = useState(false)
+  useEffect(() => {
+    if (!shield) return
+    const t = setTimeout(() => setShield(false), 600)
+    return () => clearTimeout(t)
+  }, [shield])
   const closeSaver = () => {
     setManualSaver(false)
     resetIdle()
     setView('heute')
+    setShield(true)
   }
 
   useEffect(() => {
@@ -80,6 +89,11 @@ export function Board({ weather }: { weather: Weather | null }) {
       <header className="mb-7 flex items-start justify-between gap-4">
         {/* Uhr behält ihre Breite; rechts darf bei wenig Platz umbrechen */}
         <div className="shrink-0">{enabled?.has('uhr-wetter') !== false && <ClockWeather weather={weather} />}</div>
+        {/* Module mit Kopfzeilen-Anzeige (z. B. Läuft gerade), erscheinen nur bei Bedarf */}
+        {MODULES.filter((m) => m.Header && enabled?.has(m.id)).map((m) => {
+          const Header = m.Header!
+          return <Header key={m.id} variant="wall" />
+        })}
         <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           <div className="flex gap-2" role="group" aria-label="Ansicht">
             <button type="button" className={`hb-choice ${view === 'heute' ? 'is-on' : ''}`} aria-pressed={view === 'heute'} onClick={() => setView('heute')}>
@@ -118,7 +132,15 @@ export function Board({ weather }: { weather: Weather | null }) {
         </main>
       )}
       {saverOn && <Screensaver onClose={closeSaver} />}
-      {nightActive && <NightScreen onWake={() => setWakeUntil(Date.now() + 2 * 60_000)} />}
+      {nightActive && (
+        <NightScreen
+          onWake={() => {
+            setWakeUntil(Date.now() + 2 * 60_000)
+            setShield(true)
+          }}
+        />
+      )}
+      {shield && <div className="fixed inset-0 z-[100]" aria-hidden="true" />}
     </div>
   )
 }

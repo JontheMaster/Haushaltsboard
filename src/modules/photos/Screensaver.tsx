@@ -4,7 +4,8 @@ import { addDays, berlinTime, longDate, useNow, useToday } from '../../lib/time'
 import { eventsOnDay } from '../calendar/rules'
 import { shortenTitle } from '../calendar/shorten'
 import { useCalendar } from '../calendar/useCalendar'
-import { useModuleConfig } from '../useModules'
+import { SaverMusic } from '../spotify/NowPlaying'
+import { useEnabledModules, useModuleConfig } from '../useModules'
 import { listPhotos, signedUrls } from './photoStore'
 
 export const SCREENSAVER_DEFAULTS = { idle_minutes: 5, interval_seconds: 60 }
@@ -30,6 +31,7 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
   const { interval_seconds } = useModuleConfig('bildschirmschoner', SCREENSAVER_DEFAULTS)
   const [slides, setSlides] = useState<Slide[] | null>(null)
   const [index, setIndex] = useState(0)
+  const enabled = useEnabledModules()
 
   // Fotos laden: nur aktive, im Besuchsmodus nur freigegebene, zufällige Reihenfolge
   useEffect(() => {
@@ -88,6 +90,7 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
       )}
 
       <SaverInfo />
+      {enabled?.has('spotify') && <SaverMusic />}
     </div>
   )
 }

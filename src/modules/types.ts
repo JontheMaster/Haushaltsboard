@@ -17,6 +17,8 @@ export type ModuleDef = {
   sizes: TileSize[]
   /** Kachel für die Startseite */
   Tile: ComponentType<TileProps>
+  /** Erscheint in der Kopfzeile (Wand) bzw. oben auf der Startseite (Handy), z. B. „Läuft gerade“ */
+  Header?: ComponentType<{ variant: 'wall' | 'phone' }>
   /** Detailseite (Phase 2: „Alle Funktionen“) */
   Detail?: ComponentType
   /** Einstellungen (Phase 2) */

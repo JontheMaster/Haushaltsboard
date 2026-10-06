@@ -16,7 +16,7 @@ export function useEnabledModules(): Set<string> | null {
         .then(({ data }) => data && setEnabled(new Set(data.filter((m) => m.enabled).map((m) => m.id))))
     load()
     const channel = supabase
-      .channel('modules')
+      .channel(`modules-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'modules' }, load)
       .subscribe()
     return () => {
