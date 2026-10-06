@@ -3,6 +3,7 @@ import type { Tables } from '../../lib/database.types'
 import { useMembers } from '../../lib/members'
 import { supabase } from '../../lib/supabase'
 import { berlinMidnightISO, mondayOf } from '../../lib/time'
+import { useEnabledModules } from '../useModules'
 
 type ChoreTask = Tables<'chore_tasks'>
 
@@ -103,6 +104,9 @@ export function useTodos(today: string) {
   const [undoable, setUndoable] = useState<Set<string>>(new Set())
   const [settling, setSettling] = useState<Set<string>>(new Set())
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const enabled = useEnabledModules()
+  const choresOn = useRef(true)
+  choresOn.current = enabled?.has('putzplan') !== false
 
   const load = useCallback(async () => {
     const doneFilter = `done_at.is.null,done_at.gte.${berlinMidnightISO(today)}`
@@ -112,10 +116,13 @@ export function useTodos(today: string) {
     ])
     if (todoRes.error || choreRes.error) return setError(true)
     setError(false)
-    const list = [...todoRes.data, ...onlyOldestOpen(choreRes.data.map((c) => fromChore(c, today)), today)]
+    // Putzplan ausgeschaltet (Alle Funktionen): seine Aufgaben nicht zeigen
+    const chores = choresOn.current ? onlyOldestOpen(choreRes.data.map((c) => fromChore(c, today)), today) : []
+    const list = [...todoRes.data, ...chores]
     setTodos(list)
     memory = { day: today, todos: list }
-  }, [today])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today, enabled])
 
   useEffect(() => {
     load()

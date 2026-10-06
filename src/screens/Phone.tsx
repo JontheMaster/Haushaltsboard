@@ -1,4 +1,4 @@
-import { CalendarRange, House, Images, ListChecks, Sparkles, LogOut, Plus, ShoppingCart, type LucideIcon, Music, Ellipsis, ChevronRight, ArrowLeft } from 'lucide-react'
+import { CalendarRange, House, ListChecks, LogOut, Plus, Settings2, ShoppingCart, Sparkles, type LucideIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Toast } from '../components/Toast'
@@ -14,11 +14,11 @@ import { ShoppingTile } from '../modules/shopping/ShoppingTile'
 import { deleteTodo, restoreTodo } from '../modules/todos/todoActions'
 import { TodoSheet } from '../modules/todos/TodoSheet'
 import { TodosDetail } from '../modules/todos/TodosDetail'
-import { PhotoLibrary } from '../modules/photos/PhotoLibrary'
 import { WeekView } from '../modules/week/WeekView'
 import { CHORE_PREFIX, isChoreId, type Todo } from '../modules/todos/useTodos'
 import { PutzplanPage } from '../modules/chores/Putzplan'
 import { Button } from '../components/Button'
+import { AllModules } from './AllModules'
 import { useEnabledModules, useLayout } from '../modules/useModules'
 
 type Tab = 'start' | 'woche' | 'todos' | 'einkauf'
@@ -41,11 +41,11 @@ function savedTab(): Tab {
 
 /** Handy-Ansicht (unter 700 px): eintragen, planen, abhaken */
 export function Phone({ weather }: { weather: Weather | null }) {
-  const [tab, setTab] = useState<Tab>(savedTab)
+  const [savedOrChosen, setTab] = useState<Tab>(savedTab)
   const [sheet, setSheet] = useState<{ todo?: Todo } | null>(null)
-  // Fotobibliothek als eigene Seite (über den Fotos-Knopf in der Kopfzeile)
-  // Eigene Seiten über den Reitern: Fotos (Kopfzeile) und Putzplan (Todo-Seite oder Antippen einer Putzaufgabe)
-  const [page, setPage] = useState<null | { kind: 'more' } | { kind: 'photos' } | { kind: 'spotify'; notice?: string | null } | { kind: 'putzplan'; ruleId?: string }>(
+  // Eigene Seiten über den Reitern: Alle Funktionen (Kopfzeile), deren Einstellungen,
+  // Putzplan auch direkt (Todo-Seite oder Antippen einer Putzaufgabe)
+  const [page, setPage] = useState<null | { kind: 'all' } | { kind: 'module'; id: string } | { kind: 'spotify'; notice?: string | null } | { kind: 'putzplan'; ruleId?: string }>(
     // Rückkehr von der Spotify-Anmeldung: gleich die Spotify-Seite mit Rückmeldung zeigen
     () => {
       const notice = takeSpotifyResult()
@@ -56,6 +56,10 @@ export function Phone({ weather }: { weather: Weather | null }) {
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
   const hideToast = useCallback(() => setToast(null), [])
 
+  // Ausgeschaltete Module verlieren ihren Reiter
+  const enabled = useEnabledModules()
+  const tabs = TABS.filter((t) => (t.id === 'todos' || t.id === 'einkauf' ? enabled?.has(t.id) !== false : true))
+  const tab: Tab = tabs.some((t) => t.id === savedOrChosen) ? savedOrChosen : 'start'
   const go = (t: Tab) => {
     setPage(null)
     setTab(t)
@@ -97,15 +101,15 @@ export function Phone({ weather }: { weather: Weather | null }) {
   return (
     <DeviceProvider value={{ device: 'phone', openTodo, removeTodo }}>
       <div className="min-h-dvh bg-surface pb-[calc(88px+env(safe-area-inset-bottom))]">
-        <PhoneHeader weather={weather} onMore={() => setPage({ kind: 'more' })} />
+        <PhoneHeader weather={weather} onMore={() => setPage({ kind: 'all' })} />
 
         <main className="flex flex-col gap-4 px-4">
-          {page?.kind === 'more' ? (
-            <MorePage onBack={() => setPage(null)} open={(kind) => setPage({ kind })} />
-          ) : page?.kind === 'photos' ? (
-            <PhotoLibrary onBack={() => setPage({ kind: 'more' })} />
+          {page?.kind === 'all' ? (
+            <AllModules onBack={() => setPage(null)} open={(id) => setPage({ kind: 'module', id })} />
+          ) : page?.kind === 'module' ? (
+            <ModuleSettings id={page.id} onBack={() => setPage({ kind: 'all' })} />
           ) : page?.kind === 'spotify' ? (
-            <SpotifyPage onBack={() => setPage({ kind: 'more' })} notice={page.notice} />
+            <SpotifyPage onBack={() => setPage({ kind: 'all' })} notice={page.notice} />
           ) : page?.kind === 'putzplan' ? (
             <PutzplanPage onBack={() => setPage(null)} openRuleId={page.ruleId} />
           ) : (
@@ -114,9 +118,11 @@ export function Phone({ weather }: { weather: Weather | null }) {
           {tab === 'woche' && <WeekView variant="phone" />}
           {tab === 'todos' && (
             <>
-              <Button icon={<Icon icon={Sparkles} size={20} />} onClick={() => setPage({ kind: 'putzplan' })}>
-                Putzplan bearbeiten
-              </Button>
+              {enabled?.has('putzplan') && (
+                <Button icon={<Icon icon={Sparkles} size={20} />} onClick={() => setPage({ kind: 'putzplan' })}>
+                  Putzplan bearbeiten
+                </Button>
+              )}
               <TodosDetail />
             </>
           )}
@@ -125,14 +131,14 @@ export function Phone({ weather }: { weather: Weather | null }) {
           )}
         </main>
 
-        {tab !== 'einkauf' && !page && (
+        {tab !== 'einkauf' && !page && enabled?.has('todos') !== false && (
           <button type="button" className="hb-fab" aria-label="Todo hinzufügen" onClick={() => setSheet({})}>
             <Icon icon={Plus} size={28} />
           </button>
         )}
 
         <nav className="hb-tabbar" aria-label="Bereiche">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -170,8 +176,8 @@ function PhoneHeader({ weather, onMore }: { weather: Weather | null; onMore: () 
         )}
       </div>
       <VisitToggle short />
-      <button type="button" className="hb-icon-btn" aria-label="Mehr: Fotos, Spotify, Putzplan" onClick={onMore}>
-        <Icon icon={Ellipsis} size={22} />
+      <button type="button" className="hb-icon-btn" aria-label="Alle Funktionen und Einstellungen" onClick={onMore}>
+        <Icon icon={Settings2} size={22} />
       </button>
       <button
         type="button"
@@ -198,41 +204,14 @@ function StartTab() {
         .filter((t) => enabled?.has(t.module))
         .map((t, i) => {
           const mod = MODULE_BY_ID.get(t.module)!
-          return <mod.Tile key={t.module} size={t.size} delay={i * 40} />
+          return mod.Tile && <mod.Tile key={t.module} size={t.size} delay={i * 40} />
         })}
     </>
   )
 }
 
-/** Handy: weitere Einstellungen (bis „Alle Funktionen“ kommt) */
-function MorePage({ onBack, open }: { onBack: () => void; open: (kind: 'photos' | 'spotify' | 'putzplan') => void }) {
-  const items = [
-    { kind: 'photos', icon: Images, title: 'Fotos', text: 'Bilder für den Bildschirmschoner' },
-    { kind: 'spotify', icon: Music, title: 'Spotify', text: 'Läuft gerade auf dem Board zeigen' },
-    { kind: 'putzplan', icon: Sparkles, title: 'Putzplan', text: 'Wiederkehrende Aufgaben' },
-  ] as const
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <button type="button" className="hb-icon-btn" aria-label="Zurück" onClick={onBack}>
-          <Icon icon={ArrowLeft} size={22} />
-        </button>
-        <h2 className="flex-1 font-display text-title text-ink">Mehr</h2>
-      </div>
-      <section className="hb-tile hb-tile-static gap-1 p-2">
-        {items.map((it) => (
-          <button key={it.kind} type="button" className="hb-more-row" onClick={() => open(it.kind)}>
-            <span className="hb-tile-icon">
-              <Icon icon={it.icon} size={20} />
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col text-left">
-              <span className="text-body font-semibold text-ink">{it.title}</span>
-              <span className="text-label text-ink-muted">{it.text}</span>
-            </span>
-            <Icon icon={ChevronRight} size={20} className="text-ink-muted" />
-          </button>
-        ))}
-      </section>
-    </div>
-  )
+/** Einstellungen eines Moduls aus „Alle Funktionen“ */
+function ModuleSettings({ id, onBack }: { id: string; onBack: () => void }) {
+  const Settings = MODULE_BY_ID.get(id)?.Settings
+  return Settings ? <Settings onBack={onBack} /> : null
 }

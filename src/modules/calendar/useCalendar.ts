@@ -71,9 +71,15 @@ export function useCalendar() {
     const t = setInterval(() => document.visibilityState === 'visible' && load(), POLL_MS)
     const onWake = () => document.visibilityState === 'visible' && load()
     document.addEventListener('visibilitychange', onWake)
+    // Farbe oder „Bei Besuch ausblenden“ geändert (Alle Funktionen → Kalender): gleich neu laden
+    const channel = supabase
+      .channel(`calendars-${crypto.randomUUID()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendars' }, () => load())
+      .subscribe()
     return () => {
       clearInterval(t)
       document.removeEventListener('visibilitychange', onWake)
+      supabase.removeChannel(channel)
     }
   }, [load])
 

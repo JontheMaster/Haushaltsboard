@@ -14,15 +14,18 @@ export type ModuleDef = {
   title: string
   icon: LucideIcon
   phase: number
+  /** Ein Satz für „Alle Funktionen“ */
+  description: string
+  /** Kachelgrößen; leer = keine Kachel (z. B. Nachtmodus) */
   sizes: TileSize[]
   /** Kachel für die Startseite */
-  Tile: ComponentType<TileProps>
+  Tile?: ComponentType<TileProps>
   /** Erscheint in der Kopfzeile (Wand) bzw. oben auf der Startseite (Handy), z. B. „Läuft gerade“ */
   Header?: ComponentType<{ variant: 'wall' | 'phone' }>
-  /** Detailseite (Phase 2: „Alle Funktionen“) */
-  Detail?: ComponentType
-  /** Einstellungen (Phase 2) */
-  Settings?: ComponentType
+  /** Einstellungen als eigene Seite in „Alle Funktionen“ (bringt ihre Kopfzeile mit Zurück selbst mit) */
+  Settings?: ComponentType<{ onBack: () => void }>
+  /** false = kein An/Aus-Schalter (z. B. Alexa, läuft über die Alexa-App) */
+  toggle?: boolean
 }
 
 /** Eine Kachel im Layout (Tabelle layouts, Feld tiles) */

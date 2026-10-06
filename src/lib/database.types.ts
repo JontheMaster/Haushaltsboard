@@ -16,9 +16,9 @@ export type Database = {
   public: {
     Tables: {
       calendars: {
-        Row: { hide_in_visit: boolean; id: string; label: string; owner: string | null }
+        Row: { color: string; hide_in_visit: boolean; id: string; label: string; owner: string | null }
         Insert: { hide_in_visit?: boolean; id: string; label: string; owner?: string | null }
-        Update: { hide_in_visit?: boolean; id?: string; label?: string; owner?: string | null }
+        Update: { color?: string; hide_in_visit?: boolean; id?: string; label?: string; owner?: string | null }
         Relationships: [Rel<'calendars_owner_fkey', 'owner', 'members'>]
       }
       chore_rules: {

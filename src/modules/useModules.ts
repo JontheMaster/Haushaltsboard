@@ -52,6 +52,12 @@ export function useModuleConfig<T extends object>(id: string, defaults: T): T {
   return config
 }
 
+/** Modul an- oder ausschalten (wirkt live auf allen Geräten) */
+export async function setModuleEnabled(id: string, enabled: boolean): Promise<boolean> {
+  const { error } = await supabase.from('modules').upsert({ id, enabled })
+  return !error
+}
+
 /** Einzelne Einstellung eines Moduls ändern (andere Werte in config bleiben erhalten) */
 export async function setModuleConfig(id: string, patch: Record<string, unknown>): Promise<boolean> {
   const { data } = await supabase.from('modules').select('config').eq('id', id).maybeSingle()

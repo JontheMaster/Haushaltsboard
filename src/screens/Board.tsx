@@ -45,7 +45,7 @@ export function Board({ weather }: { weather: Weather | null }) {
   // Nachtmodus (nur am Wand-Tablet) hat Vorrang; Antippen weckt für 2 Minuten
   const { settings } = useSettings()
   const now = useNow(30_000)
-  const night = useIsNight(settings) && me.is_board
+  const night = useIsNight(settings) && me.is_board && enabled?.has('nachtmodus') !== false
   const [wakeUntil, setWakeUntil] = useState(0)
   const nightActive = night && now.getTime() > wakeUntil
 
@@ -123,6 +123,7 @@ export function Board({ weather }: { weather: Weather | null }) {
         <main className={`grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-5 ${narrow ? 'grid-cols-2' : 'grid-cols-12'}`}>
           {tiles.map((t, i) => {
             const mod = MODULE_BY_ID.get(t.module)!
+            if (!mod.Tile) return null
             return (
               <div key={t.module} className={`flex min-h-0 flex-col *:flex-1 ${(narrow ? SPAN_NARROW : SPAN)[t.size]}`}>
                 <mod.Tile size={t.size} delay={i * 40} />

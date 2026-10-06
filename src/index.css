@@ -1294,3 +1294,65 @@ body {
 .hb-more-row:active {
   background: var(--surface-sunken);
 }
+
+/* ───────── Alle Funktionen ───────── */
+
+.hb-module-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: var(--space-2);
+}
+.hb-module-open {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 64px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+button.hb-module-open {
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+button.hb-module-open:active {
+  background: var(--surface-sunken);
+}
+.hb-tile-icon {
+  flex: none;
+}
+.hb-tile-icon.is-off {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+/* Farbwahl für Kalender: runde Felder, Haken auf der gewählten */
+.hb-swatch {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 40px;
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: var(--radius-full);
+  color: #fff;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-out);
+}
+.hb-swatch[aria-checked="true"] {
+  box-shadow: 0 0 0 3px var(--surface-raised), 0 0 0 5px var(--ink);
+}
+.hb-swatch:active {
+  transform: scale(0.92);
+}
+/* Kachel als Liste (Alle Funktionen): Zeilen bringen ihren Innenabstand selbst mit */
+.hb-tile.hb-list-tile {
+  gap: 0;
+  padding: var(--space-2) var(--space-1);
+}
