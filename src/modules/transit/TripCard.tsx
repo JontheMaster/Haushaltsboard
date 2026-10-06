@@ -59,6 +59,13 @@ function LegRow({ leg }: { leg: Leg }) {
  * `wall`: knapper, mit Name der Person; der Termintitel bleibt am Handy (an der Wand nur das Ziel).
  */
 export function TripCard({ plan, wall }: { plan: Plan; wall?: boolean }) {
+  if (wall) return <WallTripCard plan={plan} />
+  return <PhoneTripCard plan={plan} />
+}
+
+/** Handy: ausführlich mit allen Fahrten */
+function PhoneTripCard({ plan }: { plan: Plan }) {
+  const wall = false
   const now = useNow(15_000)
   const { byId, personKey } = useMembers()
   const trip = plan.trip
@@ -155,5 +162,48 @@ export function TransitHeader({ variant }: { variant: 'wall' | 'phone' }) {
       ))}
       {assign && <AssignSheet item={assign} onClose={() => setAssign(null)} />}
     </div>
+  )
+}
+
+/**
+ * Wand: kompakt und immer gleich hoch (passt in den festen Platz der Kopfzeile):
+ * wer · Ziel · Uhrzeit, „Los um 7:06 · in 12 Min“, erste Bahn.
+ */
+function WallTripCard({ plan }: { plan: Plan }) {
+  const now = useNow(15_000)
+  const { byId, personKey } = useMembers()
+  const trip = plan.trip
+  const first = trip?.legs.find((l) => !l.walk)
+  const name = byId.get(plan.memberId)?.name ?? ''
+  const status =
+    plan.status === 'late' ? { cls: 'is-late', text: 'zu spät' } : plan.status === 'tight' ? { cls: 'is-tight', text: 'knapp' } : { cls: 'is-ok', text: 'pünktlich' }
+  if (!trip || !first) return null
+  return (
+    <article
+      data-kind="trip"
+      className={`hb-trip hb-trip-wall hb-slot-item hb-person-${personKey(plan.memberId)}`}
+      aria-label={`${name}: los um ${hm(trip.leaveAt)} nach ${plan.target.place.name}`}
+    >
+      <header className="hb-trip-head">
+        <span className="hb-trip-event">
+          {name} · {plan.target.place.name} {hm(plan.target.start)}
+        </span>
+        <span className={`hb-trip-status ${status.cls}`}>{status.text}</span>
+      </header>
+      <div className="hb-trip-leave">
+        <span className="hb-trip-when">Los um {hm(trip.leaveAt)}</span>
+        <span className="hb-trip-count">{countdown(Date.parse(trip.leaveAt) - now.getTime())}</span>
+        {/* bei zwei Wegen untereinander: Bahn in derselben Zeile statt darunter */}
+        <span className="hb-trip-inline">
+          <LineChip line={first.line} product={first.product} />
+          {hm(depRt(first))}
+        </span>
+      </div>
+      <span className="hb-trip-first">
+        <LineChip line={first.line} product={first.product} />
+        {hm(depRt(first))} ab {first.from}
+        {first.delay !== null && first.delay > 0 && <DelayBadge delay={first.delay} />}
+      </span>
+    </article>
   )
 }

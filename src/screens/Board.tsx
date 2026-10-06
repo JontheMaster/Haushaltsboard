@@ -1,6 +1,7 @@
 import { Image, LogOut } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { HeaderSlot } from '../components/HeaderSlot'
 import { VisitToggle } from '../components/VisitToggle'
 import { useMedia } from '../lib/device'
 import { useIdle, useIsNight } from '../lib/idle'
@@ -90,43 +91,62 @@ export function Board({ weather }: { weather: Weather | null }) {
 
   return (
     <div className="flex h-dvh flex-col bg-surface p-6">
-      <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
-        {/* Uhr behält ihre Breite; rechts darf bei wenig Platz umbrechen */}
-        <div className="shrink-0">{enabled?.has('uhr-wetter') !== false && <ClockWeather weather={weather} />}</div>
-        {/* Module mit Kopfzeilen-Anzeige (z. B. Läuft gerade), erscheinen nur bei Bedarf */}
-        {MODULES.filter((m) => m.Header && enabled?.has(m.id)).map((m) => {
-          const Header = m.Header!
-          return <Header key={m.id} variant="wall" />
-        })}
-        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-          <div className="flex gap-2" role="group" aria-label="Ansicht">
-            <button type="button" className={`hb-choice ${view === 'heute' ? 'is-on' : ''}`} aria-pressed={view === 'heute'} onClick={() => setView('heute')}>
-              Heute
-            </button>
-            <button type="button" className={`hb-choice ${view === 'woche' ? 'is-on' : ''}`} aria-pressed={view === 'woche'} onClick={() => setView('woche')}>
-              Woche
-            </button>
-            {enabled?.has('abfahrten') && (
+      <header className="mb-7 flex flex-wrap items-stretch justify-between gap-4">
+        {/* links Uhr und Knöpfe untereinander, rechts der feste Platz für Musik und Wege (nur bei Bedarf) */}
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="shrink-0">{enabled?.has('uhr-wetter') !== false && <ClockWeather weather={weather} />}</div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex gap-2" role="group" aria-label="Ansicht">
               <button
                 type="button"
-                className={`hb-choice ${view === 'abfahrten' ? 'is-on' : ''}`}
-                aria-pressed={view === 'abfahrten'}
-                onClick={() => setView('abfahrten')}
+                className={`hb-choice ${view === 'heute' ? 'is-on' : ''}`}
+                aria-pressed={view === 'heute'}
+                onClick={() => setView('heute')}
               >
-                Abfahrten
+                Heute
+              </button>
+              <button
+                type="button"
+                className={`hb-choice ${view === 'woche' ? 'is-on' : ''}`}
+                aria-pressed={view === 'woche'}
+                onClick={() => setView('woche')}
+              >
+                Woche
+              </button>
+              {enabled?.has('abfahrten') && (
+                <button
+                  type="button"
+                  className={`hb-choice ${view === 'abfahrten' ? 'is-on' : ''}`}
+                  aria-pressed={view === 'abfahrten'}
+                  onClick={() => setView('abfahrten')}
+                >
+                  Abfahrten
+                </button>
+              )}
+            </div>
+            <VisitToggle />
+            <button
+              type="button"
+              className="hb-choice"
+              aria-label="Bildschirmschoner starten"
+              title="Bildschirmschoner"
+              onClick={() => setManualSaver(true)}
+            >
+              <Icon icon={Image} size={20} />
+            </button>
+            {!me.is_board && (
+              <button type="button" className="hb-icon-btn" aria-label="Abmelden" onClick={() => supabase.auth.signOut()}>
+                <Icon icon={LogOut} size={20} />
               </button>
             )}
           </div>
-          <VisitToggle />
-          <button type="button" className="hb-choice" aria-label="Bildschirmschoner starten" title="Bildschirmschoner" onClick={() => setManualSaver(true)}>
-            <Icon icon={Image} size={20} />
-          </button>
-          {!me.is_board && (
-            <button type="button" className="hb-icon-btn" aria-label="Abmelden" onClick={() => supabase.auth.signOut()}>
-              <Icon icon={LogOut} size={20} />
-            </button>
-          )}
         </div>
+        <HeaderSlot>
+          {MODULES.filter((m) => m.Header && enabled?.has(m.id)).map((m) => {
+            const Header = m.Header!
+            return <Header key={m.id} variant="wall" />
+          })}
+        </HeaderSlot>
       </header>
 
       {view === 'woche' ? (
@@ -145,7 +165,10 @@ export function Board({ weather }: { weather: Weather | null }) {
             // zeitweise Kacheln (z. B. Abfahrten morgens) stehen über dieser in derselben Spalte
             const above = stacked.filter((m) => m.stackOn === t.module)
             return (
-              <div key={t.module} className={`flex min-h-0 flex-col gap-5 *:min-h-0 *:flex-1 ${(narrow ? SPAN_NARROW : SPAN)[t.size]}`}>
+              <div
+                key={t.module}
+                className={`flex min-h-0 flex-col gap-5 *:min-h-0 *:flex-1 ${(narrow ? SPAN_NARROW : SPAN)[t.size]}`}
+              >
                 {above.map((m) => m.Tile && <m.Tile key={m.id} size="s" delay={i * 40} />)}
                 <mod.Tile size={t.size} delay={i * 40} />
               </div>

@@ -61,7 +61,7 @@ function NowPlayingCard({ p }: { p: Playing }) {
   const who = whos[useFitLevel(whoRef, whos.length, whos[0])]
 
   return (
-    <div className={`hb-np hb-person-${person} ${quiet ? 'is-quiet' : ''}`} role="status" aria-label={`${name} hört ${p.title} von ${p.artists}`}>
+    <div data-kind="music" className={`hb-np hb-slot-item hb-person-${person} ${quiet ? 'is-quiet' : ''}`} role="status" aria-label={`${name} hört ${p.title} von ${p.artists}`}>
       {p.image ? (
         <img className="hb-np-cover" src={p.image} alt="" />
       ) : (
@@ -144,7 +144,7 @@ function DuoCard({ a, b }: { a: Playing; b: Playing }) {
     : `${nameA} hört ${a.title}, ${nameB} hört ${b.title}`
 
   return (
-    <div className={`hb-np hb-np-duo hb-person-${personKey(p.memberId)}`} role="status" aria-label={label}>
+    <div data-kind="music" className={`hb-np hb-np-duo hb-slot-item hb-person-${personKey(p.memberId)}`} role="status" aria-label={label}>
       <span className="hb-np-covers" aria-hidden="true">
         {pair.map((x, i) => (
           <span key={x.memberId} className={`hb-np-cover-slot hb-person-${personKey(x.memberId)} ${i === front ? 'is-front' : 'is-back'}`}>
