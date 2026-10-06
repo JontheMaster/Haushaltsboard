@@ -32,6 +32,8 @@ export type Database = {
           show_in_today: boolean
           title: string
           weekdays: number[] | null
+          placement: string
+          created_at: string
         }
         Insert: {
           active?: boolean
@@ -43,6 +45,7 @@ export type Database = {
           show_in_today?: boolean
           title: string
           weekdays?: number[] | null
+          placement?: string
         }
         Update: Partial<Database['public']['Tables']['chore_rules']['Row']>
         Relationships: [Rel<'chore_rules_assignee_fkey', 'assignee', 'members'>]
@@ -52,17 +55,21 @@ export type Database = {
           assignee: string | null
           done_at: string | null
           done_by: string | null
-          due_date: string
+          due_date: string | null
           id: string
           rule_id: string
+          occurs_on: string
+          week_start: string
         }
         Insert: {
           assignee?: string | null
           done_at?: string | null
           done_by?: string | null
-          due_date: string
+          due_date?: string | null
           id?: string
           rule_id: string
+          occurs_on: string
+          week_start: string
         }
         Update: Partial<Database['public']['Tables']['chore_tasks']['Row']>
         Relationships: [

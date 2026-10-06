@@ -6,9 +6,9 @@ import { SwipeToDelete } from '../../components/SwipeToDelete'
 import { TaskItem } from '../../components/TaskItem'
 import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
-import { addDays, useToday, weekdayShort } from '../../lib/time'
+import { addDays, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import { useFlip } from '../../lib/useFlip'
-import { useTodos, type Todo } from './useTodos'
+import { dueOn, unplannedNow, useTodos, type Todo } from './useTodos'
 
 // Ablagen: ein Tag, „Diese Woche“ oder „Ohne Tag“
 type Group = { id: string; title: string; today?: boolean; items: Todo[] }
@@ -35,7 +35,7 @@ export function TodosDetail() {
   }
 
   const groups: Group[] = [
-    { id: `day:${today}`, title: 'Heute', today: true, items: todos.filter((t) => t.due_date && t.due_date <= today).sort(byDone) },
+    { id: `day:${today}`, title: 'Heute', today: true, items: todos.filter((t) => dueOn(t, today, today)).sort(byDone) },
   ]
   // Tage mit Todos, beim Ziehen zusätzlich alle Tage der nächsten Woche als Ablage
   const days = new Set(todos.filter((t) => t.due_date && t.due_date > today).map((t) => t.due_date!))
@@ -43,7 +43,8 @@ export function TodosDetail() {
   for (const day of [...days].sort()) {
     groups.push({ id: `day:${day}`, title: dayTitle(day), items: todos.filter((t) => t.due_date === day).sort(byDone) })
   }
-  groups.push({ id: 'week', title: 'Diese Woche', items: todos.filter((t) => !t.due_date && t.this_week).sort(byDone) })
+  const monday = mondayOf(today)
+  groups.push({ id: 'week', title: 'Diese Woche', items: todos.filter((t) => t.this_week && unplannedNow(t, monday)).sort(byDone) })
   groups.push({ id: 'none', title: 'Ohne Tag', items: todos.filter((t) => !t.due_date && !t.this_week).sort(byDone) })
 
   function onDragEnd(e: DragEndEvent) {
@@ -105,6 +106,7 @@ export function TodosDetail() {
                           compact
                           onToggle={(d) => setDone(t.id, d)}
                           onOpen={openTodo && (() => openTodo(t.id))}
+                          chore={!!t.chore}
                         />
                       </div>
                       {!t.done_at && (

@@ -1,4 +1,4 @@
-import { CalendarRange, House, Images, ListChecks, LogOut, Plus, ShoppingCart, type LucideIcon } from 'lucide-react'
+import { CalendarRange, House, Images, ListChecks, Sparkles, LogOut, Plus, ShoppingCart, type LucideIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Toast } from '../components/Toast'
@@ -15,7 +15,9 @@ import { TodoSheet } from '../modules/todos/TodoSheet'
 import { TodosDetail } from '../modules/todos/TodosDetail'
 import { PhotoLibrary } from '../modules/photos/PhotoLibrary'
 import { WeekView } from '../modules/week/WeekView'
-import type { Todo } from '../modules/todos/useTodos'
+import { CHORE_PREFIX, isChoreId, type Todo } from '../modules/todos/useTodos'
+import { PutzplanPage } from '../modules/chores/Putzplan'
+import { Button } from '../components/Button'
 import { useEnabledModules, useLayout } from '../modules/useModules'
 
 type Tab = 'start' | 'woche' | 'todos' | 'einkauf'
@@ -41,13 +43,14 @@ export function Phone({ weather }: { weather: Weather | null }) {
   const [tab, setTab] = useState<Tab>(savedTab)
   const [sheet, setSheet] = useState<{ todo?: Todo } | null>(null)
   // Fotobibliothek als eigene Seite (über den Fotos-Knopf in der Kopfzeile)
-  const [photos, setPhotos] = useState(false)
+  // Eigene Seiten über den Reitern: Fotos (Kopfzeile) und Putzplan (Todo-Seite oder Antippen einer Putzaufgabe)
+  const [page, setPage] = useState<null | { kind: 'photos' } | { kind: 'putzplan'; ruleId?: string }>(null)
   const [toast, setToast] = useState<{ id: number; message: string; action?: { label: string; run: () => void } } | null>(null)
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
   const hideToast = useCallback(() => setToast(null), [])
 
   const go = (t: Tab) => {
-    setPhotos(false)
+    setPage(null)
     setTab(t)
     window.scrollTo({ top: 0 })
     try {
@@ -73,6 +76,13 @@ export function Phone({ weather }: { weather: Weather | null }) {
   }, [])
 
   const openTodo = useCallback(async (id: string) => {
+    if (isChoreId(id)) {
+      // Putzaufgabe: deren Regel im Putzplan bearbeiten
+      const { data } = await supabase.from('chore_tasks').select('rule_id').eq('id', id.slice(CHORE_PREFIX.length)).maybeSingle()
+      setPage({ kind: 'putzplan', ruleId: data?.rule_id })
+      window.scrollTo({ top: 0 })
+      return
+    }
     const { data } = await supabase.from('todos').select('*').eq('id', id).maybeSingle()
     if (data) setSheet({ todo: data })
   }, [])
@@ -80,22 +90,31 @@ export function Phone({ weather }: { weather: Weather | null }) {
   return (
     <DeviceProvider value={{ device: 'phone', openTodo, removeTodo }}>
       <div className="min-h-dvh bg-surface pb-[calc(88px+env(safe-area-inset-bottom))]">
-        <PhoneHeader weather={weather} onPhotos={() => setPhotos(true)} />
+        <PhoneHeader weather={weather} onPhotos={() => setPage({ kind: 'photos' })} />
 
         <main className="flex flex-col gap-4 px-4">
-          {photos ? (
-            <PhotoLibrary onBack={() => setPhotos(false)} />
+          {page?.kind === 'photos' ? (
+            <PhotoLibrary onBack={() => setPage(null)} />
+          ) : page?.kind === 'putzplan' ? (
+            <PutzplanPage onBack={() => setPage(null)} openRuleId={page.ruleId} />
           ) : (
             <>
           {tab === 'start' && <StartTab />}
           {tab === 'woche' && <WeekView variant="phone" />}
-          {tab === 'todos' && <TodosDetail />}
+          {tab === 'todos' && (
+            <>
+              <Button icon={<Icon icon={Sparkles} size={20} />} onClick={() => setPage({ kind: 'putzplan' })}>
+                Putzplan bearbeiten
+              </Button>
+              <TodosDetail />
+            </>
+          )}
           {tab === 'einkauf' && <ShoppingTile size="m" delay={0} />}
             </>
           )}
         </main>
 
-        {tab !== 'einkauf' && !photos && (
+        {tab !== 'einkauf' && !page && (
           <button type="button" className="hb-fab" aria-label="Todo hinzufügen" onClick={() => setSheet({})}>
             <Icon icon={Plus} size={28} />
           </button>

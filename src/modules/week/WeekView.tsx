@@ -13,6 +13,8 @@ import {
 } from '@dnd-kit/core'
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EventPill } from '../../components/EventPill'
+import { Icon } from '../../components/Icon'
+import { Sparkles } from 'lucide-react'
 import { ScrollList } from '../../components/ScrollList'
 import { useDevice, useMedia } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
@@ -21,7 +23,7 @@ import { eventsOnDay } from '../calendar/rules'
 import { liveInfo } from '../calendar/live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from '../calendar/Timeline'
 import { useCalendar, type CalendarEvent } from '../calendar/useCalendar'
-import { useTodos, type Todo } from '../todos/useTodos'
+import { dueOn, useTodos, type Todo } from '../todos/useTodos'
 
 // Ablagen: ein Tag, „Diese Woche“ oder „Ohne Tag“
 type Zone = { kind: 'day'; day: string } | { kind: 'week' } | { kind: 'none' }
@@ -70,9 +72,9 @@ export function WeekView({ variant }: Props) {
 
   const list = todos ?? []
   const byDone = (a: Todo, b: Todo) => doneRank(a) - doneRank(b)
-  const onDay = (day: string) =>
-    list.filter((t) => t.due_date && (t.due_date === day || (day === today && t.due_date < today))).sort(byDone)
-  const thisWeek = list.filter((t) => !t.due_date && t.this_week).sort(byDone)
+  const onDay = (day: string) => list.filter((t) => dueOn(t, day, today)).sort(byDone)
+  // Putzplan-Aufgaben „irgendwann in der Woche“ gehören zu ihrer Woche; Todos „diese Woche“ immer
+  const thisWeek = list.filter((t) => !t.due_date && t.this_week && (!t.chore || t.chore.weekStart === monday)).sort(byDone)
   const noDay = list.filter((t) => !t.due_date && !t.this_week).sort(byDone)
   const active = list.find((t) => t.id === activeId)
 
@@ -370,7 +372,10 @@ function CardBody({ todo, person, lifted }: { todo: Todo; person: PersonKey; lif
     <div
       className={`hb-card hb-person-${person} ${todo.done_at ? 'is-done' : ''} ${lifted ? 'is-lifted' : ''}`}
     >
-      <span className="hb-card-title">{todo.title}</span>
+      <span className="hb-card-title">
+        {todo.chore && <Icon icon={Sparkles} size={15} label="Putzplan" className="hb-chore-icon" />}
+        {todo.title}
+      </span>
     </div>
   )
 }

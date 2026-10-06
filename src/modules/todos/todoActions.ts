@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase'
-import type { Todo } from './useTodos'
+import { CHORE_PREFIX, isChoreId, type Todo } from './useTodos'
 
 /** Wann ein Todo dran ist: ein Tag, „diese Woche“ oder noch ohne Tag */
 export type When = { kind: 'day'; date: string } | { kind: 'week' } | { kind: 'none' }
@@ -46,12 +46,21 @@ export async function updateTodo(id: string, input: TodoInput, before: Todo): Pr
 }
 
 export async function deleteTodo(id: string): Promise<boolean> {
-  const { error } = await supabase.from('todos').delete().eq('id', id)
+  // Putzplan-Aufgabe löschen = diese eine Wiederholung auslassen (die Regel bleibt)
+  const { error } = isChoreId(id)
+    ? await supabase.from('chore_tasks').delete().eq('id', id.slice(CHORE_PREFIX.length))
+    : await supabase.from('todos').delete().eq('id', id)
   return !error
 }
 
 /** Rückgängig nach dem Löschen: genau die alte Zeile wieder einfügen (gleiche id, gleiche Felder) */
 export async function restoreTodo(todo: Todo): Promise<boolean> {
-  const { error } = await supabase.from('todos').insert(todo)
+  if (todo.chore) {
+    const { error } = await supabase.from('chore_tasks').insert(todo.chore.raw)
+    return !error
+  }
+  const { chore: _none, ...row } = todo
+  void _none
+  const { error } = await supabase.from('todos').insert(row)
   return !error
 }

@@ -10,9 +10,9 @@ import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
 import { useFlip } from '../../lib/useFlip'
-import { addDays, useToday, weekdayShort } from '../../lib/time'
+import { addDays, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import type { TileProps } from '../types'
-import { useTodos, type Todo } from './useTodos'
+import { dueOn, unplannedNow, useTodos, type Todo } from './useTodos'
 
 // Ablagen auf „Heute“: eine Person (heute), „Offen“ (heute, wer Zeit hat) oder „noch ohne Tag“
 const OPEN = 'open'
@@ -35,8 +35,8 @@ export function TodosTile({ size, delay }: TileProps) {
 
   const list = todos ?? []
   // Fällig heute (oder überfällig, falls der Nachtjob noch nicht lief)
-  const dueToday = list.filter((t) => t.due_date && t.due_date <= today).sort(byDone)
-  const noDay = list.filter((t) => !t.due_date).sort(byDone)
+  const dueToday = list.filter((t) => dueOn(t, today, today)).sort(byDone)
+  const noDay = list.filter((t) => unplannedNow(t, mondayOf(today))).sort(byDone)
   const openToday = dueToday.filter((t) => !t.assignee)
   const active = list.find((t) => t.id === activeId)
 
@@ -72,6 +72,7 @@ export function TodosTile({ size, delay }: TileProps) {
         compact={compact || phone}
         onToggle={(done) => setDone(t.id, done)}
         onOpen={phone && openTodo ? () => openTodo(t.id) : undefined}
+        chore={!!t.chore}
       />
     )
     // Löschen per Wischen nur am Handy; an der Wand wird nur abgehakt

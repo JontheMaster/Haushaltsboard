@@ -1,4 +1,4 @@
-import { Undo2 } from 'lucide-react'
+import { Sparkles, Undo2 } from 'lucide-react'
 import type { PersonKey } from '../lib/members'
 import { Icon } from './Icon'
 
@@ -14,9 +14,11 @@ type Props = {
   onToggle: (done: boolean) => void
   /** Tippen auf den Text: am Handy öffnet das „Bearbeiten“, an der Wand hakt es ab */
   onOpen?: () => void
+  /** Aufgabe aus dem Putzplan: Symbol vor dem Text */
+  chore?: boolean
 }
 
-export function TaskItem({ label, detail, done, person, meta, showUndo, compact, onToggle, onOpen }: Props) {
+export function TaskItem({ label, detail, done, person, meta, showUndo, compact, onToggle, onOpen, chore }: Props) {
   const classes = ['hb-task', done && 'is-done', person && person !== 'open' && `hb-person-${person}`, compact && 'hb-compact']
     .filter(Boolean)
     .join(' ')
@@ -46,6 +48,7 @@ export function TaskItem({ label, detail, done, person, meta, showUndo, compact,
         onKeyDown={onOpen ? (e) => (e.key === 'Enter' || e.key === ' ') && onOpen() : undefined}
       >
         <span className="hb-task-text">
+          {chore && <Icon icon={Sparkles} size={compact ? 16 : 18} label="Putzplan" className="hb-chore-icon" />}
           {label}
           {detail && <span className="text-ink-muted"> · {detail}</span>}
         </span>
