@@ -2,7 +2,7 @@
 // Alle Positionen in Prozent der Höhe – so füllt der Plan jede Kachel- oder Spaltenhöhe aus.
 import { useRef, useState, type CSSProperties } from 'react'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
-import { CalendarClock, List } from 'lucide-react'
+import { CalendarClock, List, UtensilsCrossed } from 'lucide-react'
 import { Icon } from '../../components/Icon'
 import { titleVariants, useFitLevel, VariantText } from './shorten'
 import type { CalendarEvent } from './useCalendar'
@@ -67,6 +67,11 @@ function layout(events: CalendarEvent[], day: string): Placed[] {
 const tone = (e: CalendarEvent) =>
   e.color === 'blue' ? 'hb-person-a' : e.color === 'berry' ? 'hb-person-b' : e.color ? `hb-cal-${e.color}` : 'hb-person-open'
 
+const berlinHHMMOf = (iso: string) => {
+  const { hh, mm } = berlinTime(new Date(iso))
+  return `${hh}:${mm}`
+}
+
 const hhmm = (min: number) => `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
 
 const ALLDAY_SLOT_PX = 30
@@ -102,10 +107,12 @@ type DayProps = {
   hourPx?: number
   /** Antippen eines Essens (Essensplan) */
   onTapEvent?: (id: string) => void
+  /** Hinterlegte Zeiten ohne eigene Spalte, z. B. geplante Essen (zartes Band über die ganze Breite) */
+  bands?: CalendarEvent[]
 }
 
 /** Ein Tag als Zeitplan */
-export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEvent }: DayProps) {
+export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEvent, bands }: DayProps) {
   const today = useToday()
   const now = useNow(60_000)
   const span = (range.to - range.from) * 60
@@ -132,6 +139,18 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEven
         {Array.from({ length: range.to - range.from + 1 }, (_, i) => (
           <div key={i} className="hb-tl-hour" style={{ top: `${(i / (range.to - range.from)) * 100}%` }} />
         ))}
+        {bands?.map((b) => {
+          const top = Math.max(0, pct(minutesOn(b.start, day)))
+          const bottom = Math.min(100, pct(minutesOn(b.end, day)))
+          return (
+            <div key={b.id} className="hb-tl-band" style={{ top: `${top}%`, height: `${Math.max(bottom - top, 2)}%` }} title={`${berlinHHMMOf(b.start)} ${b.title}`}>
+              <span className="hb-tl-band-label">
+                <Icon icon={UtensilsCrossed} size={13} label="Essen" />
+                <span className="truncate">{b.title}</span>
+              </span>
+            </div>
+          )
+        })}
         {placed.map((p) => {
           const top = Math.max(0, pct(p.start))
           const bottom = Math.min(100, pct(p.end))

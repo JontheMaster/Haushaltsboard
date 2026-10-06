@@ -14,7 +14,7 @@ import {
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EventPill } from '../../components/EventPill'
 import { Icon } from '../../components/Icon'
-import { Sparkles } from 'lucide-react'
+import { Eye, EyeOff, Sparkles } from 'lucide-react'
 import { ScrollList } from '../../components/ScrollList'
 import { WithIcon } from '../../components/WithIcon'
 import { useDevice, useMedia } from '../../lib/device'
@@ -25,7 +25,8 @@ import { liveInfo } from '../calendar/live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from '../calendar/Timeline'
 import { useCalendar, type CalendarEvent } from '../calendar/useCalendar'
 import { dueOn, useTodos, type Todo } from '../todos/useTodos'
-import { useWithMeals } from '../meals/mealStore'
+import { mealBands, MealLine, useMealsByDay } from '../meals/MealLine'
+import { useEnabledModules } from '../useModules'
 
 // Ablagen: ein Tag, „Diese Woche“ oder „Ohne Tag“
 type Zone = { kind: 'day'; day: string } | { kind: 'week' } | { kind: 'none' }
@@ -38,6 +39,34 @@ const zoneOf = (id: string): Zone =>
 const LONG_PRESS_MS = 550
 
 type Props = { variant: 'wall' | 'phone' }
+
+// Ebenen: was die Woche zeigt (pro Gerät gemerkt, nur Komfort)
+type Layers = { events: boolean; todos: boolean; meals: boolean; person: 'all' | 'a' | 'b' }
+const ALL_LAYERS: Layers = { events: true, todos: true, meals: true, person: 'all' }
+
+function useWeekLayers(key: string): [Layers, (patch: Partial<Layers>) => void] {
+  const storageKey = `hb-week-layers-${key}`
+  const [layers, setLayers] = useState<Layers>(() => {
+    try {
+      return { ...ALL_LAYERS, ...JSON.parse(localStorage.getItem(storageKey) ?? '{}') }
+    } catch {
+      return ALL_LAYERS
+    }
+  })
+  const set = (patch: Partial<Layers>) =>
+    setLayers((l) => {
+      const next = { ...l, ...patch }
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next))
+      } catch {
+        // nur Komfort
+      }
+      return next
+    })
+  return [layers, set]
+}
+
+const eventPerson = (e: CalendarEvent): PersonKey => (e.person === 'person-a' ? 'a' : e.person === 'person-b' ? 'b' : 'open')
 
 /**
  * Woche Mo–So plus „Ungeplant“. Karten per Ziehen auf einen Tag oder zurück nach Ungeplant.
@@ -57,14 +86,21 @@ export function WeekView({ variant }: Props) {
   const { openTodo } = useDevice()
   const { todos, setDone, patchTodo, doneRank, undoable } = useTodos(today)
   const { events: calendarEvents } = useCalendar()
-  // geplante Essen stehen mit im Kalender
-  const events = useWithMeals(calendarEvents)
+  const [layers, setLayers] = useWeekLayers(variant)
+  const mealsModule = useEnabledModules()?.has('essensplan') ?? false
+  // Person: Einträge der anderen Person ausblenden, „Offen“ bleibt für beide
+  const forPerson = (k: PersonKey) => layers.person === 'all' || k === 'open' || k === layers.person
+  const events = layers.events ? (calendarEvents?.filter((e) => forPerson(eventPerson(e))) ?? null) : []
+  const allMeals = useMealsByDay()
+  const mealsOn = (day: string) => (layers.meals ? allMeals(day) : [])
+  const showTodos = layers.todos
   const [activeId, setActiveId] = useState<string | null>(null)
   const [mode, setMode] = useCalendarMode(`week-${variant}`)
   const plan = mode === 'plan'
   // Zeitplan: gemeinsamer Stundenbereich und gleich viele Ganztags-Plätze für alle Tage der Woche
   const weekEvents = days.map((day) => ({ day, events: events ? eventsOnDay(events, day) : [] }))
-  const range = hourRange(weekEvents)
+  // Essen liegen als Band im Zeitplan; der Stundenbereich muss sie mit abdecken
+  const range = hourRange(weekEvents.map((d) => ({ day: d.day, events: [...d.events, ...mealBands(mealsOn(d.day))] })))
   const allDaySlots = Math.max(0, ...weekEvents.map((d) => d.events.filter((e) => e.allDay).length))
 
   // Wand: Ziehen startet nach 8 px Bewegung (Stillhalten bleibt frei fürs lange Drücken).
@@ -75,7 +111,7 @@ export function WeekView({ variant }: Props) {
   const sensors = useSensors(...(wall ? [pointer] : [mouse, touch]))
 
   // Erledigte spart die Woche aus (Platz); gerade abgehakte bleiben 5 s sichtbar, damit man sich vertippen darf
-  const list = (todos ?? []).filter((t) => !t.done_at || undoable.has(t.id))
+  const list = (todos ?? []).filter((t) => (!t.done_at || undoable.has(t.id)) && forPerson(personKey(t.assignee)))
   const byDone = (a: Todo, b: Todo) => doneRank(a) - doneRank(b)
   const onDay = (day: string) => list.filter((t) => dueOn(t, day, today)).sort(byDone)
   // Putzplan-Aufgaben „irgendwann in der Woche“ gehören zu ihrer Woche; Todos „diese Woche“ immer
@@ -149,15 +185,16 @@ export function WeekView({ variant }: Props) {
     return (
       <DropZone key={day} zone={{ kind: 'day', day }} disabled={past}>
         {dayHeader(day)}
-        {plan ? (
+        <MealLine meals={mealsOn(day)} />
+        {!layers.events ? null : plan ? (
           <div className="grid grid-cols-[44px_minmax(0,1fr)] gap-2">
             <TimeLabels range={range} hourPx={36} allDaySlots={eventsOnDay(events ?? [], day).filter((e) => e.allDay).length} />
-            <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} range={range} hourPx={36} />
+            <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} bands={mealBands(mealsOn(day))} range={range} hourPx={36} />
           </div>
         ) : (
           eventList(day)
         )}
-        {!past && (
+        {!past && showTodos && (
           <div className="hb-week-todos">
             {dayTodos.length ? dayTodos.map(card) : <p className="px-1 text-label text-ink-muted">Keine Todos. Karte hierher ziehen.</p>}
           </div>
@@ -181,13 +218,19 @@ export function WeekView({ variant }: Props) {
   const todoWeight = Math.min(2, Math.max(1, maxTodos / 2))
 
   // Wand: Raster mit Zeilen Kopf · Termine · „Todos“ · Todos, damit alle Todo-Bereiche auf einer Höhe beginnen
+  // Ausgeblendete Ebenen geben ihren Platz ab: ohne Todos fällt auch „Ungeplant“ weg
+  const dayCols = `${plan ? '44px ' : ''}repeat(7, minmax(0, 1fr))`
+  const gridStyle: CSSProperties = !showTodos
+    ? { gridTemplateColumns: dayCols, gridTemplateRows: 'auto minmax(0, 1fr)' }
+    : !layers.events
+      ? { gridTemplateRows: 'auto 0 0 minmax(0, 1fr)' }
+      : plan
+        ? // Zeitplan: viele Todos an einem Tag → Todo-Zeile wächst (bis 2:3), der Plan wird dafür etwas enger
+          { gridTemplateRows: `auto minmax(0, 3fr) auto minmax(0, ${todoWeight}fr)` }
+        : {}
   const wallGrid = (
-    <div
-      className={`hb-week-grid min-h-0 flex-1 ${plan ? 'is-plan' : ''}`}
-      // Zeitplan: viele Todos an einem Tag → Todo-Zeile wächst (bis 2:3), der Plan wird dafür etwas enger
-      style={plan ? { gridTemplateRows: `auto minmax(0, 3fr) auto minmax(0, ${todoWeight}fr)` } : undefined}
-    >
-      {plan && (
+    <div className={`hb-week-grid min-h-0 flex-1 ${plan ? 'is-plan' : ''}`} style={gridStyle}>
+      {plan && layers.events && (
         <div style={{ gridColumn: 1, gridRow: 2 }} className="flex min-h-0 flex-col">
           <TimeLabels range={range} allDaySlots={allDaySlots} />
         </div>
@@ -196,30 +239,41 @@ export function WeekView({ variant }: Props) {
         const past = day < today
         const col = i + 1 + (plan ? 1 : 0)
         return [
-          <div key={`h${day}`} style={{ gridColumn: col, gridRow: 1 }}>
+          <div key={`h${day}`} className="flex min-w-0 flex-col gap-1" style={{ gridColumn: col, gridRow: 1 }}>
             {dayHeader(day)}
+            <MealLine meals={mealsOn(day)} wall />
           </div>,
-          <DropZone key={`e${day}`} zone={{ kind: 'day', day }} idSuffix=":t" disabled={past} plain style={{ gridColumn: col, gridRow: 2 }}>
-            {plan ? (
-              <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} range={range} allDaySlots={allDaySlots} />
-            ) : (
-              <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">{eventList(day)}</ScrollList>
-            )}
-          </DropZone>,
-          <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: 4 }}>
-            <ScrollList fit dense className="hb-day-todos flex min-h-0 flex-1 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
-          </DropZone>,
+          layers.events && (
+            <DropZone key={`e${day}`} zone={{ kind: 'day', day }} idSuffix=":t" disabled={past} plain style={{ gridColumn: col, gridRow: 2 }}>
+              {plan ? (
+                <DayTimeline day={day} events={events ? eventsOnDay(events, day) : []} bands={mealBands(mealsOn(day))} range={range} allDaySlots={allDaySlots} />
+              ) : (
+                <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">{eventList(day)}</ScrollList>
+              )}
+            </DropZone>
+          ),
+          showTodos && (
+            <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: layers.events ? 4 : '2 / 5' }}>
+              <ScrollList fit dense className="hb-day-todos flex min-h-0 flex-1 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
+            </DropZone>
+          ),
         ]
       })}
-      <h3 className="px-1 text-label text-ink-muted" style={{ gridColumn: plan ? '2 / 9' : '1 / 8', gridRow: 3 }}>
-        Todos
-      </h3>
-      <header className="hb-week-day" style={{ gridColumn: plan ? 9 : 8, gridRow: 1 }}>
-        Ungeplant
-      </header>
-      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto hb-scroll-quiet" style={{ gridColumn: plan ? 9 : 8, gridRow: '2 / 5' }}>
-        {unplannedZones}
-      </div>
+      {showTodos && layers.events && (
+        <h3 className="px-1 text-label text-ink-muted" style={{ gridColumn: plan ? '2 / 9' : '1 / 8', gridRow: 3 }}>
+          Todos
+        </h3>
+      )}
+      {showTodos && (
+        <>
+          <header className="hb-week-day" style={{ gridColumn: plan ? 9 : 8, gridRow: 1 }}>
+            Ungeplant
+          </header>
+          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto hb-scroll-quiet" style={{ gridColumn: plan ? 9 : 8, gridRow: '2 / 5' }}>
+            {unplannedZones}
+          </div>
+        </>
+      )}
     </div>
   )
 
@@ -244,15 +298,18 @@ export function WeekView({ variant }: Props) {
             <ModeSwitch mode={mode} onChange={setMode} />
           </div>
         </div>
+        <LayerBar layers={layers} set={setLayers} meals={mealsModule} names={people.map((p) => p.name)} />
 
         {!stacked ? (
           wallGrid
         ) : (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <header className="hb-week-day">Ungeplant</header>
-              {unplannedZones}
-            </div>
+            {showTodos && (
+              <div className="flex flex-col gap-2">
+                <header className="hb-week-day">Ungeplant</header>
+                {unplannedZones}
+              </div>
+            )}
             {days.filter((d) => d >= today || offset > 0).map(phoneDay)}
           </div>
         )}
@@ -262,6 +319,43 @@ export function WeekView({ variant }: Props) {
         {active ? <CardBody todo={active} person={personKey(active.assignee)} lifted /> : null}
       </DragOverlay>
     </DndContext>
+  )
+}
+
+/** Ebenen ein/aus und Person: Termine · Todos · Essen | Beide · Jonathan · Leviona */
+function LayerBar({ layers, set, meals, names }: { layers: Layers; set: (p: Partial<Layers>) => void; meals: boolean; names: string[] }) {
+  const toggle = (key: 'events' | 'todos' | 'meals', label: string) => (
+    <button type="button" className={`hb-layer ${layers[key] ? 'is-on' : ''}`} aria-pressed={layers[key]} onClick={() => set({ [key]: !layers[key] })}>
+      <Icon icon={layers[key] ? Eye : EyeOff} size={16} />
+      {label}
+    </button>
+  )
+  const persons: { value: Layers['person']; label: string }[] = [
+    { value: 'all', label: 'Beide' },
+    { value: 'a', label: names[0] ?? 'Person a' },
+    { value: 'b', label: names[1] ?? 'Person b' },
+  ]
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Was die Woche zeigt">
+        {toggle('events', 'Termine')}
+        {toggle('todos', 'Todos')}
+        {meals && toggle('meals', 'Essen')}
+      </div>
+      <div className="hb-seg ml-auto" role="group" aria-label="Für wen">
+        {persons.map((p) => (
+          <button
+            key={p.value}
+            type="button"
+            aria-pressed={layers.person === p.value}
+            className={layers.person === p.value ? 'is-on' : ''}
+            onClick={() => set({ person: p.value })}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 

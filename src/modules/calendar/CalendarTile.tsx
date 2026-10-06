@@ -9,7 +9,8 @@ import { eventsOnDay } from './rules'
 import { liveInfo, soonLabel } from './live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from './Timeline'
 import type { TileProps } from '../types'
-import { useWithMeals } from '../meals/mealStore'
+import { mealBands, MealLine, useMealsByDay } from '../meals/MealLine'
+import type { Meal } from '../meals/mealStore'
 import { useCalendar, type CalendarEvent } from './useCalendar'
 
 const personOf = (e: CalendarEvent): PersonKey => (e.person === 'person-a' ? 'a' : e.person === 'person-b' ? 'b' : 'open')
@@ -35,9 +36,9 @@ export function CalendarTile({ size, delay }: TileProps) {
   const phone = device === 'phone'
   // Große Kachel an der Wand: Heute und Morgen nebeneinander
   const wide = !phone && size === 'l'
-  const { events: calendarEvents, failed, error } = useCalendar()
-  // geplante Essen stehen mit im Kalender
-  const events = useWithMeals(calendarEvents)
+  const { events, failed, error } = useCalendar()
+  // geplante Essen: eigene Zeile bzw. Band im Zeitplan, nicht als Termin
+  const mealsOn = useMealsByDay()
   const [mode, setMode] = useCalendarMode(phone ? 'phone' : 'wall')
 
   const todays = events ? eventsOnDay(events, today) : []
@@ -63,6 +64,7 @@ export function CalendarTile({ size, delay }: TileProps) {
         <Plan
           days={wide ? [today, tomorrow] : [today]}
           events={events}
+          mealsOn={mealsOn}
           hourPx={phone ? 40 : undefined}
         />
       ) : (
@@ -70,6 +72,7 @@ export function CalendarTile({ size, delay }: TileProps) {
         <div className={wide ? 'grid min-h-0 flex-1 grid-cols-2 gap-5' : `flex flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
           <div className={`flex min-w-0 flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
             {wide && <h3 className="text-label text-ink-muted">Heute</h3>}
+            <MealLine meals={mealsOn(today)} wall={!phone} />
             {todays.length === 0 ? (
               <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>Heute keine Termine.</p>
             ) : (
@@ -96,6 +99,7 @@ export function CalendarTile({ size, delay }: TileProps) {
           {!phone && (wide || tomorrows.length > 0) && (
             <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${wide ? '' : 'mt-4'}`}>
               <h3 className="text-label text-ink-muted">Morgen</h3>
+              <MealLine meals={mealsOn(tomorrow)} wall />
               {tomorrows.length === 0 ? (
                 <p className="text-body text-ink-muted">Morgen keine Termine.</p>
               ) : (
@@ -122,9 +126,9 @@ export function CalendarTile({ size, delay }: TileProps) {
 }
 
 /** Zeitplan für einen oder zwei Tage, gemeinsame Stundenleiste links */
-function Plan({ days, events, hourPx }: { days: string[]; events: CalendarEvent[]; hourPx?: number }) {
-  const perDay = days.map((day) => ({ day, events: eventsOnDay(events, day) }))
-  const range = hourRange(perDay)
+function Plan({ days, events, mealsOn, hourPx }: { days: string[]; events: CalendarEvent[]; mealsOn: (day: string) => Meal[]; hourPx?: number }) {
+  const perDay = days.map((day) => ({ day, events: eventsOnDay(events, day), bands: mealBands(mealsOn(day)) }))
+  const range = hourRange(perDay.map((d) => ({ day: d.day, events: [...d.events, ...d.bands] })))
   const slots = Math.max(...perDay.map((d) => d.events.filter((e) => e.allDay).length))
   const two = days.length > 1
   return (
@@ -141,7 +145,7 @@ function Plan({ days, events, hourPx }: { days: string[]; events: CalendarEvent[
       >
         <TimeLabels range={range} allDaySlots={slots} hourPx={hourPx} />
         {perDay.map((d) => (
-          <DayTimeline key={d.day} day={d.day} events={d.events} range={range} allDaySlots={slots} hourPx={hourPx} />
+          <DayTimeline key={d.day} day={d.day} events={d.events} bands={d.bands} range={range} allDaySlots={slots} hourPx={hourPx} />
         ))}
       </div>
     </div>

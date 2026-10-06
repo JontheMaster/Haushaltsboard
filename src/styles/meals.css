@@ -1,29 +1,98 @@
 /* ───────── Essensplan: Rezepte, Einplanen, Kochmodus, Wand-Planer ───────── */
 
-/* Geplante Essen im Kalender: umgekehrt (dunkle Fläche, helle Schrift, Aprikose-Balken),
-   damit sie sich klar von allen Kalenderfarben abheben (Entscheidung Jonathan 6.10.2026) */
+/* Essen in Kalender und Woche sind keine Termine: eigene schmale Zeile unter dem Tag
+   und im Zeitplan ein zartes Band ohne eigene Spalte (Entscheidung Jonathan 6.10.2026) */
+.hb-meal-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 650;
+}
+.hb-meal-line.is-wall {
+  font-size: 14px;
+  line-height: 20px;
+}
+.hb-tl-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 2px dashed var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
+  pointer-events: none;
+}
+.hb-tl-band-label {
+  position: absolute;
+  top: -11px;
+  right: 2px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: calc(100% - 4px);
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 700;
+}
+
+/* Ebenen-Schalter in der Woche */
+.hb-layer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: line-through;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.hb-layer.is-on {
+  background: var(--surface-raised);
+  color: var(--ink);
+  text-decoration: none;
+}
+.hb-layer:active {
+  transform: scale(0.96);
+}
+.hb-layer:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+
+/* Wand-Planer: Essen als Blöcke in Aprikose (dort sind sie die Hauptsache) */
 .hb-event.hb-cal-meal {
   --ev-bar: var(--accent);
-  background: var(--ink);
-  color: var(--surface);
+  background: var(--accent-soft);
 }
 .hb-event.hb-cal-meal::before {
   background: var(--accent);
 }
-.hb-cal-meal .hb-event-title,
-.hb-cal-meal .hb-tl-title {
-  color: var(--surface);
-}
 .hb-cal-meal .hb-event-time,
 .hb-cal-meal .hb-event-kind {
-  color: var(--accent-soft);
+  color: var(--accent);
 }
 .hb-tl-event.hb-cal-meal,
 .hb-tl-allday.hb-cal-meal {
-  --tl-soft: var(--ink);
+  --tl-soft: var(--accent-soft);
   --tl-bar: var(--accent);
-  --tl-ink: var(--accent-soft);
-  color: var(--surface);
+  --tl-ink: var(--accent);
 }
 .is-tappable {
   cursor: pointer;
@@ -610,9 +679,6 @@
   --tl-bar: var(--line);
   --tl-ink: var(--ink-muted);
   color: var(--ink-muted);
-}
-.hb-planner-day .hb-tl-allday.hb-cal-meal {
-  color: var(--surface);
 }
 .hb-planner-day .hb-tl-event.hb-cal-meal {
   box-shadow: var(--shadow-tile);
