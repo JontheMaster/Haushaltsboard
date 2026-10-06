@@ -81,8 +81,7 @@
   color: var(--ink-muted);
 }
 .hb-tl-allday > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: none;
 }
 
 /* Läuft gerade: pulsierender Punkt, „Jetzt · bis …“, Fortschrittsbalken unten in der Kalenderfarbe */
@@ -382,7 +381,6 @@
   color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .hb-tl-allday::before {
   content: "";
@@ -753,16 +751,47 @@
   transform: rotate(-1.5deg) scale(1.03);
   animation: none;
 }
+/* Ein einzelnes Wort ist zu breit (z. B. „Konfisamstag?“): kleiner und mit Silbentrennung statt „…“ */
+.hb-fit-small {
+  font-size: 13px;
+  line-height: 16px;
+}
+.hb-fit-small.is-break {
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+/* Ganztags-Zeile (einzeilig): als letzte Stufe noch kleiner, ohne Farbpunkt (die Fläche zeigt den Kalender) */
+.hb-tl-allday .hb-fit-small.is-break {
+  font-size: 12px;
+}
+.hb-tl-allday:has(.is-break) {
+  gap: 0;
+  padding-inline: var(--space-1);
+}
+.hb-tl-allday:has(.is-break)::before {
+  display: none;
+}
+/* Woche an der Wand: schmale Spalten, Todo-Karten so groß wie die Termine */
+.hb-week-grid .hb-card {
+  font-size: 15px;
+  line-height: 20px;
+}
+/* Todo-Karten: lange Wörter trennen statt über den Rand zu laufen (Safari trennt Deutsch mit Bindestrich) */
+.hb-card-title {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
 /* Woche: wenig Platz → Todo-Karten kompakter statt gleich „+1 weiterer“ (ScrollList dense) */
-.hb-week-todos[data-dense] {
-  gap: var(--space-1);
+.hb-day-todos[data-dense] {
+  gap: 3px;
 }
-.hb-week-todos[data-dense] .hb-card {
+.hb-day-todos[data-dense] .hb-card {
   padding: 3px var(--space-2) 3px var(--space-3);
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 13px;
+  line-height: 16px;
+  hyphens: auto;
 }
-.hb-week-todos[data-dense] .hb-chore-icon {
+.hb-day-todos[data-dense] .hb-chore-icon {
   width: 13px;
   height: 13px;
 }
@@ -773,12 +802,17 @@
 .hb-event-week .hb-event-time {
   font-size: 14px;
 }
+/* Woche: kein „…“ und kein Bruch mitten im Wort; passt ein Wort nicht, wählt EventPill eine knappere Fassung */
 .hb-event-week .hb-event-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: clip;
   font-size: 15px;
   line-height: 20px;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow-wrap: break-word;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+  overflow-wrap: normal;
+  word-break: normal;
   hyphens: auto;
 }
 /* „+2 weitere“ unter einer Liste, die nicht ganz passt (antippen klappt auf) */

@@ -11,7 +11,9 @@ import {
   Video,
   type LucideIcon,
 } from 'lucide-react'
+import { useLayoutEffect, useState, type RefObject } from 'react'
 import { Icon } from '../../components/Icon'
+import { WithIcon } from '../../components/WithIcon'
 
 type Rule = {
   /** erkennt die Art des Termins */
@@ -84,4 +86,64 @@ export function EventTitle({ title, size = 16 }: { title: string; size?: number 
       {text}
     </span>
   )
+}
+
+export type TitleVariant = {
+  text: string
+  icon?: LucideIcon
+  label?: string
+  /** kleinere Schrift; 'break' = letzte Rettung, ein zu breites Wort darf getrennt werden */
+  small?: 'font' | 'break'
+}
+
+/**
+ * Fassungen eines Titels von ausführlich bis knapp, nie mitten im Wort gekürzt:
+ * Titel mit Symbol → Titel ohne Symbol → Art („Arzt“) → nur Symbol. Ohne bekannte Art:
+ * Titel → Titel kleiner → weniger ganze Wörter (kleiner) → erstes Wort kleiner und getrennt.
+ */
+export function titleVariants(title: string): TitleVariant[] {
+  const short = shortenTitle(title)
+  const kind = kindOf(title)
+  const out: TitleVariant[] = [short]
+  if (short.icon) out.push({ text: short.text })
+  if (kind) {
+    out.push({ text: kind.label, icon: kind.icon, label: kind.label })
+    out.push({ text: '', icon: kind.icon, label: kind.label })
+  } else {
+    const words = short.text.split(' ').filter(Boolean)
+    out.push({ text: short.text, small: 'font' })
+    for (let n = words.length - 1; n >= 1; n--) out.push({ text: words.slice(0, n).join(' '), small: 'font' })
+    out.push({ text: words[0] ?? short.text, small: 'break' })
+  }
+  return out
+}
+
+/**
+ * Wählt die erste Fassung, die ganz in `ref` passt (nicht zu hoch, kein Wort zu breit).
+ * Bei neuer Größe oder neuem Inhalt beginnt es wieder bei der ausführlichsten.
+ */
+export function useFitLevel(ref: RefObject<HTMLElement | null>, count: number, key: string): number {
+  const [level, setLevel] = useState(0)
+  const [size, setSize] = useState('')
+  useLayoutEffect(() => setLevel(0), [key, size])
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setSize(`${el.clientWidth}x${el.clientHeight}`))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ref])
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || level >= count - 1) return
+    if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) setLevel((l) => l + 1)
+  })
+  return Math.min(level, count - 1)
+}
+
+/** Eine Fassung anzeigen; Symbol und erstes Wort bleiben zusammen (kein Symbol allein in einer Zeile) */
+export function VariantText({ v, size = 15 }: { v: TitleVariant; size?: number }) {
+  if (v.small) return <span className={`hb-fit-small ${v.small === 'break' ? 'is-break' : ''}`}>{v.text}</span>
+  if (!v.icon) return <>{v.text}</>
+  return <WithIcon icon={<Icon icon={v.icon} size={size} label={v.label} className="hb-event-icon" />} text={v.text} />
 }

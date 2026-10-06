@@ -1,6 +1,7 @@
 import { Sparkles, Undo2 } from 'lucide-react'
 import type { PersonKey } from '../lib/members'
 import { Icon } from './Icon'
+import { WithIcon } from './WithIcon'
 
 type Props = {
   label: string
@@ -48,8 +49,11 @@ export function TaskItem({ label, detail, done, person, meta, showUndo, compact,
         onKeyDown={onOpen ? (e) => (e.key === 'Enter' || e.key === ' ') && onOpen() : undefined}
       >
         <span className="hb-task-text">
-          {chore && <Icon icon={Sparkles} size={compact ? 16 : 18} label="Putzplan" className="hb-chore-icon" />}
-          {label}
+          {chore ? (
+            <WithIcon icon={<Icon icon={Sparkles} size={compact ? 16 : 18} label="Putzplan" className="hb-chore-icon" />} text={label} />
+          ) : (
+            label
+          )}
           {detail && <span className="text-ink-muted"> · {detail}</span>}
         </span>
       </span>

@@ -1,5 +1,6 @@
 import type { PersonKey } from '../lib/members'
-import { shortenTitle } from '../modules/calendar/shorten'
+import { useRef } from 'react'
+import { shortenTitle, titleVariants, useFitLevel, VariantText, type TitleVariant } from '../modules/calendar/shorten'
 import { Icon } from './Icon'
 
 type Props = {
@@ -29,6 +30,11 @@ export function EventPill({ person, color, time, title, meta, live, soon, past, 
     color === 'blue' ? 'hb-person-a' : color === 'berry' ? 'hb-person-b' : color ? `hb-cal-${color}` : `hb-person-${person}`
   // Gekürzter Titel; das Icon steht oben neben der Uhrzeit, damit der Titel die ganze Breite hat
   const short = shortenTitle(title)
+  // Woche (schmale Spalten): kürzere Fassung, wenn ein Wort nicht in die Breite passt
+  const titleRef = useRef<HTMLSpanElement>(null)
+  const variants: TitleVariant[] = week ? titleVariants(title).filter((v) => v.text) : [short]
+  const fit = variants[useFitLevel(titleRef, variants.length, title)]
+  const icon = week && fit.icon ? fit.icon : short.icon
   const cls = ['hb-event', tone, live && 'is-live', past && 'is-past', compact && 'hb-event-compact', week && 'hb-event-week']
     .filter(Boolean)
     .join(' ')
@@ -46,11 +52,11 @@ export function EventPill({ person, color, time, title, meta, live, soon, past, 
             <span className="hb-event-time">{time}</span>
           )}
           {soon && <span className="hb-event-soon">{soon}</span>}
-          {short.icon && <Icon icon={short.icon} size={16} label={short.label} className="hb-event-kind" />}
+          {icon && <Icon icon={icon} size={16} label={short.label ?? fit.label} className="hb-event-kind" />}
           {meta && <span className="hb-event-meta">{meta}</span>}
         </span>
-        <span className="hb-event-title" title={title}>
-          {short.text}
+        <span ref={titleRef} className="hb-event-title" title={title}>
+          <VariantText v={{ text: fit.text, small: fit.small }} />
         </span>
       </span>
       {live && <span className="hb-event-progress" style={{ width: `${Math.round(live.progress * 100)}%` }} aria-hidden="true" />}

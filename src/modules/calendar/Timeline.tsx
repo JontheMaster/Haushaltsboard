@@ -1,10 +1,10 @@
 // Zeitplan: Stundenleiste, Termine als Blöcke nach Dauer, Ganztägiges oben, Linie für „jetzt“.
 // Alle Positionen in Prozent der Höhe – so füllt der Plan jede Kachel- oder Spaltenhöhe aus.
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
-import { CalendarClock, List, type LucideIcon } from 'lucide-react'
+import { CalendarClock, List } from 'lucide-react'
 import { Icon } from '../../components/Icon'
-import { EventTitle, kindOf, shortenTitle } from './shorten'
+import { titleVariants, useFitLevel, VariantText } from './shorten'
 import type { CalendarEvent } from './useCalendar'
 
 export type HourRange = { from: number; to: number }
@@ -117,9 +117,7 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx }: DayProp
       {(allDaySlots ?? allDay.length) > 0 && (
         <div className="flex flex-col gap-1" style={{ height: `${(allDaySlots ?? allDay.length) * ALLDAY_SLOT_PX - 4}px` }}>
           {allDay.map((e) => (
-            <div key={e.id} className={`hb-tl-allday ${tone(e)}`}>
-              <EventTitle title={e.title} size={14} />
-            </div>
+            <AllDay key={e.id} title={e.title} className={`hb-tl-allday ${tone(e)}`} />
           ))}
         </div>
       )}
@@ -213,56 +211,39 @@ export function ModeSwitch({
   )
 }
 
-type Variant = { text: string; icon?: LucideIcon; label?: string; time: boolean }
-
 /**
- * Termin-Block im Zeitplan, der nie mitten im Wort abschneidet. Er probiert der Reihe nach,
- * was ganz hineinpasst: Titel + Uhrzeit → nur Titel → Art mit Symbol („Arzt“) → weniger ganze Wörter → nur Symbol.
+ * Termin-Block im Zeitplan, der nie mitten im Wort abschneidet: erst Titel + Uhrzeit,
+ * dann nur Titel, dann die knapperen Fassungen aus titleVariants (z. B. nur „Arzt“).
  */
 function Block({ title, time, className, style }: { title: string; time: string; className: string; style: CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [level, setLevel] = useState(0)
-  const [size, setSize] = useState('')
-
-  const short = shortenTitle(title)
-  const kind = kindOf(title)
-  const words = short.text.split(' ').filter(Boolean)
-  const variants: Variant[] = [
-    { text: short.text, icon: short.icon, label: short.label, time: true },
-    { text: short.text, icon: short.icon, label: short.label, time: false },
-  ]
-  if (kind) variants.push({ text: kind.label, icon: kind.icon, label: kind.label, time: false })
-  else for (let n = words.length - 1; n >= 1; n--) variants.push({ text: words.slice(0, n).join(' '), time: false })
-  if (kind) variants.push({ text: '', icon: kind.icon, label: kind.label, time: false })
-  const v = variants[Math.min(level, variants.length - 1)]
-
-  // Neue Größe oder neuer Titel: wieder mit der ausführlichsten Fassung anfangen
-  useLayoutEffect(() => setLevel(0), [title, size])
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const ro = new ResizeObserver(() => setSize(`${el.clientWidth}x${el.clientHeight}`))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-  // Passt es nicht (zu hoch oder ein Wort zu breit), eine Stufe knapper
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (!el || level >= variants.length - 1) return
-    if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) setLevel((l) => l + 1)
-  })
-
+  const variants = titleVariants(title)
+  const level = useFitLevel(ref, variants.length + 1, title)
+  const v = variants[Math.max(level - 1, 0)]
   return (
     <div ref={ref} className={className} style={style} title={`${time} ${title}`} aria-label={`${time} ${title}`}>
       <span className="hb-tl-title" aria-hidden="true">
-        {v.icon && <Icon icon={v.icon} size={15} label={v.label} className="hb-event-icon" />}
-        {v.text}
+        <VariantText v={v} />
       </span>
-      {v.time && (
+      {level === 0 && (
         <span className="hb-tl-time" aria-hidden="true">
           {time}
         </span>
       )}
+    </div>
+  )
+}
+
+/** Ganztägiger Termin oben im Zeitplan: eine Zeile, knappere Fassung statt „…“ */
+function AllDay({ title, className }: { title: string; className: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const variants = titleVariants(title)
+  const v = variants[useFitLevel(ref, variants.length, title)]
+  return (
+    <div ref={ref} className={className} title={title} aria-label={title}>
+      <span aria-hidden="true">
+        <VariantText v={v} size={14} />
+      </span>
     </div>
   )
 }

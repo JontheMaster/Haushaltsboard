@@ -16,6 +16,7 @@ import { EventPill } from '../../components/EventPill'
 import { Icon } from '../../components/Icon'
 import { Sparkles } from 'lucide-react'
 import { ScrollList } from '../../components/ScrollList'
+import { WithIcon } from '../../components/WithIcon'
 import { useDevice, useMedia } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, dayLabel, mondayOf, useToday, weekdayShort } from '../../lib/time'
@@ -172,9 +173,16 @@ export function WeekView({ variant }: Props) {
     </>
   )
 
+  const maxTodos = Math.max(0, ...days.filter((d) => d >= today).map((d) => onDay(d).length))
+  const todoWeight = Math.min(2, Math.max(1, maxTodos / 2))
+
   // Wand: Raster mit Zeilen Kopf · Termine · „Todos“ · Todos, damit alle Todo-Bereiche auf einer Höhe beginnen
   const wallGrid = (
-    <div className={`hb-week-grid min-h-0 flex-1 ${plan ? 'is-plan' : ''}`}>
+    <div
+      className={`hb-week-grid min-h-0 flex-1 ${plan ? 'is-plan' : ''}`}
+      // Zeitplan: viele Todos an einem Tag → Todo-Zeile wächst (bis 2:3), der Plan wird dafür etwas enger
+      style={plan ? { gridTemplateRows: `auto minmax(0, 3fr) auto minmax(0, ${todoWeight}fr)` } : undefined}
+    >
       {plan && (
         <div style={{ gridColumn: 1, gridRow: 2 }} className="flex min-h-0 flex-col">
           <TimeLabels range={range} allDaySlots={allDaySlots} />
@@ -195,7 +203,7 @@ export function WeekView({ variant }: Props) {
             )}
           </DropZone>,
           <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: 4 }}>
-            <ScrollList fit dense className="hb-week-todos flex min-h-0 flex-1 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
+            <ScrollList fit dense className="hb-day-todos flex min-h-0 flex-1 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
           </DropZone>,
         ]
       })}
@@ -375,8 +383,11 @@ function CardBody({ todo, person, lifted }: { todo: Todo; person: PersonKey; lif
       className={`hb-card hb-person-${person} ${todo.done_at ? 'is-done' : ''} ${lifted ? 'is-lifted' : ''}`}
     >
       <span className="hb-card-title">
-        {todo.chore && <Icon icon={Sparkles} size={15} label="Putzplan" className="hb-chore-icon" />}
-        {todo.title}
+        {todo.chore ? (
+          <WithIcon icon={<Icon icon={Sparkles} size={15} label="Putzplan" className="hb-chore-icon" />} text={todo.title} />
+        ) : (
+          todo.title
+        )}
       </span>
     </div>
   )
