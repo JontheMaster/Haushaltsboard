@@ -55,7 +55,7 @@ export function WeekView({ variant }: Props) {
 
   const { people, personKey } = useMembers()
   const { openTodo } = useDevice()
-  const { todos, setDone, patchTodo, doneRank } = useTodos(today)
+  const { todos, setDone, patchTodo, doneRank, undoable } = useTodos(today)
   const { events: calendarEvents } = useCalendar()
   // geplante Essen stehen mit im Kalender
   const events = useWithMeals(calendarEvents)
@@ -74,7 +74,8 @@ export function WeekView({ variant }: Props) {
   const touch = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } })
   const sensors = useSensors(...(wall ? [pointer] : [mouse, touch]))
 
-  const list = todos ?? []
+  // Erledigte spart die Woche aus (Platz); gerade abgehakte bleiben 5 s sichtbar, damit man sich vertippen darf
+  const list = (todos ?? []).filter((t) => !t.done_at || undoable.has(t.id))
   const byDone = (a: Todo, b: Todo) => doneRank(a) - doneRank(b)
   const onDay = (day: string) => list.filter((t) => dueOn(t, day, today)).sort(byDone)
   // Putzplan-Aufgaben „irgendwann in der Woche“ gehören zu ihrer Woche; Todos „diese Woche“ immer
