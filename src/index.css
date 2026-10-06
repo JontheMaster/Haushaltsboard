@@ -1360,3 +1360,15 @@ button.hb-module-open:active {
   gap: 0;
   padding: var(--space-2) var(--space-1);
 }
+
+/* Erinnerung an einem Todo: Glocke und Uhrzeit, ruhig in Akzentfarbe */
+.hb-task-remind {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}

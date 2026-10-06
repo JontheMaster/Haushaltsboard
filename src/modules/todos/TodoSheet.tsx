@@ -1,11 +1,12 @@
-import { Plus, Save, Trash2 } from 'lucide-react'
+import { Bell, Plus, Save, Trash2, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Button } from '../../components/Button'
 import { Choice } from '../../components/Choice'
 import { Icon } from '../../components/Icon'
 import { Sheet } from '../../components/Sheet'
 import { useMembers } from '../../lib/members'
-import { addDays, useToday, weekdayShort } from '../../lib/time'
+import { addDays, berlinHHMM, useToday, weekdayShort } from '../../lib/time'
+import { useEnabledModules } from '../useModules'
 import { useDevice } from '../../lib/device'
 import { createTodo, deleteTodo, updateTodo, whenOf, type When } from './todoActions'
 import type { Todo } from './useTodos'
@@ -33,6 +34,9 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
     initialWhen.kind === 'day' && initialWhen.date !== today && initialWhen.date !== tomorrow ? initialWhen.date : addDays(today, 2),
   )
   const [assignee, setAssignee] = useState<string | null>(todo ? todo.assignee : me.is_board ? null : me.id)
+  // Erinnerung (nur mit festem Tag): Uhrzeit „HH:MM“ oder leer
+  const [time, setTime] = useState(todo?.remind_at ? berlinHHMM(todo.remind_at) : '')
+  const remindersOn = useEnabledModules()?.has('erinnerungen') ?? false
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,7 +55,9 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
     e.preventDefault()
     if (!title.trim()) return setError('Gib dem Todo einen Titel.')
     setBusy(true)
-    const input = { title, when, assignee }
+    const withTime = remindersOn && when.kind === 'day' && time ? time : null
+    // Erinnerungen aus: vorhandene Uhrzeit nicht anfassen
+    const input = { title, when, assignee, time: remindersOn ? withTime : undefined }
     const ok = todo ? await updateTodo(todo.id, input, todo) : await createTodo(input)
     setBusy(false)
     if (!ok) return setError('Speichern hat nicht geklappt. Prüf die Verbindung und probier es noch mal.')
@@ -67,7 +73,7 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
               ? 'Ohne Tag'
               : `Für ${weekdayShort(otherDate)} ${Number(otherDate.slice(8))}.`
     const who = assignee ? byId.get(assignee)?.name : 'Offen'
-    onSaved?.(`${whenText} ${todo ? 'gespeichert' : 'eingetragen'} · ${who}`)
+    onSaved?.(`${whenText}${withTime ? ` ${withTime}` : ''} ${todo ? 'gespeichert' : 'eingetragen'} · ${who}`)
     onClose()
   }
 
@@ -128,6 +134,30 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
             />
           )}
         </div>
+
+        {remindersOn && when.kind === 'day' && (
+          <div className="flex flex-col gap-2">
+            <span className="text-label text-ink">Erinnern um</span>
+            <div className="flex items-center gap-2">
+              <span className="relative flex-1">
+                <Icon icon={Bell} size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+                <input
+                  type="time"
+                  aria-label="Uhrzeit für die Erinnerung"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="h-7 w-full rounded-md border border-line bg-surface-sunken pl-[40px] pr-4 text-body text-ink focus-visible:focus-ring"
+                />
+              </span>
+              {time && (
+                <button type="button" className="hb-icon-btn" aria-label="Keine Erinnerung" onClick={() => setTime('')}>
+                  <Icon icon={X} size={20} />
+                </button>
+              )}
+            </div>
+            {!time && <span className="text-label text-ink-muted">Optional. Zur Uhrzeit kommt eine Mitteilung aufs Handy.</span>}
+          </div>
+        )}
 
         <Choice<string | null>
           label="Wer"

@@ -130,6 +130,12 @@ export type Database = {
         Update: { id?: number; night_from?: string; night_to?: string; visit_mode?: boolean }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: { auth: string; created_at: string; device: string | null; endpoint: string; id: string; member_id: string; p256dh: string }
+        Insert: { auth: string; device?: string | null; endpoint: string; member_id: string; p256dh: string }
+        Update: { auth?: string; device?: string | null; endpoint?: string; p256dh?: string }
+        Relationships: [Rel<'push_subscriptions_member_id_fkey', 'member_id', 'members'>]
+      }
       todos: {
         Row: {
           assignee: string | null
@@ -139,6 +145,8 @@ export type Database = {
           due_date: string | null
           id: string
           moved_since: string | null
+          reminded_at: string | null
+          remind_at: string | null
           this_week: boolean
           title: string
         }
@@ -150,6 +158,8 @@ export type Database = {
           due_date?: string | null
           id?: string
           moved_since?: string | null
+          reminded_at?: string | null
+          remind_at?: string | null
           this_week?: boolean
           title: string
         }

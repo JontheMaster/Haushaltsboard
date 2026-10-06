@@ -72,6 +72,18 @@ export function berlinMidnightISO(day: string): string {
   return new Date(guess - offset).toISOString()
 }
 
+/** ISO-Zeitpunkt → „HH:MM“ in Berlin */
+export function berlinHHMM(iso: string): string {
+  const { hh, mm } = berlinTime(new Date(iso))
+  return `${hh}:${mm}`
+}
+
+/** Uhrzeit „HH:MM“ an einem Berliner Tag als ISO-Zeitpunkt (für Erinnerungen) */
+export function berlinAtISO(day: string, hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number)
+  return new Date(Date.parse(berlinMidnightISO(day)) + (h * 60 + m) * 60000).toISOString()
+}
+
 /** Aktuelle Zeit, neu alle `everyMs` Millisekunden (auf die volle Sekunde ausgerichtet) */
 export function useNow(everyMs = 1000): Date {
   const [now, setNow] = useState(() => new Date())

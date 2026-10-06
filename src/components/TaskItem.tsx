@@ -1,4 +1,4 @@
-import { Sparkles, Undo2 } from 'lucide-react'
+import { Bell, Sparkles, Undo2 } from 'lucide-react'
 import type { PersonKey } from '../lib/members'
 import { Icon } from './Icon'
 import { WithIcon } from './WithIcon'
@@ -17,9 +17,11 @@ type Props = {
   onOpen?: () => void
   /** Aufgabe aus dem Putzplan: Symbol vor dem Text */
   chore?: boolean
+  /** Erinnerung um diese Uhrzeit („17:30“) */
+  remind?: string
 }
 
-export function TaskItem({ label, detail, done, person, meta, showUndo, compact, onToggle, onOpen, chore }: Props) {
+export function TaskItem({ label, detail, done, person, meta, showUndo, compact, onToggle, onOpen, chore, remind }: Props) {
   const classes = ['hb-task', done && 'is-done', person && person !== 'open' && `hb-person-${person}`, compact && 'hb-compact']
     .filter(Boolean)
     .join(' ')
@@ -57,6 +59,12 @@ export function TaskItem({ label, detail, done, person, meta, showUndo, compact,
           {detail && <span className="text-ink-muted"> · {detail}</span>}
         </span>
       </span>
+      {remind && !done && (
+        <span className="hb-task-remind" aria-label={`Erinnerung um ${remind}`}>
+          <Icon icon={Bell} size={14} />
+          {remind}
+        </span>
+      )}
       {meta && !done && <span className="hb-task-meta">{meta}</span>}
       {done && showUndo && (
         <button type="button" className="hb-undo" onClick={() => onToggle(false)}>

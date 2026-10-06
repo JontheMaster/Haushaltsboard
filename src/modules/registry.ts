@@ -1,4 +1,5 @@
-import { CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles } from 'lucide-react'
+import { Bell, CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles } from 'lucide-react'
+import { ReminderSettings } from './reminders/ReminderSettings'
 import { AlexaHelp } from './alexa/AlexaHelp'
 import { CalendarSettings } from './calendar/CalendarSettings'
 import { PutzplanPage } from './chores/Putzplan'
@@ -18,6 +19,7 @@ export const MODULES: ModuleDef[] = [
   { id: 'kalender', title: 'Kalender', description: 'Termine heute und morgen, Farben, Besuchsmodus', icon: CalendarDays, phase: 2, sizes: ['s', 'm', 'l'], Tile: CalendarTile, Settings: CalendarSettings },
   { id: 'todos', title: 'Todos', description: 'Aufgaben für heute, die Woche und ohne Tag', icon: ListChecks, phase: 1, sizes: ['s', 'm', 'l'], Tile: TodosTile },
   { id: 'putzplan', title: 'Putzplan', description: 'Wiederkehrende Aufgaben, laufen bei den Todos mit', icon: Sparkles, phase: 2, sizes: [], Settings: PutzplanPage },
+  { id: 'erinnerungen', title: 'Erinnerungen', description: 'Mitteilung aufs Handy, wenn ein Todo eine Uhrzeit hat', icon: Bell, phase: 5, sizes: [], Settings: ReminderSettings },
   { id: 'einkauf', title: 'Einkauf', description: 'Eure Bring!-Liste „Zuhause“', icon: ShoppingCart, phase: 1, sizes: ['s', 'm', 'l'], Tile: ShoppingTile },
   // Spotify: nur sichtbar, solange etwas läuft (Kopfzeile statt fester Kachel)
   { id: 'spotify', title: 'Läuft gerade', description: 'Was bei euch auf Spotify läuft', icon: Music, phase: 5, sizes: ['m'], Tile: NowPlayingTile, Header: NowPlayingHeader, Settings: SpotifyPage },

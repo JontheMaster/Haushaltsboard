@@ -1,15 +1,18 @@
 import { supabase } from '../../lib/supabase'
+import { berlinAtISO } from '../../lib/time'
 import { CHORE_PREFIX, isChoreId, type Todo } from './useTodos'
 
 /** Wann ein Todo dran ist: ein Tag, „diese Woche“ oder noch ohne Tag */
 export type When = { kind: 'day'; date: string } | { kind: 'week' } | { kind: 'none' }
 
-export type TodoInput = { title: string; when: When; assignee: string | null }
+/** `time`: Erinnerung „HH:MM“ (nur mit festem Tag) oder null; undefined = Erinnerung nicht anfassen */
+export type TodoInput = { title: string; when: When; assignee: string | null; time?: string | null }
 
-function whenFields(when: When) {
+function whenFields(when: When, time?: string | null) {
   return {
     due_date: when.kind === 'day' ? when.date : null,
     this_week: when.kind === 'week',
+    ...(time === undefined ? {} : { remind_at: when.kind === 'day' && time ? berlinAtISO(when.date, time) : null }),
   }
 }
 
@@ -25,12 +28,12 @@ export function whenOf(t: Todo): When {
 export async function createTodo(input: TodoInput): Promise<boolean> {
   const { error } = await supabase
     .from('todos')
-    .insert({ title: input.title.trim(), assignee: input.assignee, ...whenFields(input.when) })
+    .insert({ title: input.title.trim(), assignee: input.assignee, ...whenFields(input.when, input.time) })
   return !error
 }
 
 export async function updateTodo(id: string, input: TodoInput, before: Todo): Promise<boolean> {
-  const fields = whenFields(input.when)
+  const fields = whenFields(input.when, input.time)
   // Neu eingeplant → „seit …“-Hinweis zurücksetzen, die Rutsch-Regel beginnt von vorn
   const replanned = fields.due_date !== before.due_date || fields.this_week !== before.this_week
   const { error } = await supabase

@@ -6,7 +6,7 @@ import { SwipeToDelete } from '../../components/SwipeToDelete'
 import { TaskItem } from '../../components/TaskItem'
 import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
-import { addDays, mondayOf, useToday, weekdayShort } from '../../lib/time'
+import { addDays, berlinHHMM, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import { useFlip } from '../../lib/useFlip'
 import { dueOn, sinceLabel, unplannedNow, useTodos, type Todo } from './useTodos'
 
@@ -106,6 +106,7 @@ export function TodosDetail() {
                           onToggle={(d) => setDone(t.id, d)}
                           onOpen={openTodo && (() => openTodo(t.id))}
                           chore={!!t.chore}
+                          remind={t.remind_at ? berlinHHMM(t.remind_at) : undefined}
                         />
                       </div>
                       {!t.done_at && (

@@ -46,6 +46,8 @@ function fromChore(t: ChoreTask & { chore_rules: { title: string } | null }, tod
     done_at: t.done_at,
     done_by: t.done_by,
     created_at: t.occurs_on,
+    remind_at: null,
+    reminded_at: null,
     chore: { ruleId: t.rule_id, weekStart: t.week_start, raw },
   }
 }

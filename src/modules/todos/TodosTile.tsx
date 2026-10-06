@@ -10,7 +10,7 @@ import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
 import { useFlip } from '../../lib/useFlip'
-import { addDays, mondayOf, useToday, weekdayShort } from '../../lib/time'
+import { addDays, mondayOf, useToday, weekdayShort, berlinHHMM } from '../../lib/time'
 import type { TileProps } from '../types'
 import { dueOn, sinceLabel, unplannedNow, useTodos, type Todo } from './useTodos'
 
@@ -70,6 +70,7 @@ export function TodosTile({ size, delay }: TileProps) {
         onToggle={(done) => setDone(t.id, done)}
         onOpen={phone && openTodo ? () => openTodo(t.id) : undefined}
         chore={!!t.chore}
+        remind={t.remind_at ? berlinHHMM(t.remind_at) : undefined}
       />
     )
     // Löschen per Wischen nur am Handy; an der Wand wird nur abgehakt
