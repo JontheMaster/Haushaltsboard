@@ -4,7 +4,8 @@ import { Button } from './components/Button'
 import { Icon } from './components/Icon'
 import { useIsPhone } from './lib/device'
 import { MembersProvider, useLoadMembers } from './lib/members'
-import { SettingsProvider } from './lib/settings'
+import { SettingsProvider, useSettings } from './lib/settings'
+import { useIsNight } from './lib/idle'
 import { supabase } from './lib/supabase'
 import { useEveningTheme, useNightlyReload } from './lib/theme'
 import { useSession } from './lib/useSession'
@@ -40,7 +41,8 @@ function SignedIn({ session }: { session: Session }) {
 function Shell({ isBoard }: { isBoard: boolean }) {
   const weather = useWeather()
   const phone = useIsPhone()
-  useEveningTheme(weather)
+  const { settings } = useSettings()
+  useEveningTheme(weather, useIsNight(settings))
   useNightlyReload(isBoard)
   return phone ? <Phone weather={weather} /> : <Board weather={weather} />
 }

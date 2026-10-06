@@ -27,6 +27,39 @@ export function useEnabledModules(): Set<string> | null {
   return enabled
 }
 
+/** Einstellungen eines Moduls (modules.config), mit Standardwerten; live auf allen Geräten */
+export function useModuleConfig<T extends object>(id: string, defaults: T): T {
+  const [config, setConfig] = useState<T>(defaults)
+  useEffect(() => {
+    const load = () =>
+      supabase
+        .from('modules')
+        .select('config')
+        .eq('id', id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.config && typeof data.config === 'object') setConfig((c) => ({ ...c, ...(data.config as Partial<T>) }))
+        })
+    load()
+    const channel = supabase
+      .channel(`module-${id}-${crypto.randomUUID()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'modules', filter: `id=eq.${id}` }, load)
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [id])
+  return config
+}
+
+/** Einzelne Einstellung eines Moduls ändern (andere Werte in config bleiben erhalten) */
+export async function setModuleConfig(id: string, patch: Record<string, unknown>): Promise<boolean> {
+  const { data } = await supabase.from('modules').select('config').eq('id', id).maybeSingle()
+  const config = { ...((data?.config as Record<string, unknown>) ?? {}), ...patch }
+  const { error } = await supabase.from('modules').upsert({ id, config: config as never })
+  return !error
+}
+
 /** Layout: an der Wand gemeinsam („wand“), am Handy pro Person. Fehlt es, gilt das Standard-Layout. */
 export function useLayout(view: 'wall' | 'phone'): LayoutTile[] {
   const { me } = useMembers()

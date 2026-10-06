@@ -3,17 +3,17 @@ import type { Weather } from '../modules/clock-weather/weather'
 import { berlinDay, berlinStamp, berlinTime, useNow } from './time'
 
 /** Abend-Theme zwischen Sonnenuntergang und Sonnenaufgang (Open-Meteo liefert beides) */
-export function useEveningTheme(weather: Weather | null) {
+export function useEveningTheme(weather: Weather | null, forceDark = false) {
   const now = useNow(60_000)
   useEffect(() => {
-    if (!weather) return
+    if (!weather && !forceDark) return
     const stamp = berlinStamp(now)
-    const evening = stamp >= weather.sunset || stamp < weather.sunrise
+    const evening = forceDark || (!!weather && (stamp >= weather.sunset || stamp < weather.sunrise))
     document.documentElement.dataset.theme = evening ? 'dark' : 'light'
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--surface').trim())
-  }, [weather, now])
+  }, [weather, now, forceDark])
 }
 
 /** Einmal pro Nacht um 3 Uhr komplett neu laden: hält Speicher und Verbindungen frisch (nur Wand) */

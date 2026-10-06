@@ -89,6 +89,34 @@ export type Database = {
         Update: { config?: Json; enabled?: boolean; id?: string }
         Relationships: []
       }
+      photos: {
+        Row: {
+          id: string
+          path: string
+          thumb_path: string
+          width: number | null
+          height: number | null
+          uploaded_by: string | null
+          taken_at: string | null
+          created_at: string
+          show_in_visit: boolean
+          active: boolean
+        }
+        Insert: {
+          id?: string
+          path: string
+          thumb_path: string
+          width?: number | null
+          height?: number | null
+          uploaded_by?: string | null
+          taken_at?: string | null
+          created_at?: string
+          show_in_visit?: boolean
+          active?: boolean
+        }
+        Update: Partial<Database['public']['Tables']['photos']['Row']>
+        Relationships: [Rel<'photos_uploaded_by_fkey', 'uploaded_by', 'members'>]
+      }
       settings: {
         Row: { id: number; night_from: string; night_to: string; visit_mode: boolean }
         Insert: { id?: number; night_from?: string; night_to?: string; visit_mode?: boolean }

@@ -1,15 +1,19 @@
-import { LogOut } from 'lucide-react'
+import { Image, LogOut } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { VisitToggle } from '../components/VisitToggle'
 import { useMedia } from '../lib/device'
+import { useIdle, useIsNight } from '../lib/idle'
+import { useSettings } from '../lib/settings'
+import { useNow } from '../lib/time'
+import { NightScreen, Screensaver, SCREENSAVER_DEFAULTS } from '../modules/photos/Screensaver'
 import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
 import { ClockWeather } from '../modules/clock-weather/ClockWeather'
 import type { Weather } from '../modules/clock-weather/weather'
 import { MODULE_BY_ID } from '../modules/registry'
 import type { TileSize } from '../modules/types'
-import { useEnabledModules, useLayout } from '../modules/useModules'
+import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useModules'
 import { WeekView } from '../modules/week/WeekView'
 
 type View = 'heute' | 'woche'
@@ -37,6 +41,25 @@ export function Board({ weather }: { weather: Weather | null }) {
   const tiles = layout.filter((t) => enabled?.has(t.module))
   const narrow = useMedia('(max-width: 1023px)')
   const [view, setView] = useState<View>('heute')
+
+  // Nachtmodus (nur am Wand-Tablet) hat Vorrang; Antippen weckt für 2 Minuten
+  const { settings } = useSettings()
+  const now = useNow(30_000)
+  const night = useIsNight(settings) && me.is_board
+  const [wakeUntil, setWakeUntil] = useState(0)
+  const nightActive = night && now.getTime() > wakeUntil
+
+  // Bildschirmschoner: am Wand-Tablet von selbst nach x Minuten ohne Berührung, überall per Knopf
+  const saverConfig = useModuleConfig('bildschirmschoner', SCREENSAVER_DEFAULTS)
+  const saverEnabled = enabled?.has('bildschirmschoner') ?? false
+  const [idle, resetIdle] = useIdle(saverConfig.idle_minutes * 60_000, me.is_board && saverEnabled && !nightActive)
+  const [manualSaver, setManualSaver] = useState(false)
+  const saverOn = !nightActive && (manualSaver || idle)
+  const closeSaver = () => {
+    setManualSaver(false)
+    resetIdle()
+    setView('heute')
+  }
 
   useEffect(() => {
     if (view !== 'woche') return
@@ -67,6 +90,9 @@ export function Board({ weather }: { weather: Weather | null }) {
             </button>
           </div>
           <VisitToggle />
+          <button type="button" className="hb-choice" aria-label="Bildschirmschoner starten" title="Bildschirmschoner" onClick={() => setManualSaver(true)}>
+            <Icon icon={Image} size={20} />
+          </button>
           {!me.is_board && (
             <button type="button" className="hb-icon-btn" aria-label="Abmelden" onClick={() => supabase.auth.signOut()}>
               <Icon icon={LogOut} size={20} />
@@ -91,6 +117,8 @@ export function Board({ weather }: { weather: Weather | null }) {
           })}
         </main>
       )}
+      {saverOn && <Screensaver onClose={closeSaver} />}
+      {nightActive && <NightScreen onWake={() => setWakeUntil(Date.now() + 2 * 60_000)} />}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { CalendarRange, House, ListChecks, LogOut, Plus, ShoppingCart, type LucideIcon } from 'lucide-react'
+import { CalendarRange, House, Images, ListChecks, LogOut, Plus, ShoppingCart, type LucideIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Toast } from '../components/Toast'
@@ -13,6 +13,7 @@ import { ShoppingTile } from '../modules/shopping/ShoppingTile'
 import { deleteTodo, restoreTodo } from '../modules/todos/todoActions'
 import { TodoSheet } from '../modules/todos/TodoSheet'
 import { TodosDetail } from '../modules/todos/TodosDetail'
+import { PhotoLibrary } from '../modules/photos/PhotoLibrary'
 import { WeekView } from '../modules/week/WeekView'
 import type { Todo } from '../modules/todos/useTodos'
 import { useEnabledModules, useLayout } from '../modules/useModules'
@@ -39,11 +40,14 @@ function savedTab(): Tab {
 export function Phone({ weather }: { weather: Weather | null }) {
   const [tab, setTab] = useState<Tab>(savedTab)
   const [sheet, setSheet] = useState<{ todo?: Todo } | null>(null)
+  // Fotobibliothek als eigene Seite (über den Fotos-Knopf in der Kopfzeile)
+  const [photos, setPhotos] = useState(false)
   const [toast, setToast] = useState<{ id: number; message: string; action?: { label: string; run: () => void } } | null>(null)
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
   const hideToast = useCallback(() => setToast(null), [])
 
   const go = (t: Tab) => {
+    setPhotos(false)
     setTab(t)
     window.scrollTo({ top: 0 })
     try {
@@ -76,16 +80,22 @@ export function Phone({ weather }: { weather: Weather | null }) {
   return (
     <DeviceProvider value={{ device: 'phone', openTodo, removeTodo }}>
       <div className="min-h-dvh bg-surface pb-[calc(88px+env(safe-area-inset-bottom))]">
-        <PhoneHeader weather={weather} />
+        <PhoneHeader weather={weather} onPhotos={() => setPhotos(true)} />
 
         <main className="flex flex-col gap-4 px-4">
+          {photos ? (
+            <PhotoLibrary onBack={() => setPhotos(false)} />
+          ) : (
+            <>
           {tab === 'start' && <StartTab />}
           {tab === 'woche' && <WeekView variant="phone" />}
           {tab === 'todos' && <TodosDetail />}
           {tab === 'einkauf' && <ShoppingTile size="m" delay={0} />}
+            </>
+          )}
         </main>
 
-        {tab !== 'einkauf' && (
+        {tab !== 'einkauf' && !photos && (
           <button type="button" className="hb-fab" aria-label="Todo hinzufügen" onClick={() => setSheet({})}>
             <Icon icon={Plus} size={28} />
           </button>
@@ -113,7 +123,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
   )
 }
 
-function PhoneHeader({ weather }: { weather: Weather | null }) {
+function PhoneHeader({ weather, onPhotos }: { weather: Weather | null; onPhotos: () => void }) {
   const now = useNow(60_000)
   const { me } = useMembers()
   const w = weather && describe(weather.now.code, weather.now.isDay)
@@ -130,6 +140,9 @@ function PhoneHeader({ weather }: { weather: Weather | null }) {
         )}
       </div>
       <VisitToggle short />
+      <button type="button" className="hb-icon-btn" aria-label="Fotos für den Bildschirmschoner" onClick={onPhotos}>
+        <Icon icon={Images} size={20} />
+      </button>
       <button
         type="button"
         className="hb-icon-btn"
