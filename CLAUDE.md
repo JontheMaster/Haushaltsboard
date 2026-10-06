@@ -93,12 +93,17 @@ Tabellen: `members` (id = auth user, name, color, is_board), `calendars`, `todos
 - Zeitplan-Ansicht (`src/modules/calendar/Timeline.tsx`): Umschalter „Liste | Zeitplan“ in Termine-Kachel und Woche, Standard Liste, Wahl pro Gerät in localStorage. Woche ist getrennt: Termine oben, Todos unten.
 - Termintitel werden nur in der Anzeige gekürzt (`src/modules/calendar/shorten.tsx`): bekannte Arten als Lucide-Icon (Geburtstag, Livestream, Arzt, Training, Büro, Kirche, Treffen, Urlaub), Füllwörter und Uhrzeit am Anfang fallen weg. Keine Emoji (Entscheidung Jonathan: Icons statt Emoji).
 - Ideen, nur vorgemerkt (nicht eingeplant, stehen in der Doku unter „Funktionen und Ideen“): Termine verschieben (Google-Schreibzugriff), Date-Zufallsgenerator (ferne Zukunft).
-- Ideen, die Jonathan gut findet und umsetzen will (7.10.2026, Reihenfolge offen, jeweils erst nach Go):
-  - „Was koche ich?“-Würfel im Essensplan: zufälliges Rezept vorschlagen, bevorzugt lange nicht gekochte; ein Tipp = einplanen.
-  - Geburtstage mit Vorlauf: eine Woche vor einem Geburtstag im Kalender automatisch ein Todo „Geschenk besorgen“.
-  - Pflanzen gießen: Ableger des Putzplans mit eigenem Symbol (möglichst über den bestehenden Putzplan lösen).
-  - Pinnwand / Notizen: kurze Zettel an der Wand, die nach ein paar Tagen von selbst verschwinden; auch zum Sich-gegenseitig-Schreiben (Jonathan ↔ Leviona).
-  - Tracking allgemein: frei anlegbare Werte, die man regelmäßig einträgt (z. B. Stromzähler monatlich), das Board zeigt den Verlauf.
+- Ideen-Fahrplan (gesammelt 7.10.2026, Jonathan arbeitet die Liste von oben ab; jeder Punkt erst nach Go). Reihenfolge = Nutzen pro Aufwand:
+  1. „Was koche ich?“-Würfel im Essensplan: zufälliges Rezept, bevorzugt lange nicht gekochte; ein Tipp = einplanen. (klein)
+  2. Streit-Schlichter als Münzwurf (Kopf/Zahl, Entscheidung Jonathan): wer bringt den Müll raus / wäscht ab; an der Wand mit Animation, am Handy auch. (klein)
+  3. Pinnwand / Notizen: kurze Zettel an der Wand, verschwinden nach ein paar Tagen von selbst; auch zum Sich-gegenseitig-Schreiben (Jonathan ↔ Leviona, evtl. Push). (mittel)
+  4. Jubiläen: Zähler „seit X Tagen zusammen“, an runden Tagen (z. B. 1000 Tage), Monaten und Jahren als Hinweis an der Wand; dazu im Bildschirmschoner bevorzugt Fotos vom gleichen Tag früherer Jahre („Heute vor 2 Jahren“, `photos.taken_at`). Braucht das Zusammen-seit-Datum. (klein bis mittel)
+  5. Geburtstage mit Vorlauf: eine Woche vor einem Geburtstag im Kalender automatisch ein Todo „Geschenk besorgen“ (serverseitig, nicht doppelt anlegen). (mittel)
+  6. Haushalts-Punkte: jede erledigte Aufgabe gibt Punkte, im Wochenrückblick Sieger mit Pokal; Verlierer sucht z. B. den Film aus oder kocht. Baut auf `week_recap` auf. (klein bis mittel)
+  7. Pflanzen gießen: Ableger des Putzplans mit eigenem Symbol, möglichst über den bestehenden Putzplan (z. B. Symbol pro Regel). (klein)
+  8. Tages-Frage für zwei: jeden Tag eine Frage an der Wand, beide antworten am Handy, Antworten erst sichtbar, wenn beide geantwortet haben. (mittel)
+  9. Tracking allgemein: frei anlegbare Werte, die man regelmäßig einträgt (z. B. Stromzähler monatlich), Board zeigt den Verlauf. (groß)
+  Später / zurückgestellt: Countdown `#countdown`, Date-Zufallsgenerator, Termine verschieben (Google-Schreibzugriff), Handy-Widget, Müllabfuhr-Kalender (vorgeschlagen, noch nicht gewählt).
 - Vorgezogen und fertig: Bildschirmschoner mit Fotobibliothek (eigentlich Phase 6) und Nachtmodus. Tabelle `photos`, privater Bucket `photos` (full/ ca. 1920 px, thumb/ ca. 400 px, im Browser verkleinert), Modul `bildschirmschoner` mit config `idle_minutes` (Standard 5) und `interval_seconds` (Standard 60), einstellbar am Handy auf der Fotos-Seite. Auto-Start und Nachtmodus nur am Board-Konto (`is_board`), manueller Start per Knopf überall an der Wand. Nachtmodus nach `settings.night_from/to`, Antippen weckt 2 Minuten.
 - Laufender Termin: „Jetzt · bis …“ mit pulsierendem Punkt und Fortschrittsbalken, nächster Termin „in 40 Min“ (`src/modules/calendar/live.ts`).
 - Phase 2, Teil 3 erledigt: Putzplan. Regeln am Handy (Todos-Seite → „Putzplan bearbeiten“, `src/modules/chores/Putzplan.tsx`): Rhythmus täglich/wöchentlich/alle 2 Wochen/monatlich/bestimmte Tage, Wer fest/abwechselnd/offen, Wann „Fester Tag“ oder „Irgendwann in der Woche“ (`chore_rules.placement`). `private.generate_chores()` erzeugt `chore_tasks` für 14 Tage (Trigger bei Regeländerung, Cron `generate-chores` 23:35 UTC). Putzaufgaben laufen in `useTodos` mit (id `chore:…`, Feld `chore`), Symbol Sparkles, Antippen am Handy öffnet die Regel.
