@@ -1,10 +1,10 @@
 // Zeitplan: Stundenleiste, Termine als Blöcke nach Dauer, Ganztägiges oben, Linie für „jetzt“.
 // Alle Positionen in Prozent der Höhe – so füllt der Plan jede Kachel- oder Spaltenhöhe aus.
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
-import { CalendarClock, List } from 'lucide-react'
+import { CalendarClock, List, type LucideIcon } from 'lucide-react'
 import { Icon } from '../../components/Icon'
-import { EventTitle } from './shorten'
+import { EventTitle, kindOf, shortenTitle } from './shorten'
 import type { CalendarEvent } from './useCalendar'
 
 export type HourRange = { from: number; to: number }
@@ -135,28 +135,19 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx }: DayProp
           const bottom = Math.min(100, pct(p.end))
           const past = p.e.end <= now.toISOString()
           const live = p.e.start <= now.toISOString() && !past
-          const short = p.end - p.start < 45
           return (
-            <div
+            <Block
               key={p.e.id}
-              className={`hb-tl-event ${tone(p.e)} ${past ? 'is-past' : ''} ${live ? 'is-live' : ''} ${short ? 'is-short' : ''}`}
+              title={p.e.title}
+              time={`${hhmm(p.start)}–${hhmm(p.end)}`}
+              className={`hb-tl-event ${tone(p.e)} ${past ? 'is-past' : ''} ${live ? 'is-live' : ''} ${p.end - p.start < 45 ? 'is-short' : ''}`}
               style={{
                 top: `${top}%`,
                 height: `${Math.max(bottom - top, 2)}%`,
                 left: `calc(${(p.lane / p.lanes) * 100}% + 2px)`,
                 width: `calc(${100 / p.lanes}% - 4px)`,
               }}
-              title={`${hhmm(p.start)}–${hhmm(p.end)} ${p.e.title}`}
-            >
-              <span className="hb-tl-title">
-                <EventTitle title={p.e.title} size={15} />
-              </span>
-              {!short && (
-                <span className="hb-tl-time">
-                  {hhmm(p.start)}–{hhmm(p.end)}
-                </span>
-              )}
-            </div>
+            />
           )
         })}
         {nowMin !== null && nowMin >= range.from * 60 && nowMin <= range.to * 60 && (
@@ -218,6 +209,60 @@ export function ModeSwitch({
       >
         {compact ? <Icon icon={CalendarClock} size={18} /> : 'Zeitplan'}
       </button>
+    </div>
+  )
+}
+
+type Variant = { text: string; icon?: LucideIcon; label?: string; time: boolean }
+
+/**
+ * Termin-Block im Zeitplan, der nie mitten im Wort abschneidet. Er probiert der Reihe nach,
+ * was ganz hineinpasst: Titel + Uhrzeit → nur Titel → Art mit Symbol („Arzt“) → weniger ganze Wörter → nur Symbol.
+ */
+function Block({ title, time, className, style }: { title: string; time: string; className: string; style: CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [level, setLevel] = useState(0)
+  const [size, setSize] = useState('')
+
+  const short = shortenTitle(title)
+  const kind = kindOf(title)
+  const words = short.text.split(' ').filter(Boolean)
+  const variants: Variant[] = [
+    { text: short.text, icon: short.icon, label: short.label, time: true },
+    { text: short.text, icon: short.icon, label: short.label, time: false },
+  ]
+  if (kind) variants.push({ text: kind.label, icon: kind.icon, label: kind.label, time: false })
+  else for (let n = words.length - 1; n >= 1; n--) variants.push({ text: words.slice(0, n).join(' '), time: false })
+  if (kind) variants.push({ text: '', icon: kind.icon, label: kind.label, time: false })
+  const v = variants[Math.min(level, variants.length - 1)]
+
+  // Neue Größe oder neuer Titel: wieder mit der ausführlichsten Fassung anfangen
+  useLayoutEffect(() => setLevel(0), [title, size])
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setSize(`${el.clientWidth}x${el.clientHeight}`))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  // Passt es nicht (zu hoch oder ein Wort zu breit), eine Stufe knapper
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || level >= variants.length - 1) return
+    if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) setLevel((l) => l + 1)
+  })
+
+  return (
+    <div ref={ref} className={className} style={style} title={`${time} ${title}`} aria-label={`${time} ${title}`}>
+      <span className="hb-tl-title" aria-hidden="true">
+        {v.icon && <Icon icon={v.icon} size={15} label={v.label} className="hb-event-icon" />}
+        {v.text}
+      </span>
+      {v.time && (
+        <span className="hb-tl-time" aria-hidden="true">
+          {time}
+        </span>
+      )}
     </div>
   )
 }

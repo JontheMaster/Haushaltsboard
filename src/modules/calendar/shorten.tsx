@@ -17,7 +17,7 @@ type Rule = {
   /** erkennt die Art des Termins */
   match: RegExp
   icon: LucideIcon
-  /** Wort für Screenreader */
+  /** Wort für Screenreader und als Kurzform, wenn der Titel nicht passt (z. B. „Arzt“) */
   label: string
   /** ganze Wörter, die aus dem Titel entfallen (samt Trennern daneben) */
   strip: string[]
@@ -27,7 +27,7 @@ type Rule = {
 const RULES: Rule[] = [
   { match: /geburtstag|\bgeb\.|\bbday\b/i, icon: Cake, label: 'Geburtstag', strip: ['Geburtstag', 'Geb.', 'Bday'] },
   { match: /livestream/i, icon: Video, label: 'Livestream', strip: ['Livestream'] },
-  { match: /^termin\b|arzt|ärztin|praxis|\bmvz\b|radiolog|zahnarzt/i, icon: Stethoscope, label: 'Arzttermin', strip: ['Termin', 'MVZ'] },
+  { match: /^termin\b|arzt|ärztin|praxis|\bmvz\b|radiolog|zahnarzt/i, icon: Stethoscope, label: 'Arzt', strip: ['Termin', 'MVZ'] },
   { match: /training/i, icon: Dumbbell, label: 'Training', strip: ['Training'] },
   { match: /büro|office/i, icon: Briefcase, label: 'Arbeit', strip: ['Büro', 'Office'] },
   { match: /gottesdienst|synode|andacht/i, icon: Church, label: 'Kirche', strip: ['Gottesdienst', 'Andacht'] },
@@ -49,6 +49,12 @@ function removeWord(text: string, word: string): string {
   const w = escapeRegex(word)
   const re = new RegExp(`(^|\\s)(${SEP}\\s*)?${w}(?=$|\\s|[?!.,]|${SEP})(\\s*${SEP})?`, 'gi')
   return text.replace(re, ' ')
+}
+
+/** Art des Termins als Kurzform mit Symbol (für sehr kleine Blöcke), sonst undefined */
+export function kindOf(title: string): { icon: LucideIcon; label: string } | undefined {
+  const rule = RULES.find((r) => r.match.test(title))
+  return rule && { icon: rule.icon, label: rule.label }
 }
 
 /** Kürzt einen Titel; ohne passende Regel bleibt er (bis auf Firmenzusätze) wie er ist */

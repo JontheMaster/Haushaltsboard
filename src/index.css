@@ -345,22 +345,21 @@
 .hb-tl-event.is-past {
   opacity: 0.55;
 }
+/* Titel nie per „…“ kürzen und nie mitten im Wort umbrechen (außer echter Silbentrennung);
+   passt er nicht, wählt der Block selbst eine knappere Fassung */
 .hb-tl-title {
   font-size: 15px;
   line-height: 19px;
   font-weight: 650;
   color: var(--ink);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
+  word-break: normal;
   hyphens: auto;
 }
+.hb-tl-event.is-short {
+  padding-block: 2px;
+}
 .hb-tl-event.is-short .hb-tl-title {
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
   font-size: 14px;
 }
 .hb-tl-time {
