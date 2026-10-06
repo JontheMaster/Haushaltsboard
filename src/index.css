@@ -170,9 +170,31 @@
   box-shadow: var(--shadow-tile);
   transition: background-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
-.hb-week-unplanned .hb-drop {
+.hb-drop-sunken {
   background: var(--surface-sunken);
   box-shadow: none;
+}
+/* Termin-Bereich an der Wand: keine eigene Fläche, nur beim Ziehen sichtbar */
+.hb-drop-plain {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+/* Wand: Zeilen Kopf · Termine · „Todos“ · Todos über alle Tage, Ungeplant rechts über die ganze Höhe */
+.hb-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(0, 1.2fr);
+  grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--space-2) var(--space-3);
+}
+/* Handy: Todos pro Tag abgesetzt unter den Terminen */
+.hb-week-todos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
 }
 .hb-drop.is-over {
   background: var(--accent-soft);
@@ -181,11 +203,6 @@
 .hb-drop.is-disabled {
   background: transparent;
   box-shadow: none;
-}
-.hb-week-unplanned {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 /* Karte in der Woche: Rand links in der Personenfarbe */
 .hb-card {

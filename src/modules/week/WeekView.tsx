@@ -11,7 +11,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EventPill } from '../../components/EventPill'
 import { useDevice } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
@@ -24,8 +24,9 @@ import { useTodos, type Todo } from '../todos/useTodos'
 type Zone = { kind: 'day'; day: string } | { kind: 'week' } | { kind: 'none' }
 
 const zoneId = (z: Zone) => (z.kind === 'day' ? `day:${z.day}` : z.kind)
+// Tagesspalten haben zwei Ablagen (Termin- und Todo-Bereich), beide bedeuten „auf diesen Tag“
 const zoneOf = (id: string): Zone =>
-  id.startsWith('day:') ? { kind: 'day', day: id.slice(4) } : id === 'week' ? { kind: 'week' } : { kind: 'none' }
+  id.startsWith('day:') ? { kind: 'day', day: id.slice(4, 14) } : id === 'week' ? { kind: 'week' } : { kind: 'none' }
 
 const LONG_PRESS_MS = 550
 
@@ -99,50 +100,86 @@ export function WeekView({ variant }: Props) {
     />
   )
 
-  const dayColumn = (day: string) => {
+  const dayHeader = (day: string) => (
+    <header className={`hb-week-day ${day === today ? 'is-today' : ''} ${day < today ? 'is-past' : ''}`}>
+      {wall ? dayLabel(day) : `${weekdayShort(day)} ${Number(day.slice(8))}.${Number(day.slice(5, 7))}.`}
+      {day === today && <span className="sr-only"> (heute)</span>}
+    </header>
+  )
+
+  const eventList = (day: string) =>
+    (events ? eventsOnDay(events, day) : []).map((e) => (
+      <EventPill
+        key={e.id}
+        person={e.person === 'person-a' ? 'a' : e.person === 'person-b' ? 'b' : 'open'}
+        color={e.color}
+        time={timeLabel(e, day)}
+        title={e.title}
+        week
+        past={!e.allDay && e.end <= new Date().toISOString()}
+      />
+    ))
+
+  // Handy: ein Block pro Tag – oben Termine, darunter abgesetzt die Todos
+  const phoneDay = (day: string) => {
     const past = day < today
-    const dayEvents = events ? eventsOnDay(events, day) : []
     const dayTodos = past ? [] : onDay(day)
     return (
-      <DropZone key={day} zone={{ kind: 'day', day }} disabled={past} className={wall ? 'min-h-0' : ''}>
-        <header className={`hb-week-day ${day === today ? 'is-today' : ''} ${past ? 'is-past' : ''}`}>
-          {wall ? dayLabel(day) : `${weekdayShort(day)} ${Number(day.slice(8))}.${Number(day.slice(5, 7))}.`}
-          {day === today && <span className="sr-only"> (heute)</span>}
-        </header>
-        <div className={`flex flex-col gap-2 ${wall ? 'min-h-0 flex-1 overflow-y-auto hb-scroll-quiet' : ''}`}>
-          {dayEvents.map((e) => (
-            <EventPill
-              key={e.id}
-              person={e.person === 'person-a' ? 'a' : e.person === 'person-b' ? 'b' : 'open'}
-              color={e.color}
-              time={timeLabel(e, day)}
-              title={e.title}
-              week
-              past={!e.allDay && e.end <= new Date().toISOString()}
-            />
-          ))}
-          {dayTodos.map(card)}
-          {!past && dayEvents.length === 0 && dayTodos.length === 0 && (
-            <p className="px-1 text-label text-ink-muted">{wall ? 'Frei' : 'Frei. Karte hierher ziehen.'}</p>
-          )}
-        </div>
+      <DropZone key={day} zone={{ kind: 'day', day }} disabled={past}>
+        {dayHeader(day)}
+        {eventList(day)}
+        {!past && (
+          <div className="hb-week-todos">
+            {dayTodos.length ? dayTodos.map(card) : <p className="px-1 text-label text-ink-muted">Keine Todos. Karte hierher ziehen.</p>}
+          </div>
+        )}
       </DropZone>
     )
   }
 
-  const unplanned = (
-    <div className={`hb-week-unplanned ${wall ? 'min-h-0' : ''}`}>
-      <header className="hb-week-day">Ungeplant</header>
-      <div className={`flex flex-col gap-3 ${wall ? 'min-h-0 flex-1 overflow-y-auto hb-scroll-quiet' : ''}`}>
-        <DropZone zone={{ kind: 'week' }} label="Diese Woche">
-          {thisWeek.length ? thisWeek.map(card) : <p className="px-1 text-label text-ink-muted">Hierher ziehen</p>}
-        </DropZone>
-        <DropZone zone={{ kind: 'none' }} label="Ohne Tag">
-          {noDay.length ? noDay.map(card) : <p className="px-1 text-label text-ink-muted">Hierher ziehen</p>}
-        </DropZone>
+  const unplannedZones = (
+    <>
+      <DropZone zone={{ kind: 'week' }} label="Diese Woche" sunken>
+        {thisWeek.length ? thisWeek.map(card) : <p className="px-1 text-label text-ink-muted">Hierher ziehen</p>}
+      </DropZone>
+      <DropZone zone={{ kind: 'none' }} label="Ohne Tag" sunken>
+        {noDay.length ? noDay.map(card) : <p className="px-1 text-label text-ink-muted">Hierher ziehen</p>}
+      </DropZone>
+    </>
+  )
+
+  // Wand: Raster mit Zeilen Kopf · Termine · „Todos“ · Todos, damit alle Todo-Bereiche auf einer Höhe beginnen
+  const wallGrid = (
+    <div className="hb-week-grid min-h-0 flex-1">
+      {days.map((day, i) => {
+        const past = day < today
+        const col = i + 1
+        return [
+          <div key={`h${day}`} style={{ gridColumn: col, gridRow: 1 }}>
+            {dayHeader(day)}
+          </div>,
+          <DropZone key={`e${day}`} zone={{ kind: 'day', day }} idSuffix=":t" disabled={past} plain style={{ gridColumn: col, gridRow: 2 }}>
+            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto hb-scroll-quiet">{eventList(day)}</div>
+          </DropZone>,
+          <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: 4 }}>
+            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto hb-scroll-quiet">
+              {past ? null : onDay(day).map(card)}
+            </div>
+          </DropZone>,
+        ]
+      })}
+      <h3 className="px-1 text-label text-ink-muted" style={{ gridColumn: '1 / 8', gridRow: 3 }}>
+        Todos
+      </h3>
+      <header className="hb-week-day" style={{ gridColumn: 8, gridRow: 1 }}>
+        Ungeplant
+      </header>
+      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto hb-scroll-quiet" style={{ gridColumn: 8, gridRow: '2 / 5' }}>
+        {unplannedZones}
       </div>
     </div>
   )
+
 
   const sunday = addDays(monday, 6)
   const range = `${Number(monday.slice(8))}.${Number(monday.slice(5, 7))}. – ${Number(sunday.slice(8))}.${Number(sunday.slice(5, 7))}.`
@@ -163,14 +200,14 @@ export function WeekView({ variant }: Props) {
         </div>
 
         {wall ? (
-          <div className="grid min-h-0 flex-1 grid-cols-[repeat(7,minmax(0,1fr))_minmax(0,1.2fr)] gap-3">
-            {days.map(dayColumn)}
-            {unplanned}
-          </div>
+          wallGrid
         ) : (
           <div className="flex flex-col gap-4">
-            {unplanned}
-            {days.filter((d) => d >= today || offset > 0).map(dayColumn)}
+            <div className="flex flex-col gap-2">
+              <header className="hb-week-day">Ungeplant</header>
+              {unplannedZones}
+            </div>
+            {days.filter((d) => d >= today || offset > 0).map(phoneDay)}
           </div>
         )}
       </div>
@@ -196,24 +233,32 @@ function timeLabel(e: CalendarEvent, day: string): string {
 
 function DropZone({
   zone,
+  idSuffix = '',
   label,
   disabled,
-  className = '',
+  plain,
+  sunken,
+  style,
   children,
 }: {
   zone: Zone
+  /** Zweite Ablage für denselben Tag (Termin-Bereich an der Wand) */
+  idSuffix?: string
   label?: string
   disabled?: boolean
-  className?: string
+  /** ohne eigene Fläche (Termin-Bereich) */
+  plain?: boolean
+  /** vertieft (Ungeplant) */
+  sunken?: boolean
+  style?: CSSProperties
   children: ReactNode
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: zoneId(zone), disabled })
+  const { setNodeRef, isOver } = useDroppable({ id: zoneId(zone) + idSuffix, disabled })
+  const cls = ['hb-drop flex min-h-0 flex-col gap-2', isOver && 'is-over', disabled && 'is-disabled', plain && 'hb-drop-plain', sunken && 'hb-drop-sunken']
+    .filter(Boolean)
+    .join(' ')
   return (
-    <section
-      ref={setNodeRef}
-      aria-label={label}
-      className={`hb-drop flex flex-col gap-2 ${isOver ? 'is-over' : ''} ${disabled ? 'is-disabled' : ''} ${className}`}
-    >
+    <section ref={setNodeRef} aria-label={label} className={cls} style={style}>
       {label && <h3 className="px-1 text-label text-ink-muted">{label}</h3>}
       {children}
     </section>
