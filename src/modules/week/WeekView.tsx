@@ -25,6 +25,7 @@ import { liveInfo } from '../calendar/live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from '../calendar/Timeline'
 import { useCalendar, type CalendarEvent } from '../calendar/useCalendar'
 import { dueOn, useTodos, type Todo } from '../todos/useTodos'
+import { useWithMeals } from '../meals/mealStore'
 
 // Ablagen: ein Tag, „Diese Woche“ oder „Ohne Tag“
 type Zone = { kind: 'day'; day: string } | { kind: 'week' } | { kind: 'none' }
@@ -55,7 +56,9 @@ export function WeekView({ variant }: Props) {
   const { people, personKey } = useMembers()
   const { openTodo } = useDevice()
   const { todos, setDone, patchTodo, doneRank } = useTodos(today)
-  const { events } = useCalendar()
+  const { events: calendarEvents } = useCalendar()
+  // geplante Essen stehen mit im Kalender
+  const events = useWithMeals(calendarEvents)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [mode, setMode] = useCalendarMode(`week-${variant}`)
   const plan = mode === 'plan'

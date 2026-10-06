@@ -1,4 +1,6 @@
-import { CalendarRange, House, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, type LucideIcon } from 'lucide-react'
+import { CalendarRange, House, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { CookMode } from '../modules/meals/CookMode'
+import { MealsTab } from '../modules/meals/MealsTab'
 import { Sheet } from '../components/Sheet'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
 import { useCallback, useState } from 'react'
@@ -22,19 +24,22 @@ import { Button } from '../components/Button'
 import { AllModules } from './AllModules'
 import { useEnabledModules, useLayout } from '../modules/useModules'
 
-type Tab = 'start' | 'woche' | 'todos' | 'einkauf'
+type Tab = 'start' | 'woche' | 'todos' | 'einkauf' | 'essen'
 
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'start', label: 'Start', icon: House },
   { id: 'woche', label: 'Woche', icon: CalendarRange },
   { id: 'todos', label: 'Todos', icon: ListChecks },
   { id: 'einkauf', label: 'Einkauf', icon: ShoppingCart },
+  { id: 'essen', label: 'Essen', icon: UtensilsCrossed },
 ]
+// Reiter, die zu einem abschaltbaren Modul gehören
+const TAB_MODULE: Partial<Record<Tab, string>> = { todos: 'todos', einkauf: 'einkauf', essen: 'essensplan' }
 
 function savedTab(): Tab {
   try {
     const t = localStorage.getItem('hb-tab')
-    return t === 'woche' || t === 'todos' || t === 'einkauf' ? t : 'start'
+    return t === 'woche' || t === 'todos' || t === 'einkauf' || t === 'essen' ? t : 'start'
   } catch {
     return 'start'
   }
@@ -59,7 +64,11 @@ export function Phone({ weather }: { weather: Weather | null }) {
 
   // Ausgeschaltete Module verlieren ihren Reiter
   const enabled = useEnabledModules()
-  const tabs = TABS.filter((t) => (t.id === 'todos' || t.id === 'einkauf' ? enabled?.has(t.id) !== false : true))
+  const tabs = TABS.filter((t) => {
+    const mod = TAB_MODULE[t.id]
+    // Essensplan ist neu: Reiter erst, wenn die Module geladen sind und es an ist
+    return !mod || (mod === 'essensplan' ? enabled?.has(mod) === true : enabled?.has(mod) !== false)
+  })
   const tab: Tab = tabs.some((t) => t.id === savedOrChosen) ? savedOrChosen : 'start'
   const go = (t: Tab) => {
     setPage(null)
@@ -128,11 +137,12 @@ export function Phone({ weather }: { weather: Weather | null }) {
             </>
           )}
           {tab === 'einkauf' && <ShoppingTile size="m" delay={0} />}
+          {tab === 'essen' && <MealsTab showToast={showToast} />}
             </>
           )}
         </main>
 
-        {tab !== 'einkauf' && !page && enabled?.has('todos') !== false && (
+        {tab !== 'einkauf' && tab !== 'essen' && !page && enabled?.has('todos') !== false && (
           <button type="button" className="hb-fab" aria-label="Todo hinzufügen" onClick={() => setSheet({})}>
             <Icon icon={Plus} size={28} />
           </button>
@@ -155,6 +165,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
 
         {sheet && <TodoSheet todo={sheet.todo} onClose={() => setSheet(null)} onSaved={showToast} />}
         {toast && <Toast key={toast.id} message={toast.message} action={toast.action} onDone={hideToast} />}
+        <CookMode />
       </div>
     </DeviceProvider>
   )

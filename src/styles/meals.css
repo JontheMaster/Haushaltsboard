@@ -1,0 +1,610 @@
+/* ───────── Essensplan: Rezepte, Einplanen, Kochmodus, Wand-Planer ───────── */
+
+/* Geplante Essen im Kalender: Aprikose (accent), in der Liste mit Besteck-Symbol */
+.hb-event.hb-cal-meal {
+  --ev-bar: var(--accent);
+  background: var(--accent-soft);
+}
+.hb-event.hb-cal-meal::before {
+  background: var(--accent);
+}
+.hb-cal-meal .hb-event-time,
+.hb-cal-meal .hb-event-kind {
+  color: var(--accent);
+}
+.hb-tl-event.hb-cal-meal,
+.hb-tl-allday.hb-cal-meal {
+  --tl-soft: var(--accent-soft);
+  --tl-bar: var(--accent);
+  --tl-ink: var(--accent);
+}
+.is-tappable {
+  cursor: pointer;
+}
+.is-tappable:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+
+/* Rezeptbild: fester Rahmen, Platzhalter mit Besteck */
+.hb-recipe-img {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 104px;
+  height: 104px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+.hb-recipe-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hb-recipe-img-sm {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+}
+.hb-recipe-hero {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-lg);
+}
+.hb-recipe-pick {
+  border: 1px dashed var(--line);
+  cursor: pointer;
+  padding: 0;
+}
+.hb-recipe-pick:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-recipe-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 650;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* Rezeptkarte am Handy */
+.hb-recipe-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+}
+.hb-recipe-card-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+.hb-recipe-card-main:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-recipe-plan {
+  width: 44px;
+  height: 44px;
+  align-self: center;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.hb-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Suche und Filter */
+.hb-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 48px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+.hb-search:focus-within {
+  box-shadow: var(--focus-ring);
+}
+.hb-search input {
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  border: 0;
+  background: none;
+  outline: none;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+.hb-search input::placeholder {
+  color: var(--ink-muted);
+}
+.hb-chip-row {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: calc(var(--space-4) * -1);
+  padding: 2px var(--space-4);
+}
+.hb-chip-row::-webkit-scrollbar {
+  display: none;
+}
+.hb-chip-row .hb-choice {
+  flex: none;
+}
+.hb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+  text-align: center;
+}
+
+/* Portionen − 2 + */
+.hb-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 44px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+}
+.hb-stepper .hb-icon-btn {
+  width: 36px;
+  height: 36px;
+  color: var(--ink);
+}
+.hb-stepper .hb-icon-btn:disabled {
+  opacity: 0.35;
+}
+.hb-stepper-value {
+  min-width: 96px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Zutaten und Schritte */
+.hb-ingredients {
+  display: flex;
+  flex-direction: column;
+}
+.hb-ingredients li {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ink);
+}
+.hb-ingredients li:last-child {
+  border-bottom: 0;
+}
+.hb-ingredient-qty {
+  flex: none;
+  width: 88px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.hb-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.hb-steps li {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ink);
+}
+.hb-step-num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Einstellungen: entfernbare Pillen */
+.hb-chip-removable {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 40px;
+  padding: 0 var(--space-1) 0 var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.hb-chip-removable button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+/* Abhak-Zeile (Einkaufsfrage, Zutaten beim Kochen) */
+.hb-pick {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.hb-pick:active {
+  background: var(--surface-sunken);
+}
+.hb-pick:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-pick-box {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--line);
+  color: var(--on-accent);
+  transition: background-color var(--dur-base) var(--ease-spring), border-color var(--dur-base) var(--ease-out);
+}
+.hb-pick.is-on .hb-pick-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+/* beim Kochen: bereitgelegt = erledigt (grün, durchgestrichen) */
+.hb-pick.is-done .hb-pick-box {
+  background: var(--success-fill);
+  border-color: var(--success-fill);
+  color: #ffffff;
+}
+.hb-pick.is-done > span:last-child {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+}
+/* im aktuellen Schritt gebraucht */
+.hb-pick.is-used:not(.is-done) {
+  background: var(--highlight);
+  color: var(--highlight-ink);
+}
+.hb-time-input {
+  width: 128px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────── Kochmodus ───────── */
+.hb-cook {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+  background: var(--surface);
+  animation: hb-fade-in var(--dur-base) var(--ease-out) both;
+  overflow: hidden;
+}
+@media (min-width: 900px) {
+  .hb-cook {
+    padding: var(--space-6);
+    gap: var(--space-5);
+  }
+}
+.hb-cook-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.hb-cook-head > .hb-icon-btn {
+  width: 48px;
+  height: 48px;
+}
+.hb-cook-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+.hb-cook-body.is-wide {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 2fr;
+  gap: var(--space-5);
+  overflow: hidden;
+}
+.hb-cook-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  overflow-y: auto;
+}
+.hb-cook-ingredients {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hb-cook-ingredients .hb-pick {
+  font-size: 18px;
+  line-height: 26px;
+}
+.hb-cook-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  flex: 1;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  overflow-y: auto;
+}
+.hb-cook-text {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  line-height: 34px;
+  font-weight: 500;
+  color: var(--ink);
+  animation: hb-step-in var(--dur-base) var(--ease-out) both;
+}
+@media (min-width: 900px) {
+  .hb-cook-text {
+    font-size: 32px;
+    line-height: 44px;
+  }
+}
+@keyframes hb-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+.hb-cook-dots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hb-cook-dots button {
+  width: 28px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--line);
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-out), width var(--dur-base) var(--ease-spring);
+}
+.hb-cook-dots button.is-past {
+  background: var(--success-fill);
+}
+.hb-cook-dots button.is-on {
+  width: 44px;
+  background: var(--accent);
+}
+.hb-cook-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--highlight);
+}
+
+/* Timer */
+.hb-timer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.hb-timer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 52px;
+  max-width: 100%;
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.hb-timer > button:first-child {
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  min-height: 44px;
+}
+.hb-timer-time {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.hb-timer.is-paused {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+.hb-timer.is-done {
+  background: var(--urgent);
+  color: #ffffff;
+  animation: hb-timer-ring 1.2s var(--ease-out) infinite;
+}
+@keyframes hb-timer-ring {
+  50% {
+    transform: scale(1.04);
+  }
+}
+.hb-timer-x {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* ───────── Essen planen (Wand) ───────── */
+.hb-planner {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 3fr;
+  gap: var(--space-5);
+  min-height: 0;
+  flex: 1;
+}
+@media (max-width: 1023px) {
+  .hb-planner {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+}
+.hb-planner-library {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+}
+.hb-planner-library .hb-chip-row {
+  margin-inline: 0;
+  padding-inline: 0;
+}
+.hb-planner-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
+  gap: var(--space-3);
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+.hb-recipe-tile {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  cursor: grab;
+  transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
+}
+.hb-recipe-tile.is-lifted {
+  width: 180px;
+  transform: rotate(-2deg) scale(1.03);
+  box-shadow: var(--shadow-lift);
+  cursor: grabbing;
+}
+.hb-recipe-tile-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+}
+.hb-recipe-tile .hb-recipe-title {
+  font-size: 18px;
+  line-height: 24px;
+}
+.hb-planner-week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}
+.hb-planner-grid {
+  display: grid;
+  grid-template-columns: 44px repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-2);
+  min-height: 0;
+  flex: 1;
+}
+@media (max-width: 1023px) {
+  .hb-planner-grid {
+    min-height: 640px;
+  }
+}
+/* Termine treten zurück, die Essen stehen vorn */
+.hb-planner-day .hb-tl-event:not(.hb-cal-meal),
+.hb-planner-day .hb-tl-allday:not(.hb-cal-meal) {
+  --tl-soft: var(--surface-sunken);
+  --tl-bar: var(--line);
+  --tl-ink: var(--ink-muted);
+  color: var(--ink-muted);
+}
+.hb-planner-day .hb-tl-event.hb-cal-meal {
+  box-shadow: var(--shadow-tile);
+  z-index: 1;
+}

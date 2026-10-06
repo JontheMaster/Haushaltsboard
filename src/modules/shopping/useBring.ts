@@ -121,5 +121,16 @@ export function useBring() {
     return !error
   }, [apply])
 
-  return { items, error, done, toggle, add }
+  /** Mehrere Artikel auf einmal, z. B. Zutaten eines eingeplanten Essens */
+  const addMany = useCallback(
+    async (list: BringItem[]): Promise<boolean> => {
+      setItems((cur) => [...list.filter((n) => !cur?.some((i) => i.name === n.name)), ...(cur ?? [])])
+      const { data, error } = await supabase.functions.invoke<BringResponse>('bring', { method: 'POST', body: { action: 'addMany', items: list } })
+      apply(data, error)
+      return !error
+    },
+    [apply],
+  )
+
+  return { items, error, done, toggle, add, addMany }
 }

@@ -1,4 +1,5 @@
-import { Bell, CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, TrainFront } from 'lucide-react'
+import { Bell, CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed } from 'lucide-react'
+import { MealSettings } from './meals/MealSettings'
 import { DeparturesTile, useMorningBoard } from './transit/DeparturesBoard'
 import { TransitSettings } from './transit/TransitSettings'
 import { TransitHeader } from './transit/TripCard'
@@ -23,6 +24,8 @@ export const MODULES: ModuleDef[] = [
   { id: 'todos', title: 'Todos', description: 'Aufgaben für heute, die Woche und ohne Tag', icon: ListChecks, phase: 1, sizes: ['s', 'm', 'l'], Tile: TodosTile },
   { id: 'putzplan', title: 'Putzplan', description: 'Wiederkehrende Aufgaben, laufen bei den Todos mit', icon: Sparkles, phase: 2, sizes: [], Settings: PutzplanPage },
   { id: 'erinnerungen', title: 'Erinnerungen', description: 'Mitteilung aufs Handy, wenn ein Todo eine Uhrzeit hat', icon: Bell, phase: 5, sizes: [], Settings: ReminderSettings },
+  // Essensplan: Reiter „Essen“ am Handy, Ansicht „Essen“ an der Wand, Essen erscheinen im Kalender
+  { id: 'essensplan', title: 'Essensplan', description: 'Rezepte, Essen in die Woche ziehen, Kochmodus', icon: UtensilsCrossed, phase: 4, sizes: [], Settings: MealSettings },
   { id: 'einkauf', title: 'Einkauf', description: 'Eure Bring!-Liste „Zuhause“', icon: ShoppingCart, phase: 1, sizes: ['s', 'm', 'l'], Tile: ShoppingTile },
   // Abfahrten: Weg pro Person in der Kopfzeile (nur kurz vor dem Losgehen), morgens die Tafel über dem Einkauf
   { id: 'abfahrten', title: 'Abfahrten', description: 'Wann ihr los müsst, mit Echtzeit von VAG und VGN', icon: TrainFront, phase: 5, sizes: ['s'], Tile: DeparturesTile, Header: TransitHeader, Settings: TransitSettings, stackOn: 'einkauf', useShow: useMorningBoard },

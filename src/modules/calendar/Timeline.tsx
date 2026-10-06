@@ -100,10 +100,12 @@ type DayProps = {
   allDaySlots?: number
   /** feste Höhe pro Stunde (Handy); ohne Angabe füllt der Plan die verfügbare Höhe */
   hourPx?: number
+  /** Antippen eines Essens (Essensplan) */
+  onTapEvent?: (id: string) => void
 }
 
 /** Ein Tag als Zeitplan */
-export function DayTimeline({ day, events, range, allDaySlots, hourPx }: DayProps) {
+export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEvent }: DayProps) {
   const today = useToday()
   const now = useNow(60_000)
   const span = (range.to - range.from) * 60
@@ -111,13 +113,15 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx }: DayProp
   const allDay = events.filter((e) => e.allDay)
   const placed = layout(events, day)
   const nowMin = day === today ? minutesOn(now.toISOString(), day) : null
+  // Antippen nur bei Einträgen, die etwas öffnen können (z. B. geplante Essen)
+  const tapFor = (e: CalendarEvent) => (onTapEvent && e.calendar === 'essen' ? () => onTapEvent(e.id) : undefined)
 
   return (
     <div className={`flex flex-col gap-1 ${hourPx ? '' : 'min-h-0 flex-1'}`}>
       {(allDaySlots ?? allDay.length) > 0 && (
         <div className="flex flex-col gap-1" style={{ height: `${(allDaySlots ?? allDay.length) * ALLDAY_SLOT_PX - 4}px` }}>
           {allDay.map((e) => (
-            <AllDay key={e.id} title={e.title} className={`hb-tl-allday ${tone(e)}`} />
+            <AllDay key={e.id} title={e.title} className={`hb-tl-allday ${tone(e)}`} onTap={tapFor(e)} />
           ))}
         </div>
       )}
@@ -139,6 +143,7 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx }: DayProp
               title={p.e.title}
               time={`${hhmm(p.start)}–${hhmm(p.end)}`}
               className={`hb-tl-event ${tone(p.e)} ${past ? 'is-past' : ''} ${live ? 'is-live' : ''} ${p.end - p.start < 45 ? 'is-short' : ''}`}
+              onTap={tapFor(p.e)}
               style={{
                 top: `${top}%`,
                 height: `${Math.max(bottom - top, 2)}%`,
@@ -215,13 +220,23 @@ export function ModeSwitch({
  * Termin-Block im Zeitplan, der nie mitten im Wort abschneidet: erst Titel + Uhrzeit,
  * dann nur Titel, dann die knapperen Fassungen aus titleVariants (z. B. nur „Arzt“).
  */
-function Block({ title, time, className, style }: { title: string; time: string; className: string; style: CSSProperties }) {
+function Block({ title, time, className, style, onTap }: { title: string; time: string; className: string; style: CSSProperties; onTap?: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const variants = titleVariants(title)
   const level = useFitLevel(ref, variants.length + 1, title)
   const v = variants[Math.max(level - 1, 0)]
   return (
-    <div ref={ref} className={className} style={style} title={`${time} ${title}`} aria-label={`${time} ${title}`}>
+    <div
+      ref={ref}
+      className={`${className} ${onTap ? 'is-tappable' : ''}`}
+      style={style}
+      title={`${time} ${title}`}
+      aria-label={`${time} ${title}`}
+      role={onTap ? 'button' : undefined}
+      tabIndex={onTap ? 0 : undefined}
+      onClick={onTap}
+      onKeyDown={onTap ? (e) => e.key === 'Enter' && onTap() : undefined}
+    >
       <span className="hb-tl-title" aria-hidden="true">
         <VariantText v={v} />
       </span>
@@ -235,12 +250,20 @@ function Block({ title, time, className, style }: { title: string; time: string;
 }
 
 /** Ganztägiger Termin oben im Zeitplan: eine Zeile, knappere Fassung statt „…“ */
-function AllDay({ title, className }: { title: string; className: string }) {
+function AllDay({ title, className, onTap }: { title: string; className: string; onTap?: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const variants = titleVariants(title)
   const v = variants[useFitLevel(ref, variants.length, title)]
   return (
-    <div ref={ref} className={className} title={title} aria-label={title}>
+    <div
+      ref={ref}
+      className={`${className} ${onTap ? 'is-tappable' : ''}`}
+      title={title}
+      aria-label={title}
+      role={onTap ? 'button' : undefined}
+      tabIndex={onTap ? 0 : undefined}
+      onClick={onTap}
+    >
       <span aria-hidden="true">
         <VariantText v={v} size={14} />
       </span>

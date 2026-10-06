@@ -124,6 +124,70 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['photos']['Row']>
         Relationships: [Rel<'photos_uploaded_by_fkey', 'uploaded_by', 'members'>]
       }
+      recipe_categories: {
+        Row: { id: string; name: string; sort: number; created_at: string }
+        Insert: { id?: string; name: string; sort?: number }
+        Update: { name?: string; sort?: number }
+        Relationships: []
+      }
+      recipes: {
+        Row: {
+          id: string
+          title: string
+          image_path: string | null
+          thumb_path: string | null
+          duration_min: number | null
+          servings: number
+          category_ids: string[]
+          ingredients: Json
+          steps: Json
+          source_url: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          image_path?: string | null
+          thumb_path?: string | null
+          duration_min?: number | null
+          servings?: number
+          category_ids?: string[]
+          ingredients?: Json
+          steps?: Json
+          source_url?: string | null
+          created_by?: string | null
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['recipes']['Insert']>
+        Relationships: [Rel<'recipes_created_by_fkey', 'created_by', 'members'>]
+      }
+      meals: {
+        Row: {
+          id: string
+          recipe_id: string | null
+          title: string
+          day: string
+          start_time: string | null
+          duration_min: number | null
+          servings: number
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          recipe_id?: string | null
+          title: string
+          day: string
+          start_time?: string | null
+          duration_min?: number | null
+          servings?: number
+          created_by?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['meals']['Insert']>
+        Relationships: [Rel<'meals_recipe_id_fkey', 'recipe_id', 'recipes'>, Rel<'meals_created_by_fkey', 'created_by', 'members'>]
+      }
       settings: {
         Row: { id: number; night_from: string; night_to: string; visit_mode: boolean }
         Insert: { id?: number; night_from?: string; night_to?: string; visit_mode?: boolean }

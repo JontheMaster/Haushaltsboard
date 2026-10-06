@@ -13,14 +13,22 @@ Deno.serve(async (req) => {
     if (req.method === 'GET') return json(req, await getItems())
 
     if (req.method === 'POST') {
-      const { action, name, specification = '', text } = await req.json()
+      const { action, name, specification = '', text, items } = await req.json()
+      // mehrere Artikel auf einmal, z. B. Zutaten eines eingeplanten Essens
+      if (action === 'addMany' && Array.isArray(items) && items.length && items.length <= 60) {
+        const clean = items
+          .filter((i) => i && typeof i.name === 'string' && i.name.trim())
+          .map((i) => ({ name: String(i.name).trim().slice(0, 80), specification: String(i.specification ?? '').trim().slice(0, 80) }))
+        await addItems(clean)
+        return json(req, await getItems())
+      }
       // freier Text aus dem Eingabefeld, z. B. „Milch, 2 Liter“ oder „Milch und Eier“
       if (action === 'addText' && typeof text === 'string' && text.trim()) {
         await addItems(parseItems(text))
         return json(req, await getItems())
       }
       if (!['complete', 'add'].includes(action) || typeof name !== 'string' || !name) {
-        return json(req, { error: 'action (complete|add|addText) und name bzw. text nötig' }, 400)
+        return json(req, { error: 'action (complete|add|addText|addMany) und name, text bzw. items nötig' }, 400)
       }
       await change(action, name, specification)
       return json(req, await getItems())

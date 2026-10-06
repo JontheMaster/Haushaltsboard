@@ -1,5 +1,9 @@
 import { Image, LogOut } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Toast } from '../components/Toast'
+import { CookMode } from '../modules/meals/CookMode'
+import { useCook } from '../modules/meals/cookStore'
+import { MealPlanner } from '../modules/meals/MealPlanner'
 import { Icon } from '../components/Icon'
 import { HeaderSlot } from '../components/HeaderSlot'
 import { VisitToggle } from '../components/VisitToggle'
@@ -18,7 +22,7 @@ import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useMod
 import { WeekView } from '../modules/week/WeekView'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
 
-type View = 'heute' | 'woche' | 'abfahrten'
+type View = 'heute' | 'woche' | 'abfahrten' | 'essen'
 // Nach so langer Zeit ohne Berührung springen Woche und Abfahrten zurück auf Heute
 const IDLE_MS = 2 * 60 * 1000
 
@@ -50,14 +54,16 @@ export function Board({ weather }: { weather: Weather | null }) {
   // Nachtmodus (nur am Wand-Tablet) hat Vorrang; Antippen weckt für 2 Minuten
   const { settings } = useSettings()
   const now = useNow(30_000)
-  const night = useIsNight(settings) && me.is_board && enabled?.has('nachtmodus') !== false
+  // Beim Kochen bleiben Nachtmodus und Bildschirmschoner aus
+  const cooking = useCook().session !== null
+  const night = useIsNight(settings) && me.is_board && enabled?.has('nachtmodus') !== false && !cooking
   const [wakeUntil, setWakeUntil] = useState(0)
   const nightActive = night && now.getTime() > wakeUntil
 
   // Bildschirmschoner: am Wand-Tablet von selbst nach x Minuten ohne Berührung, überall per Knopf
   const saverConfig = useModuleConfig('bildschirmschoner', SCREENSAVER_DEFAULTS)
   const saverEnabled = enabled?.has('bildschirmschoner') ?? false
-  const [idle, resetIdle] = useIdle(saverConfig.idle_minutes * 60_000, me.is_board && saverEnabled && !nightActive)
+  const [idle, resetIdle] = useIdle(saverConfig.idle_minutes * 60_000, me.is_board && saverEnabled && !nightActive && !cooking)
   const [manualSaver, setManualSaver] = useState(false)
   const saverOn = !nightActive && (manualSaver || idle)
   // Nach dem Schließen (Bildschirmschoner, Nachtmodus) fängt kurz eine unsichtbare Fläche alle Berührungen ab,
@@ -75,8 +81,12 @@ export function Board({ weather }: { weather: Weather | null }) {
     setShield(true)
   }
 
+  const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
+  const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
+  const hideToast = useCallback(() => setToast(null), [])
+
   useEffect(() => {
-    if (view === 'heute') return
+    if (view === 'heute' || cooking) return
     let t = setTimeout(() => setView('heute'), IDLE_MS)
     const touch = () => {
       clearTimeout(t)
@@ -87,7 +97,7 @@ export function Board({ weather }: { weather: Weather | null }) {
       clearTimeout(t)
       window.removeEventListener('pointerdown', touch)
     }
-  }, [view])
+  }, [view, cooking])
 
   return (
     <div className="flex h-dvh flex-col bg-surface p-6">
@@ -113,6 +123,16 @@ export function Board({ weather }: { weather: Weather | null }) {
               >
                 Woche
               </button>
+              {enabled?.has('essensplan') && (
+                <button
+                  type="button"
+                  className={`hb-choice ${view === 'essen' ? 'is-on' : ''}`}
+                  aria-pressed={view === 'essen'}
+                  onClick={() => setView('essen')}
+                >
+                  Essen
+                </button>
+              )}
               {enabled?.has('abfahrten') && (
                 <button
                   type="button"
@@ -153,6 +173,10 @@ export function Board({ weather }: { weather: Weather | null }) {
         <main className="flex min-h-0 flex-1 flex-col *:flex-1">
           <WeekView variant="wall" />
         </main>
+      ) : view === 'essen' ? (
+        <main className="flex min-h-0 flex-1 flex-col">
+          <MealPlanner showToast={showToast} />
+        </main>
       ) : view === 'abfahrten' ? (
         <main className="min-h-0 flex-1 overflow-y-auto hb-scroll-quiet">
           <DeparturesBoard />
@@ -176,6 +200,8 @@ export function Board({ weather }: { weather: Weather | null }) {
           })}
         </main>
       )}
+      <CookMode />
+      {toast && <Toast key={toast.id} message={toast.message} onDone={hideToast} />}
       {saverOn && <Screensaver onClose={closeSaver} />}
       {nightActive && (
         <NightScreen

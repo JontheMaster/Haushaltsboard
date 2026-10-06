@@ -9,6 +9,7 @@ import { eventsOnDay } from './rules'
 import { liveInfo, soonLabel } from './live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from './Timeline'
 import type { TileProps } from '../types'
+import { useWithMeals } from '../meals/mealStore'
 import { useCalendar, type CalendarEvent } from './useCalendar'
 
 const personOf = (e: CalendarEvent): PersonKey => (e.person === 'person-a' ? 'a' : e.person === 'person-b' ? 'b' : 'open')
@@ -34,7 +35,9 @@ export function CalendarTile({ size, delay }: TileProps) {
   const phone = device === 'phone'
   // Große Kachel an der Wand: Heute und Morgen nebeneinander
   const wide = !phone && size === 'l'
-  const { events, failed, error } = useCalendar()
+  const { events: calendarEvents, failed, error } = useCalendar()
+  // geplante Essen stehen mit im Kalender
+  const events = useWithMeals(calendarEvents)
   const [mode, setMode] = useCalendarMode(phone ? 'phone' : 'wall')
 
   const todays = events ? eventsOnDay(events, today) : []

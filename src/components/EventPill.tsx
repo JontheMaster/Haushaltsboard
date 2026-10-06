@@ -1,6 +1,7 @@
 import type { PersonKey } from '../lib/members'
 import { useRef } from 'react'
 import { shortenTitle, titleVariants, useFitLevel, VariantText, type TitleVariant } from '../modules/calendar/shorten'
+import { UtensilsCrossed } from 'lucide-react'
 import { Icon } from './Icon'
 
 type Props = {
@@ -34,7 +35,8 @@ export function EventPill({ person, color, time, title, meta, live, soon, past, 
   const titleRef = useRef<HTMLSpanElement>(null)
   const variants: TitleVariant[] = week ? titleVariants(title).filter((v) => v.text) : [short]
   const fit = variants[useFitLevel(titleRef, variants.length, title)]
-  const icon = week && fit.icon ? fit.icon : short.icon
+  // geplante Essen tragen immer das Besteck
+  const icon = color === 'meal' ? UtensilsCrossed : week && fit.icon ? fit.icon : short.icon
   const cls = ['hb-event', tone, live && 'is-live', past && 'is-past', compact && 'hb-event-compact', week && 'hb-event-week']
     .filter(Boolean)
     .join(' ')
@@ -52,7 +54,7 @@ export function EventPill({ person, color, time, title, meta, live, soon, past, 
             <span className="hb-event-time">{time}</span>
           )}
           {soon && <span className="hb-event-soon">{soon}</span>}
-          {icon && <Icon icon={icon} size={16} label={short.label ?? fit.label} className="hb-event-kind" />}
+          {icon && <Icon icon={icon} size={16} label={color === 'meal' ? 'Essen' : (short.label ?? fit.label)} className="hb-event-kind" />}
           {meta && <span className="hb-event-meta">{meta}</span>}
         </span>
         <span ref={titleRef} className="hb-event-title" title={title}>
