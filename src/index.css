@@ -1165,6 +1165,9 @@ body {
   animation: hb-rise var(--dur-slow) var(--ease-out) both;
   --np: var(--accent);
 }
+.hb-np.is-quiet {
+  animation: none;
+}
 .hb-np.hb-person-a {
   --np: var(--person-a);
 }

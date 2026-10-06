@@ -1,11 +1,11 @@
 import { Music } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { useMembers } from '../../lib/members'
 import { useFitLevel } from '../../lib/useFitLevel'
 import { useNow } from '../../lib/time'
 import type { TileProps } from '../types'
-import { useNowPlaying, type Playing } from './useNowPlaying'
+import { useNowPlaying, wasShown, type Playing } from './useNowPlaying'
 
 /** „Remastered 2011“, „(feat. …)“ und Ähnliches kosten nur Platz */
 function cleanTitle(title: string): string {
@@ -37,6 +37,8 @@ export function NowPlayingTile(_: TileProps) {
 }
 
 function NowPlayingCard({ p }: { p: Playing }) {
+  // Schon gesehen (z. B. zurück aus den Einstellungen): nicht noch einmal einblenden
+  const [quiet] = useState(() => wasShown(p))
   const { byId, personKey } = useMembers()
   const now = useNow(1000)
   const person = personKey(p.memberId)
@@ -60,7 +62,7 @@ function NowPlayingCard({ p }: { p: Playing }) {
   const who = whos[useFitLevel(whoRef, whos.length, whos[0])]
 
   return (
-    <div className={`hb-np hb-person-${person}`} role="status" aria-label={`${name} hört ${p.title} von ${p.artists}`}>
+    <div className={`hb-np hb-person-${person} ${quiet ? 'is-quiet' : ''}`} role="status" aria-label={`${name} hört ${p.title} von ${p.artists}`}>
       {p.image ? (
         <img className="hb-np-cover" src={p.image} alt="" />
       ) : (
