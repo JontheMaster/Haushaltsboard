@@ -6,32 +6,7 @@ import { useNow } from '../../lib/time'
 import { addTimer, clock, findTimes, remaining, removeTimer, setCookServings, setStep, stopCooking, tickTimers, toggleTimer, useCook, type Timer } from './cookStore'
 import { baseName, quantity, type Ingredient } from './ingredients'
 import { ServingsStepper } from './RecipeDetail'
-
-// Ton für abgelaufene Timer (ohne Datei: drei kurze Pieptöne über Web Audio)
-let audio: AudioContext | null = null
-function unlockAudio() {
-  try {
-    audio ??= new AudioContext()
-    if (audio.state === 'suspended') audio.resume()
-  } catch {
-    // ohne Ton geht es auch
-  }
-}
-function beep() {
-  if (!audio) return
-  const t0 = audio.currentTime
-  for (let i = 0; i < 3; i++) {
-    const osc = audio.createOscillator()
-    const gain = audio.createGain()
-    osc.frequency.value = 880
-    gain.gain.setValueAtTime(0.0001, t0 + i * 0.35)
-    gain.gain.exponentialRampToValueAtTime(0.4, t0 + i * 0.35 + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.35 + 0.25)
-    osc.connect(gain).connect(audio.destination)
-    osc.start(t0 + i * 0.35)
-    osc.stop(t0 + i * 0.35 + 0.3)
-  }
-}
+import { ring, unlockAudio } from './alarm'
 
 /** Bildschirm bleibt an, solange gekocht wird */
 function useWakeLock() {
@@ -87,8 +62,8 @@ function CookScreen() {
   const ringing = timers.some((t) => t.done)
   useEffect(() => {
     if (!ringing) return
-    beep()
-    const i = setInterval(beep, 2500)
+    ring()
+    const i = setInterval(ring, 2500)
     return () => clearInterval(i)
   }, [ringing])
 
@@ -216,6 +191,8 @@ function CookScreen() {
       aria-modal="true"
       aria-label={`Kochmodus: ${recipe.title}`}
       tabIndex={-1}
+      // jedes Tippen hält den Ton freigeschaltet (iPad spielt sonst nichts ab)
+      onPointerDown={unlockAudio}
       onKeyDown={(e) => {
         if (e.key === 'ArrowRight') go(step + 1)
         if (e.key === 'ArrowLeft') go(step - 1)
