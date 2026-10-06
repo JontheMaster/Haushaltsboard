@@ -35,7 +35,9 @@ function LegRow({ leg }: { leg: Leg }) {
   if (leg.walk) {
     return (
       <li className="hb-leg is-walk">
-        <Icon icon={Footprints} size={16} />
+        <span className="hb-leg-icon">
+          <Icon icon={Footprints} size={16} />
+        </span>
         <span>{leg.minutes ? `${leg.minutes} Min zu Fuß` : 'zu Fuß'}</span>
       </li>
     )
@@ -99,7 +101,10 @@ export function TripCard({ plan, wall }: { plan: Plan; wall?: boolean }) {
           </ul>
           {plan.earlier && (plan.status !== 'ok' || !wall) && (
             <p className="hb-trip-alt">
-              <Icon icon={TrainFront} size={15} /> Früher geht auch: los um {hm(plan.earlier.leaveAt)}, an {hm(plan.earlier.arrivalRt)}
+              <span className="hb-leg-icon">
+                <Icon icon={TrainFront} size={15} />
+              </span>
+              Früher geht auch: los um {hm(plan.earlier.leaveAt)}, an {hm(plan.earlier.arrivalRt)}
             </p>
           )}
         </>

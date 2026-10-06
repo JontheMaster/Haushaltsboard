@@ -1529,7 +1529,7 @@ button.hb-module-open:active {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 4px var(--space-2);
   font-size: 14px;
   color: var(--ink-muted);
 }
@@ -1550,10 +1550,15 @@ button.hb-module-open:active {
   color: var(--ink);
 }
 .hb-leg.is-walk {
-  gap: 6px;
-  padding-left: 6px;
   font-size: 14px;
   color: var(--ink-muted);
+}
+/* Symbole (Fußweg, Zug) in derselben Spalte und Breite wie die Linienschilder */
+.hb-leg-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  min-width: 34px;
 }
 .hb-leg-text {
   flex: 1;
