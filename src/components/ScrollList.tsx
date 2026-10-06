@@ -9,6 +9,11 @@ type Props = {
    * Für flache Listen (jedes Kind ein Eintrag). Ohne `fit`: scrollen mit Hinweis „mehr“.
    */
   fit?: boolean
+  /**
+   * Mit `fit`: passt nicht alles, zuerst kompakter zeigen (Attribut data-dense, Stil per CSS)
+   * und erst danach Einträge in „+N weitere“ verstecken.
+   */
+  dense?: boolean
   children: ReactNode
 }
 
@@ -21,7 +26,7 @@ const OVERFLOW_PX = 24
  * Senkrechte Liste ohne sichtbaren Balken (Tablet und Handy zeigen keinen).
  * Nie wird ein Eintrag mitten im Wort am Rand abgeschnitten: entweder „+N weitere“ (fit) oder „mehr ▾“.
  */
-export function ScrollList({ className = '', fit, children }: Props) {
+export function ScrollList({ className = '', fit, dense, children }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const [more, setMore] = useState(false)
   const [hidden, setHidden] = useState(0)
@@ -66,6 +71,7 @@ export function ScrollList({ className = '', fit, children }: Props) {
       c.style.display = ''
       delete c.dataset.fitHidden
     }
+    delete el.dataset.dense
     const items = ([...el.children] as HTMLElement[]).filter(
       (c) => !c.dataset.more && getComputedStyle(c).display !== 'none',
     )
@@ -73,9 +79,17 @@ export function ScrollList({ className = '', fit, children }: Props) {
       setHidden(0)
       return
     }
-    if (el.scrollHeight <= el.clientHeight + 1) {
+    const fits = () => el.scrollHeight <= el.clientHeight + 1
+    if (fits()) {
       setHidden(0)
       return
+    }
+    if (dense) {
+      el.dataset.dense = '1'
+      if (fits()) {
+        setHidden(0)
+        return
+      }
     }
     const limit = el.clientHeight - MORE_PX
     let count = 0

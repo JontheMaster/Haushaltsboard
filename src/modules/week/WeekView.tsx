@@ -195,7 +195,7 @@ export function WeekView({ variant }: Props) {
             )}
           </DropZone>,
           <DropZone key={`t${day}`} zone={{ kind: 'day', day }} disabled={past} style={{ gridColumn: col, gridRow: 4 }}>
-            <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
+            <ScrollList fit dense className="hb-week-todos flex min-h-0 flex-1 flex-col gap-2">{past ? null : onDay(day).map(card)}</ScrollList>
           </DropZone>,
         ]
       })}

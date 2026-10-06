@@ -753,6 +753,19 @@
   transform: rotate(-1.5deg) scale(1.03);
   animation: none;
 }
+/* Woche: wenig Platz → Todo-Karten kompakter statt gleich „+1 weiterer“ (ScrollList dense) */
+.hb-week-todos[data-dense] {
+  gap: var(--space-1);
+}
+.hb-week-todos[data-dense] .hb-card {
+  padding: 3px var(--space-2) 3px var(--space-3);
+  font-size: 14px;
+  line-height: 18px;
+}
+.hb-week-todos[data-dense] .hb-chore-icon {
+  width: 13px;
+  height: 13px;
+}
 .hb-event-week {
   animation: none;
   padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
