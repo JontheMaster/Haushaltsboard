@@ -1624,8 +1624,27 @@ button.hb-module-open:active {
   font-size: 15px;
   color: var(--ink);
 }
-.hb-board-row.is-missed {
-  opacity: 0.4;
+/* Uhrzeit groß, darunter wann man los muss; kurz vor knapp in Akzentfarbe */
+.hb-board-when {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 76px;
+  line-height: 1.15;
+}
+.hb-board-leave {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.hb-board-row.is-now .hb-board-leave {
+  color: var(--accent);
+}
+/* nur noch mit Beeilen zu schaffen */
+.hb-board-row.is-hurry {
+  opacity: 0.45;
 }
 .hb-board-dir {
   flex: 1;
@@ -1640,7 +1659,6 @@ button.hb-module-open:active {
 }
 .hb-board-time {
   flex: none;
-  min-width: 52px;
   text-align: right;
   font-weight: 700;
   font-variant-numeric: tabular-nums;

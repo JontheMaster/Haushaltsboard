@@ -7,7 +7,6 @@ import { Sheet } from '../../components/Sheet'
 import { Toggle } from '../../components/Toggle'
 import { useMembers } from '../../lib/members'
 import { supabase } from '../../lib/supabase'
-import { addDays, useToday, weekdayShort } from '../../lib/time'
 import { setModuleConfig } from '../useModules'
 import { searchAddress, useTransitConfig, type Stop, type Unknown } from './api'
 
@@ -23,34 +22,45 @@ export type Place = {
   buffer_min: number
   transit: boolean
 }
-type Prefs = { member_id: string; show_on_wall: boolean; push_leave: boolean; push_leave_min: number; push_delay: boolean; ignore: string[] }
-type Shift = { id: string; member_id: string; name: string; start_time: string; place_id: string }
+type Prefs = {
+  member_id: string
+  show_on_wall: boolean
+  push_leave: boolean
+  push_leave_min: number
+  push_delay: boolean
+  ignore: string[]
+  /** übliche Zeit, zu der man aus dem Haus geht (für die Abfahrtskachel an der Wand) */
+  leave_time: string | null
+  leave_days: number[]
+}
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const input = 'h-7 w-full rounded-md border border-line bg-surface-sunken px-4 text-body text-ink placeholder:text-ink-muted focus-visible:focus-ring'
 
-/** Eigene Ziele, Einstellungen und Schichten laden (für die Seite und den „Wohin?“-Dialog) */
+/** Eigene Ziele und Einstellungen laden (für die Seite und den „Wohin?“-Dialog) */
 function useTransitData(memberId: string) {
   const [places, setPlaces] = useState<Place[] | null>(null)
   const [prefs, setPrefs] = useState<Prefs | null>(null)
-  const [shifts, setShifts] = useState<Shift[]>([])
-  const [days, setDays] = useState<Map<string, string>>(new Map())
-  const today = useToday()
 
   const load = useCallback(async () => {
-    const [p, pr, sh, d] = await Promise.all([
+    const [p, pr] = await Promise.all([
       supabase.from('transit_places').select('*').or(`member_id.eq.${memberId},member_id.is.null`).order('name'),
       supabase.from('transit_prefs').select('*').eq('member_id', memberId).maybeSingle(),
-      supabase.from('transit_shifts').select('*').eq('member_id', memberId).order('start_time'),
-      supabase.from('transit_shift_days').select('day, shift_id').eq('member_id', memberId).gte('day', today),
     ])
     setPlaces((p.data ?? []) as Place[])
     setPrefs(
-      (pr.data as Prefs) ?? { member_id: memberId, show_on_wall: true, push_leave: false, push_leave_min: 10, push_delay: false, ignore: [] },
+      (pr.data as Prefs) ?? {
+          member_id: memberId,
+          show_on_wall: true,
+          push_leave: false,
+          push_leave_min: 10,
+          push_delay: false,
+          ignore: [],
+          leave_time: null,
+          leave_days: [1, 2, 3, 4, 5],
+        },
     )
-    setShifts((sh.data ?? []) as Shift[])
-    setDays(new Map((d.data ?? []).map((x) => [x.day, x.shift_id])))
-  }, [memberId, today])
+  }, [memberId])
 
   useEffect(() => {
     load()
@@ -61,38 +71,25 @@ function useTransitData(memberId: string) {
     setPrefs(next)
     await supabase.from('transit_prefs').upsert(next)
   }
-  return { places, prefs, shifts, days, load, savePrefs, setDays }
+  return { places, prefs, load, savePrefs }
 }
 
 /** Alle Funktionen → Abfahrten: alles, was die Abfahrten brauchen, am Handy einstellen */
 export function TransitSettings({ onBack }: { onBack: () => void }) {
   const { me } = useMembers()
   const config = useTransitConfig()
-  const { places, prefs, shifts, days, load, savePrefs, setDays } = useTransitData(me.id)
+  const { places, prefs, load, savePrefs } = useTransitData(me.id)
   const [editPlace, setEditPlace] = useState<Partial<Place> | null>(null)
-  const [editShift, setEditShift] = useState<Partial<Shift> | null>(null)
-  const today = useToday()
 
   const saveStops = (stops: Stop[]) => setModuleConfig('abfahrten', { stops })
-  const setDay = async (day: string, shiftId: string) => {
-    setDays((m) => {
-      const next = new Map(m)
-      if (shiftId) next.set(day, shiftId)
-      else next.delete(day)
-      return next
-    })
-    if (shiftId) await supabase.from('transit_shift_days').upsert({ member_id: me.id, day, shift_id: shiftId })
-    else await supabase.from('transit_shift_days').delete().eq('member_id', me.id).eq('day', day)
-  }
-
   if (!places || !prefs) return <PageHeader title="Abfahrten" onBack={onBack} />
 
   return (
     <div className="flex flex-col gap-4">
       <PageHeader title="Abfahrten" onBack={onBack} />
       <p className="text-body text-ink-muted">
-        Die App schaut in deinen Kalender (oder deine Schichten), erkennt das Ziel und rechnet, wann du los musst – mit Puffer, damit du
-        pünktlich bist. Abfahrten gelten immer ab zuhause.
+        Die App schaut in deinen Kalender, erkennt das Ziel und rechnet, wann du los musst – mit Puffer, damit du pünktlich bist.
+        Abfahrten gelten immer ab zuhause.
       </p>
 
       <Section title="Haltestellen zuhause" hint="Fußweg von der Haustür bis zur Haltestelle">
@@ -136,39 +133,6 @@ export function TransitSettings({ onBack }: { onBack: () => void }) {
         </Button>
       </Section>
 
-      <Section title="Schichten" hint="Für Wege, die nicht im Kalender stehen: Schicht anlegen, dann pro Tag auswählen">
-        {shifts.map((s) => (
-          <button key={s.id} type="button" className="hb-list-row" onClick={() => setEditShift(s)}>
-            <span className="flex-1 text-left text-body text-ink">
-              {s.name} · {s.start_time.slice(0, 5)} · {places.find((p) => p.id === s.place_id)?.name ?? '?'}
-            </span>
-          </button>
-        ))}
-        <Button icon={<Icon icon={Plus} size={20} />} disabled={!places.length} onClick={() => setEditShift({ member_id: me.id, start_time: '08:00' })}>
-          Schicht anlegen
-        </Button>
-        {shifts.length > 0 && (
-          <div className="flex flex-col gap-1 pt-2">
-            <span className="text-label text-ink">Nächste 14 Tage</span>
-            {Array.from({ length: 14 }, (_, i) => addDays(today, i)).map((day) => (
-              <label key={day} className="flex items-center gap-3">
-                <span className="w-[72px] text-body text-ink">
-                  {i18nDay(day, today)}
-                </span>
-                <select className={`${input} h-6`} value={days.get(day) ?? ''} onChange={(e) => setDay(day, e.target.value)}>
-                  <option value="">frei</option>
-                  {shifts.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.start_time.slice(0, 5)})
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))}
-          </div>
-        )}
-      </Section>
-
       <Section title="An der Wand">
         <Toggle label="Meine Abfahrten an der Wand zeigen" checked={prefs.show_on_wall} onChange={(v) => savePrefs({ show_on_wall: v })} />
         <div className="flex items-center gap-2">
@@ -176,12 +140,38 @@ export function TransitSettings({ onBack }: { onBack: () => void }) {
           <Stepper value={config.wall_minutes} unit="Min" min={10} max={90} step={5} onChange={(v) => setModuleConfig('abfahrten', { wall_minutes: v })} />
         </div>
         <div className="flex flex-col gap-2">
-          <span className="text-body text-ink">Abfahrtstafel als Kachel, morgens von – bis</span>
+          <span className="text-body text-ink">Ich gehe meist los um</span>
           <div className="flex items-center gap-2">
-            <input type="time" aria-label="Kachel ab" className={`${input} min-w-0 flex-1 px-3`} value={config.morning_from} onChange={(e) => e.target.value && setModuleConfig('abfahrten', { morning_from: e.target.value })} />
-            <span className="text-ink-muted">–</span>
-            <input type="time" aria-label="Kachel bis" className={`${input} min-w-0 flex-1 px-3`} value={config.morning_to} onChange={(e) => e.target.value && setModuleConfig('abfahrten', { morning_to: e.target.value })} />
+            <input
+              type="time"
+              aria-label="Übliche Losgehzeit"
+              className={`${input} min-w-0 flex-1 px-3`}
+              value={prefs.leave_time?.slice(0, 5) ?? ''}
+              onChange={(e) => savePrefs({ leave_time: e.target.value || null })}
+            />
+            {prefs.leave_time && (
+              <button type="button" className="hb-icon-btn" aria-label="Keine Losgehzeit" onClick={() => savePrefs({ leave_time: null })}>
+                <Icon icon={X} size={18} />
+              </button>
+            )}
           </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="An diesen Tagen">
+            {WEEKDAYS.map((d, i) => {
+              const on = prefs.leave_days.includes(i + 1)
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  aria-pressed={on}
+                  className={`hb-choice ${on ? 'is-on' : ''}`}
+                  onClick={() => savePrefs({ leave_days: on ? prefs.leave_days.filter((x) => x !== i + 1) : [...prefs.leave_days, i + 1].sort() })}
+                >
+                  {d}
+                </button>
+              )
+            })}
+          </div>
+          <span className="text-label text-ink-muted">Dann steht die Abfahrtstafel an diesen Tagen 30 Min vorher bis 10 Min danach an der Wand.</span>
         </div>
       </Section>
 
@@ -219,25 +209,8 @@ export function TransitSettings({ onBack }: { onBack: () => void }) {
           }}
         />
       )}
-      {editShift && (
-        <ShiftSheet
-          shift={editShift}
-          places={places}
-          onClose={() => setEditShift(null)}
-          onSaved={() => {
-            setEditShift(null)
-            load()
-          }}
-        />
-      )}
     </div>
   )
-}
-
-function i18nDay(day: string, today: string): string {
-  if (day === today) return 'Heute'
-  if (day === addDays(today, 1)) return 'Morgen'
-  return `${weekdayShort(day)} ${Number(day.slice(8))}.`
 }
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -404,62 +377,6 @@ export function PlaceSheet({ place, onClose, onSaved }: { place: Partial<Place>;
       {place.id && (
         <Button variant="ghost" className="hb-btn-danger" icon={<Icon icon={Trash2} size={18} />} onClick={remove}>
           Ziel löschen
-        </Button>
-      )}
-    </Sheet>
-  )
-}
-
-function ShiftSheet({ shift, places, onClose, onSaved }: { shift: Partial<Shift>; places: Place[]; onClose: () => void; onSaved: () => void }) {
-  const [name, setName] = useState(shift.name ?? '')
-  const [time, setTime] = useState((shift.start_time ?? '08:00').slice(0, 5))
-  const [placeId, setPlaceId] = useState(shift.place_id ?? places[0]?.id ?? '')
-  const [error, setError] = useState<string | null>(null)
-
-  async function save() {
-    if (!name.trim()) return setError('Gib der Schicht einen Namen, z. B. Frühdienst.')
-    const { error } = await supabase
-      .from('transit_shifts')
-      .upsert({ ...(shift.id ? { id: shift.id } : {}), member_id: shift.member_id!, name: name.trim(), start_time: time, place_id: placeId })
-    if (error) return setError('Speichern hat nicht geklappt. Probier es noch mal.')
-    onSaved()
-  }
-  async function remove() {
-    if (shift.id) await supabase.from('transit_shifts').delete().eq('id', shift.id)
-    onSaved()
-  }
-
-  return (
-    <Sheet title={shift.id ? 'Schicht bearbeiten' : 'Neue Schicht'} onClose={onClose}>
-      <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Name</span>
-        <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Frühdienst" />
-      </label>
-      <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Beginnt um</span>
-        <input type="time" className={input} value={time} onChange={(e) => e.target.value && setTime(e.target.value)} />
-      </label>
-      <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Wo</span>
-        <select className={input} value={placeId} onChange={(e) => setPlaceId(e.target.value)}>
-          {places.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      {error && (
-        <p role="alert" className="rounded-md bg-urgent-soft px-4 py-3 text-label text-urgent">
-          {error}
-        </p>
-      )}
-      <Button variant="primary" size="lg" icon={<Icon icon={Save} size={22} />} onClick={save}>
-        Schicht speichern
-      </Button>
-      {shift.id && (
-        <Button variant="ghost" className="hb-btn-danger" icon={<Icon icon={Trash2} size={18} />} onClick={remove}>
-          Schicht löschen
         </Button>
       )}
     </Sheet>

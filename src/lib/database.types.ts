@@ -166,22 +166,28 @@ export type Database = {
         Relationships: [Rel<'transit_places_member_id_fkey', 'member_id', 'members'>]
       }
       transit_prefs: {
-        Row: { ignore: string[]; member_id: string; push_delay: boolean; push_leave: boolean; push_leave_min: number; show_on_wall: boolean }
-        Insert: { ignore?: string[]; member_id: string; push_delay?: boolean; push_leave?: boolean; push_leave_min?: number; show_on_wall?: boolean }
+        Row: {
+          ignore: string[]
+          leave_days: number[]
+          leave_time: string | null
+          member_id: string
+          push_delay: boolean
+          push_leave: boolean
+          push_leave_min: number
+          show_on_wall: boolean
+        }
+        Insert: {
+          ignore?: string[]
+          leave_days?: number[]
+          leave_time?: string | null
+          member_id: string
+          push_delay?: boolean
+          push_leave?: boolean
+          push_leave_min?: number
+          show_on_wall?: boolean
+        }
         Update: Partial<Database['public']['Tables']['transit_prefs']['Insert']>
         Relationships: [Rel<'transit_prefs_member_id_fkey', 'member_id', 'members'>]
-      }
-      transit_shifts: {
-        Row: { id: string; member_id: string; name: string; place_id: string; start_time: string }
-        Insert: { id?: string; member_id: string; name: string; place_id: string; start_time: string }
-        Update: Partial<Database['public']['Tables']['transit_shifts']['Insert']>
-        Relationships: [Rel<'transit_shifts_member_id_fkey', 'member_id', 'members'>, Rel<'transit_shifts_place_id_fkey', 'place_id', 'transit_places'>]
-      }
-      transit_shift_days: {
-        Row: { day: string; member_id: string; shift_id: string }
-        Insert: { day: string; member_id: string; shift_id: string }
-        Update: Partial<Database['public']['Tables']['transit_shift_days']['Insert']>
-        Relationships: [Rel<'transit_shift_days_member_id_fkey', 'member_id', 'members'>, Rel<'transit_shift_days_shift_id_fkey', 'shift_id', 'transit_shifts'>]
       }
       todos: {
         Row: {

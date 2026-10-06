@@ -1,10 +1,10 @@
 // Abfahrten: Abfahrtstafel der Haltestellen zuhause und „Wann muss ich los?“ pro Person.
 //   GET  ?action=board          → nächste Abfahrten an den Haltestellen zuhause (VAG, mit Echtzeit)
-//   GET  ?action=plans          → nächster Weg pro Person (aus Kalender oder Schichten) + unbekannte Ziele des Aufrufers
+//   GET  ?action=plans          → nächster Weg pro Person (aus dem Kalender) + unbekannte Ziele des Aufrufers
 //   GET  ?action=geocode&q=…    → Adresse suchen (OpenStreetMap), für neue Ziele
 //   POST {action:'watch'}  + x-cron-key → Mitteilungen „Losgehen“ und „Verspätung“ (Cron jede Minute)
 // Verbindungen rechnet die VGN-Fahrplanauskunft (EFA), Echtzeit kommt von der VAG.
-import { addDays, berlinDay, loadEvents, type CalendarEvent } from '../_shared/calendar.ts'
+import { loadEvents, type CalendarEvent } from '../_shared/calendar.ts'
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
 import { APP_URL, phonesOf, pushTo } from '../_shared/push.ts'
 
@@ -13,7 +13,7 @@ const TZ = 'Europe/Berlin'
 const EFA = 'https://efa.vgn.de/vgnExt_oeffi/'
 const VAG = 'https://start.vag.de/dm/api/v1/'
 const UA = { 'User-Agent': 'Haushaltsboard/1.0 (privates Haushalts-Dashboard)' }
-/** So weit voraus wird nach Terminen und Schichten gesucht (abends schon der Weg für morgen früh) */
+/** So weit voraus wird nach Terminen gesucht (abends schon der Weg für morgen früh) */
 const LOOKAHEAD_MS = 18 * 60 * 60 * 1000
 /** Umstieg darunter gilt als knapp (pünktlich sein ist wichtiger als spät losgehen) */
 const TIGHT_TRANSFER_MIN = 3
@@ -61,7 +61,7 @@ type Trip = {
   /** knappster Umstieg in Minuten (null = kein Umstieg) */
   minTransfer: number | null
 }
-type Target = { key: string; title: string; start: string; place: { id: string; name: string; buffer: number }; source: 'calendar' | 'shift' }
+type Target = { key: string; title: string; start: string; place: { id: string; name: string; buffer: number }; source: 'calendar' }
 type Plan = {
   memberId: string
   target: Target
@@ -93,19 +93,6 @@ function berlinParts(iso: string | Date): { date: string; hhmm: string; weekday:
   )
   const weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(p.weekday) + 1
   return { date: `${p.year}-${p.month}-${p.day}`, hhmm: `${p.hour}:${p.minute}`, weekday }
-}
-
-/** Berliner Ortszeit „YYYY-MM-DD“ + „HH:MM“ → ISO */
-function berlinToIso(date: string, hhmm: string): string {
-  const [y, m, d] = date.split('-').map(Number)
-  const [h, min] = hhmm.split(':').map(Number)
-  const guess = Date.UTC(y, m - 1, d, h, min)
-  const name = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'longOffset' })
-    .formatToParts(new Date(guess))
-    .find((p) => p.type === 'timeZoneName')!.value
-  const match = name.match(/([+-])(\d{2}):(\d{2})/)
-  const offset = match ? (match[1] === '-' ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3])) * 60000 : 0
-  return new Date(guess - offset).toISOString()
 }
 
 const minutes = (ms: number) => Math.round(ms / 60000)
@@ -314,7 +301,7 @@ async function bestTrip(stops: Stop[], place: Place, start: string): Promise<{ t
   return { trip, earlier }
 }
 
-// ───────── Ziele aus Kalender und Schichten ─────────
+// ───────── Ziele aus dem Kalender ─────────
 
 const ONLINE = /https?:\/\/|teams|zoom|meet\.google|webex|online|livestream|discord/i
 
@@ -421,25 +408,6 @@ async function candidatesFor(member: string, events: CalendarEvent[], unknown: U
     }
   }
 
-  // Schichten (z. B. Leviona): heute und morgen
-  const today = berlinDay(new Date())
-  const { data: days } = await db
-    .from('transit_shift_days')
-    .select('day, transit_shifts(id, name, start_time, place_id)')
-    .eq('member_id', member)
-    .in('day', [today, addDays(today, 1)])
-  for (const d of days ?? []) {
-    const shift = d.transit_shifts as unknown as { id: string; name: string; start_time: string; place_id: string } | null
-    const place = shift && s.places.find((p) => p.id === shift.place_id)
-    if (!shift || !place) continue
-    const start = berlinToIso(d.day, shift.start_time.slice(0, 5))
-    if (Date.parse(start) <= now || Date.parse(start) > now + LOOKAHEAD_MS) continue
-    out.push({
-      target: { key: `shift:${d.day}:${shift.id}`, title: shift.name, start, place: { id: place.id, name: place.name, buffer: place.buffer_min }, source: 'shift' },
-      place,
-      sameAsBefore: false,
-    })
-  }
   return out.filter((c) => c.place.transit && !c.sameAsBefore).sort((a, b) => a.target.start.localeCompare(b.target.start))
 }
 

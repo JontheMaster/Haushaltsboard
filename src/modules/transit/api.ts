@@ -22,7 +22,7 @@ export type Leg = {
 export type Trip = { leaveAt: string; stop: string; walk: number; legs: Leg[]; arrival: string; arrivalRt: string; minTransfer: number | null }
 export type Plan = {
   memberId: string
-  target: { key: string; title: string; start: string; place: { id: string; name: string; buffer: number }; source: 'calendar' | 'shift' }
+  target: { key: string; title: string; start: string; place: { id: string; name: string; buffer: number }; source: 'calendar' }
   trip: Trip | null
   earlier: Trip | null
   status: 'ok' | 'tight' | 'late' | 'none'
@@ -32,8 +32,6 @@ type PlansResponse = { plans: Plan[]; unknown: Unknown[]; wallMinutes: number; o
 
 export const TRANSIT_DEFAULTS = {
   stops: [] as Stop[],
-  morning_from: '06:00',
-  morning_to: '09:00',
   wall_minutes: 30,
 }
 export function useTransitConfig() {
