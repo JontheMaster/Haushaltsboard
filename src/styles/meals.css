@@ -890,3 +890,163 @@ button.hb-meal-card:focus-visible {
   height: 32px;
   font-size: 14px;
 }
+
+/* ───────── Wochenrückblick (Vollbild, Wand und Handy) ───────── */
+
+.hb-recap {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  animation: hb-fade-in var(--dur-base) var(--ease-out) both;
+}
+.hb-recap-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-4) var(--space-3);
+}
+.hb-recap-head .hb-icon-btn:disabled {
+  opacity: 0.35;
+}
+.hb-recap-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+.hb-recap-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--accent-soft);
+  animation: hb-rise var(--dur-slow) var(--ease-out) both;
+}
+.hb-recap-big {
+  font-family: var(--font-display);
+  font-size: 64px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.hb-recap-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+.hb-recap-card-box {
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+.hb-recap-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.hb-recap-card-title svg {
+  color: var(--accent);
+}
+.hb-recap-bar {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.hb-recap-bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.hb-recap-bar-fill.hb-person-a { background: var(--person-a); }
+.hb-recap-bar-fill.hb-person-b { background: var(--person-b); }
+.hb-recap-bar-fill.hb-person-open { background: var(--ink-muted); }
+.hb-recap-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  font-size: 16px;
+  color: var(--ink);
+}
+.hb-recap-day {
+  flex: none;
+  width: 48px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.hb-recap-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+}
+.hb-recap-dot.hb-person-a { background: var(--person-a); }
+.hb-recap-dot.hb-person-b { background: var(--person-b); }
+.hb-recap-foot {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+@media (min-width: 900px) {
+  .hb-recap-head {
+    padding: var(--space-5) var(--space-6) var(--space-4);
+  }
+  .hb-recap-body {
+    padding: 0 var(--space-6) var(--space-6);
+  }
+  .hb-recap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1200px) {
+  .hb-recap-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ───────── WLAN für Gäste ───────── */
+
+.hb-wifi-qr {
+  flex: none;
+  max-width: 100%;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+}
+.hb-wifi-qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.hb-wifi-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  text-align: left;
+}
+.hb-wifi-facts dt {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.hb-wifi-facts dd {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  word-break: break-all;
+}

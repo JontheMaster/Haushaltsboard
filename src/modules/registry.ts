@@ -1,4 +1,7 @@
-import { Bell, CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed } from 'lucide-react'
+import { Bell, CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, TrainFront, Trophy, UtensilsCrossed, Wifi } from 'lucide-react'
+import { RecapHeader } from './recap/RecapHeader'
+import { RecapSettings } from './recap/RecapSettings'
+import { WifiSettings } from './wlan/Wifi'
 import { MealHeader } from './meals/MealHeader'
 import { MealSettings } from './meals/MealSettings'
 import { DeparturesTile, useMorningBoard } from './transit/DeparturesBoard'
@@ -33,6 +36,10 @@ export const MODULES: ModuleDef[] = [
   { id: 'abfahrten', title: 'Abfahrten', description: 'Wann ihr los müsst, mit Echtzeit von VAG und VGN', icon: TrainFront, phase: 5, sizes: ['s'], Tile: DeparturesTile, Header: TransitHeader, Settings: TransitSettings, stackOn: 'einkauf', useShow: useMorningBoard },
   // Spotify: nur sichtbar, solange etwas läuft (Kopfzeile statt fester Kachel)
   { id: 'spotify', title: 'Läuft gerade', description: 'Was bei euch auf Spotify läuft', icon: Music, phase: 5, sizes: ['m'], Tile: NowPlayingTile, Header: NowPlayingHeader, Settings: SpotifyPage },
+  // Wochenrückblick: sonntags ab Nachmittag als Karte oben (wie Essen), Antippen öffnet den Rückblick; Push pro Person
+  { id: 'wochenrueckblick', title: 'Wochenrückblick', description: 'Sonntags: was ihr in der Woche geschafft habt', icon: Trophy, phase: 5, sizes: [], Header: RecapHeader, Settings: RecapSettings },
+  // WLAN für Gäste: Knopf in der Kopfzeile nur im Besuchsmodus (WifiButton), Einstellungen hier
+  { id: 'wlan', title: 'WLAN für Gäste', description: 'QR-Code fürs WLAN, wenn der Besuchsmodus an ist', icon: Wifi, phase: 5, sizes: [], Settings: WifiSettings },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary },
   { id: 'nachtmodus', title: 'Nachtmodus', description: 'Nachts nur eine gedimmte Uhr an der Wand', icon: Moon, phase: 2, sizes: [], Settings: NightSettings },
   { id: 'alexa', title: 'Alexa', description: 'Todos per Sprache eintragen und vorlesen lassen', icon: Mic, phase: 3, sizes: [], Settings: AlexaHelp, toggle: false },

@@ -9,7 +9,7 @@ const ROTATE_MS = 8000
  * - nur Musik: die normale Karte
  * - Weg + Musik: Weg-Karte oben, Musik als schmale Zeile darunter (beides gleichzeitig)
  * - zwei Wege: untereinander; zwei Wege + Musik: die Wege wechseln sich ab, die Musikzeile bleibt
- * - Essen („meal“): allein eine normale Karte, mit anderen eine schmale Zeile; bei Weg + Musik zugleich weicht es
+ * - Essen („meal“, auch der Wochenrückblick): allein eine normale Karte, mit anderen eine schmale Zeile; bei Weg + Musik zugleich weicht es
  */
 export function HeaderSlot({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -60,7 +60,7 @@ export function HeaderSlot({ children }: { children: ReactNode }) {
     kinds.trips && kinds.music && 'is-mixed',
     !kinds.music && kinds.trips > 1 && 'is-dense',
     // Essen neben anderem: schmale Zeile
-    kinds.meals && kinds.trips + kinds.music > 0 && 'has-others',
+    kinds.meals && (kinds.trips + kinds.music > 0 || kinds.meals > 1) && 'has-others',
   ]
     .filter(Boolean)
     .join(' ')

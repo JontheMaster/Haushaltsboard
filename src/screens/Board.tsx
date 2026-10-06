@@ -2,6 +2,8 @@ import { Image, LogOut } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Toast } from '../components/Toast'
 import { CookMode } from '../modules/meals/CookMode'
+import { WeekRecap } from '../modules/recap/WeekRecap'
+import { WifiButton } from '../modules/wlan/Wifi'
 import { useCook } from '../modules/meals/cookStore'
 import { MealPlanner } from '../modules/meals/MealPlanner'
 import { Icon } from '../components/Icon'
@@ -145,6 +147,7 @@ export function Board({ weather }: { weather: Weather | null }) {
               )}
             </div>
             <VisitToggle />
+            <WifiButton variant="wall" />
             <button
               type="button"
               className="hb-choice"
@@ -201,6 +204,7 @@ export function Board({ weather }: { weather: Weather | null }) {
         </main>
       )}
       <CookMode />
+      <WeekRecap />
       {toast && <Toast key={toast.id} message={toast.message} onDone={hideToast} />}
       {saverOn && <Screensaver onClose={closeSaver} />}
       {nightActive && (

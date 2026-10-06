@@ -2,6 +2,8 @@
 //   POST {action:'send'}  + Header x-cron-key → fällige Todo-Erinnerungen verschicken (Cron jede Minute)
 //   GET  ?action=key      → öffentlicher Schlüssel für die Anmeldung im Browser (nur Mitglieder)
 //   POST {action:'test'}  → Test-Mitteilung an die eigenen Handys (nur Mitglieder)
+//   POST {action:'weekly'} + Header x-cron-key → Wochenrückblick sonntags 18:00 Berlin an alle, die ihn wollen
+//   POST {action:'weekly-test'} → Wochenrückblick-Mitteilung jetzt an die eigenen Handys (nur Mitglieder)
 // Die VAPID-Schlüssel erzeugt die Function beim ersten Aufruf selbst und legt sie in push_config ab.
 import * as webpush from 'jsr:@negrel/webpush@0.5.0'
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
@@ -99,6 +101,48 @@ async function sendDue(): Promise<unknown> {
   return { due: due.length, sent }
 }
 
+type Recap = { todos: { done: number }; chores: { done: number }; meals: unknown[]; prev_done: number }
+
+/** Ein Satz für die Mitteilung, z. B. „12 Todos und 5 Putzaufgaben erledigt, 4 Essen gekocht.“ */
+function recapText(r: Recap): string {
+  const parts: string[] = []
+  const done = [
+    r.todos.done && `${r.todos.done} ${r.todos.done === 1 ? 'Todo' : 'Todos'}`,
+    r.chores.done && `${r.chores.done} ${r.chores.done === 1 ? 'Putzaufgabe' : 'Putzaufgaben'}`,
+  ].filter(Boolean)
+  if (done.length) parts.push(`${done.join(' und ')} erledigt`)
+  if (r.meals.length) parts.push(`${r.meals.length} Essen gekocht`)
+  if (!parts.length) return 'Eine ruhige Woche. Schau dir euren Rückblick an.'
+  return `${parts.join(', ')}. Schau dir euren Rückblick an.`
+}
+
+/** Wochenrückblick an die Handys der angegebenen Mitglieder */
+async function sendWeekly(memberIds: string[]): Promise<number> {
+  if (!memberIds.length) return 0
+  const { data: recap, error } = await db.rpc('week_recap')
+  if (error) throw error
+  const { data: subs } = await db.from('push_subscriptions').select('id, member_id, endpoint, p256dh, auth').in('member_id', memberIds)
+  return pushTo(subs ?? [], {
+    title: 'Euer Wochenrückblick',
+    body: recapText(recap as Recap),
+    tag: 'wochenrueckblick',
+    url: `${APP_URL}?rueckblick`,
+  })
+}
+
+/** Cron (16 und 17 Uhr UTC): nur schicken, wenn es in Berlin gerade 18 Uhr ist (Sommer- und Winterzeit) */
+async function weeklyFromCron(): Promise<unknown> {
+  // nur die Stunde als Zahl (de-DE würde „18 Uhr“ liefern)
+  const hour = Number(
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()).find((p) => p.type === 'hour')?.value,
+  )
+  if (hour !== 18) return { skipped: hour }
+  const { data: mod } = await db.from('modules').select('enabled, config').eq('id', 'wochenrueckblick').maybeSingle()
+  if (!mod?.enabled) return { skipped: 'aus' }
+  const push = ((mod.config as { push?: string[] })?.push ?? []).filter((id) => typeof id === 'string')
+  return { sent: await sendWeekly(push) }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
   const url = new URL(req.url)
@@ -109,6 +153,8 @@ Deno.serve(async (req) => {
     if (cronKey) {
       const { data } = await db.from('push_config').select('cron_key').eq('id', 1).single()
       if (!data || cronKey !== data.cron_key) return new Response('Nicht erlaubt', { status: 403 })
+      const body = await req.json().catch(() => ({}))
+      if (body.action === 'weekly') return Response.json(await weeklyFromCron())
       return Response.json(await sendDue())
     }
 
@@ -130,6 +176,7 @@ Deno.serve(async (req) => {
         })
         return json(req, { sent })
       }
+      if (body.action === 'weekly-test') return json(req, { sent: await sendWeekly([member]) })
     }
     return json(req, { error: 'Unbekannte Aktion' }, 400)
   } catch (e) {

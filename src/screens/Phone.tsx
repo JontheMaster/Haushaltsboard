@@ -1,5 +1,7 @@
 import { CalendarRange, House, LayoutGrid, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 import { CookMode } from '../modules/meals/CookMode'
+import { WeekRecap } from '../modules/recap/WeekRecap'
+import { WifiButton } from '../modules/wlan/Wifi'
 import { MealsTab } from '../modules/meals/MealsTab'
 import { Sheet } from '../components/Sheet'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
@@ -176,6 +178,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
         {sheet && <TodoSheet todo={sheet.todo} onClose={() => setSheet(null)} onSaved={showToast} />}
         {toast && <Toast key={toast.id} message={toast.message} action={toast.action} onDone={hideToast} />}
         <CookMode />
+        <WeekRecap />
       </div>
     </DeviceProvider>
   )
@@ -221,6 +224,8 @@ function StartTab({ onEdit }: { onEdit: () => void }) {
   const layout = useLayout('phone')
   return (
     <>
+      {/* Besuch da: WLAN-Code als Zeile oben (in der Kopfzeile ist am Handy kein Platz mehr) */}
+      <WifiButton variant="phone" />
       {MODULES.filter((m) => m.Header && enabled?.has(m.id)).map((m) => {
         const Header = m.Header!
         return <Header key={m.id} variant="phone" />

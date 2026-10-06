@@ -288,7 +288,10 @@ export type Database = {
       }
     }
     Views: { [_ in never]: never }
-    Functions: { [_ in never]: never }
+    Functions: {
+      // Wochenrückblick (Mo–So), ohne Datum die laufende Woche
+      week_recap: { Args: { p_week_start?: string }; Returns: Json }
+    }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }
   }
