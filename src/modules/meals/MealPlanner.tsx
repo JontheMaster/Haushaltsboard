@@ -1,4 +1,4 @@
-import { DndContext, DragOverlay, PointerSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { DndContext, DragOverlay, PointerSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragMoveEvent } from '@dnd-kit/core'
 import { CalendarPlus, ChefHat, Clock } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../../components/Button'
@@ -17,17 +17,25 @@ import { RecipeDetail } from './RecipeDetail'
 import { CategoryTags, RecipeFilters, RecipeImage, useRecipeFilter } from './RecipeLibrary'
 import { useCategories, useRecipes, type Category, type Recipe } from './recipeStore'
 
-/** Ablagepunkt → Uhrzeit, auf 15 Minuten gerundet */
-function timeAt(day: string, y: number, range: { from: number; to: number }): string | null {
-  const el = document.querySelector(`[data-tl-day="${day}"] .hb-tl-day`)
-  if (!el) return null
+// Beim Ziehen ist jeder Tag in drei Bereiche geteilt (Entscheidung Jonathan 6.10.2026):
+// oben = Früh, Mitte = Mittag, unten = Abend. Die Uhrzeit ist dann vorausgewählt und lässt sich im Fenster ändern.
+export const SLOTS = [
+  { id: 'frueh', label: 'Früh', time: '08:00' },
+  { id: 'mittag', label: 'Mittag', time: '12:00' },
+  { id: 'abend', label: 'Abend', time: '18:30' },
+] as const
+type SlotId = (typeof SLOTS)[number]['id']
+
+/** Fingerhöhe → Bereich des Tages (Drittel der Spalte) */
+function slotAt(day: string, y: number): SlotId {
+  const el = document.querySelector(`[data-tl-day="${day}"]`)
+  if (!el) return 'abend'
   const r = el.getBoundingClientRect()
-  if (y < r.top) return null // auf die Ganztags-Zeile oder den Kopf gelegt
-  const frac = Math.min(1, (y - r.top) / r.height)
-  const min = Math.round(((range.from + frac * (range.to - range.from)) * 60) / 15) * 15
-  const h = Math.min(23, Math.floor(min / 60))
-  return `${String(h).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
+  const frac = (y - r.top) / r.height
+  return frac < 1 / 3 ? 'frueh' : frac < 2 / 3 ? 'mittag' : 'abend'
 }
+
+const fingerY = (e: { activatorEvent: Event | null; delta: { y: number } }) => ((e.activatorEvent as PointerEvent | null)?.clientY ?? 0) + e.delta.y
 
 /**
  * Essen planen an der Wand: links die Rezepte (groß, mit Bild), rechts die Woche als Zeitplan.
@@ -46,6 +54,8 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
   const filter = useRecipeFilter(recipes)
   const flow = usePlanFlow(showToast)
   const [dragging, setDragging] = useState<Recipe | null>(null)
+  // Bereich unter dem Finger während des Ziehens (leuchtet auf)
+  const [hover, setHover] = useState<{ day: string; slot: SlotId } | null>(null)
   const [open, setOpen] = useState<Recipe | null>(null)
 
   const weekEvents = days.map((day) => ({ day, events: events ? eventsOnDay(events, day) : [] }))
@@ -54,15 +64,21 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
+  function onDragMove(e: DragMoveEvent) {
+    if (!e.over) return setHover(null)
+    const day = String(e.over.id).slice(4)
+    const slot = slotAt(day, fingerY(e))
+    setHover((h) => (h?.day === day && h.slot === slot ? h : { day, slot }))
+  }
+
   function onDragEnd(e: DragEndEvent) {
     setDragging(null)
+    setHover(null)
     const recipe = recipes?.find((r) => r.id === e.active.id)
     if (!recipe || !e.over) return
     const day = String(e.over.id).slice(4)
-    // Fingerposition beim Loslassen
-    const start = e.activatorEvent as PointerEvent | null
-    const y = (start?.clientY ?? 0) + e.delta.y
-    flow.setPlan({ recipe, day, time: timeAt(day, y, range) ?? DEFAULT_TIME })
+    const slot = SLOTS.find((s) => s.id === slotAt(day, fingerY(e)))
+    flow.setPlan({ recipe, day, time: slot?.time ?? DEFAULT_TIME })
   }
 
   const tapEvent = (id: string) => {
@@ -77,13 +93,17 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
       // Ablage dort, wo der Finger ist (die große Karte würde sonst die Nachbarspalte treffen)
       collisionDetection={pointerWithin}
       onDragStart={(e) => setDragging(recipes?.find((r) => r.id === e.active.id) ?? null)}
+      onDragMove={onDragMove}
       onDragEnd={onDragEnd}
-      onDragCancel={() => setDragging(null)}
+      onDragCancel={() => {
+        setDragging(null)
+        setHover(null)
+      }}
     >
       <div className="hb-planner">
         <section className="hb-planner-library" aria-label="Rezepte">
           <RecipeFilters {...filter} categories={categories} />
-          <p className="text-label text-ink-muted">Rezept auf einen Tag ziehen. Antippen zeigt das Rezept.</p>
+          <p className="text-label text-ink-muted">Rezept auf einen Tag ziehen: oben Früh, Mitte Mittag, unten Abend. Antippen zeigt das Rezept.</p>
           <div className="hb-planner-cards hb-scroll-quiet">
             {recipes?.length === 0 && <p className="text-body text-ink-muted">Noch keine Rezepte. Leg sie am Handy an (Reiter Essen).</p>}
             {filter.list.map((r) => (
@@ -119,6 +139,8 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
                 range={range}
                 allDaySlots={allDaySlots}
                 onTapEvent={tapEvent}
+                dragging={!!dragging}
+                hoverSlot={hover?.day === day ? hover.slot : null}
               />
             ))}
           </div>
@@ -175,7 +197,11 @@ function DayColumn({
   range,
   allDaySlots,
   onTapEvent,
+  dragging,
+  hoverSlot,
 }: {
+  dragging: boolean
+  hoverSlot: SlotId | null
   day: string
   col: number
   past: boolean
@@ -198,6 +224,16 @@ function DayColumn({
         style={{ gridColumn: col, gridRow: 2 }}
       >
         <DayTimeline day={day} events={events} range={range} allDaySlots={allDaySlots} onTapEvent={onTapEvent} />
+        {dragging && !past && (
+          <div className="hb-slot-zones" aria-hidden="true">
+            {SLOTS.map((s) => (
+              <div key={s.id} className={`hb-slot-zone ${hoverSlot === s.id ? 'is-on' : ''}`}>
+                <span>{s.label}</span>
+                <span className="hb-slot-time">{s.time}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   )

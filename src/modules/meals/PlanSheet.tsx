@@ -13,7 +13,7 @@ import { ServingsStepper } from './RecipeDetail'
 import { RecipeImage } from './RecipeLibrary'
 import type { Recipe } from './recipeStore'
 
-const TIMES = ['12:00', '18:00', '18:30', '19:00']
+const TIMES = ['08:00', '12:00', '18:00', '18:30', '19:00']
 export const DEFAULT_TIME = '18:30'
 
 function dayChip(day: string, today: string): string {

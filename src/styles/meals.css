@@ -742,3 +742,42 @@
 .hb-sheet {
   overflow-x: hidden;
 }
+
+/* Wand-Planer beim Ziehen: Tag in Früh / Mittag / Abend geteilt */
+.hb-planner-day {
+  position: relative;
+}
+.hb-slot-zones {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  pointer-events: none;
+}
+.hb-slot-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--line);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--ink-muted);
+  font-size: 15px;
+  font-weight: 650;
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring);
+}
+.hb-slot-zone.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  transform: scale(1.03);
+}
+.hb-slot-time {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
