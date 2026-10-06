@@ -14,6 +14,8 @@ type Props = {
 
 // Platz für den Knopf „+N weitere“
 const MORE_PX = 34
+// „mehr“ erst ab echtem Überstand (kurze Animationen ragen kurz über den Rand)
+const OVERFLOW_PX = 24
 
 /**
  * Senkrechte Liste ohne sichtbaren Balken (Tablet und Handy zeigen keinen).
@@ -31,17 +33,23 @@ export function ScrollList({ className = '', fit, children }: Props) {
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    let later: ReturnType<typeof setTimeout>
+    const measure = () => setMore(el.scrollHeight - el.scrollTop - el.clientHeight > OVERFLOW_PX)
     const check = () => {
-      setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 4)
+      measure()
       setTick((t) => t + 1)
+      // nach Gleit-Animationen (Abhaken, Verschieben) noch einmal nachmessen
+      clearTimeout(later)
+      later = setTimeout(measure, 500)
     }
     check()
     el.addEventListener('scroll', check, { passive: true })
     const ro = new ResizeObserver(check)
     ro.observe(el)
-    const mo = new MutationObserver(() => setTick((t) => t + 1))
+    const mo = new MutationObserver(check)
     mo.observe(el, { childList: true, subtree: true, characterData: true })
     return () => {
+      clearTimeout(later)
       el.removeEventListener('scroll', check)
       ro.disconnect()
       mo.disconnect()
@@ -96,9 +104,17 @@ export function ScrollList({ className = '', fit, children }: Props) {
         </button>
       )}
       {!fitting && more && (
-        <div className="hb-more" data-more="1" aria-hidden="true">
+        <button
+          type="button"
+          className="hb-more"
+          data-more="1"
+          onClick={(e) => {
+            e.stopPropagation()
+            ref.current?.scrollBy({ top: ref.current.clientHeight * 0.8, behavior: 'smooth' })
+          }}
+        >
           mehr <Icon icon={ChevronDown} size={14} />
-        </div>
+        </button>
       )}
     </div>
   )

@@ -154,7 +154,7 @@ function PhoneHeader({ weather, onPhotos }: { weather: Weather | null; onPhotos:
         {weather && w && (
           <span className="flex items-center gap-1 text-label text-ink-muted">
             <Icon icon={w.icon} size={18} label={w.label} className="text-accent" />
-            {weather.now.temp}° · heute bis {weather.days[0]?.max}°
+            {weather.now.temp}° · bis {weather.days[0]?.max}°
           </span>
         )}
       </div>

@@ -45,7 +45,7 @@ export function CalendarTile({ size, delay }: TileProps) {
   const meta = (e: CalendarEvent) => e.who ?? e.label ?? ''
 
   return (
-    <Tile title="Termine heute" icon={CalendarDays} delay={delay} action={<ModeSwitch mode={mode} onChange={setMode} />}>
+    <Tile title="Termine heute" icon={CalendarDays} delay={delay} action={<ModeSwitch mode={mode} onChange={setMode} compact={phone} />}>
       {(error || failed.length > 0) && (
         <p role="status" className="mb-2 rounded-md bg-urgent-soft px-3 py-2 text-label text-urgent">
           {error

@@ -2,6 +2,8 @@
 // Alle Positionen in Prozent der Höhe – so füllt der Plan jede Kachel- oder Spaltenhöhe aus.
 import { useState } from 'react'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
+import { CalendarClock, List } from 'lucide-react'
+import { Icon } from '../../components/Icon'
 import { EventTitle } from './shorten'
 import type { CalendarEvent } from './useCalendar'
 
@@ -186,15 +188,35 @@ export function useCalendarMode(key: string): ['list' | 'plan', (m: 'list' | 'pl
   return [mode, set]
 }
 
-/** Umschalter „Liste | Zeitplan“ */
-export function ModeSwitch({ mode, onChange }: { mode: 'list' | 'plan'; onChange: (m: 'list' | 'plan') => void }) {
+/** Umschalter „Liste | Zeitplan“; kompakt (Handy) mit Symbolen statt Wörtern */
+export function ModeSwitch({
+  mode,
+  onChange,
+  compact,
+}: {
+  mode: 'list' | 'plan'
+  onChange: (m: 'list' | 'plan') => void
+  compact?: boolean
+}) {
   return (
     <div className="hb-seg" role="group" aria-label="Darstellung">
-      <button type="button" aria-pressed={mode === 'list'} className={mode === 'list' ? 'is-on' : ''} onClick={() => onChange('list')}>
-        Liste
+      <button
+        type="button"
+        aria-pressed={mode === 'list'}
+        aria-label="Liste"
+        className={`${mode === 'list' ? 'is-on' : ''} ${compact ? 'is-icon' : ''}`}
+        onClick={() => onChange('list')}
+      >
+        {compact ? <Icon icon={List} size={18} /> : 'Liste'}
       </button>
-      <button type="button" aria-pressed={mode === 'plan'} className={mode === 'plan' ? 'is-on' : ''} onClick={() => onChange('plan')}>
-        Zeitplan
+      <button
+        type="button"
+        aria-pressed={mode === 'plan'}
+        aria-label="Zeitplan"
+        className={`${mode === 'plan' ? 'is-on' : ''} ${compact ? 'is-icon' : ''}`}
+        onClick={() => onChange('plan')}
+      >
+        {compact ? <Icon icon={CalendarClock} size={18} /> : 'Zeitplan'}
       </button>
     </div>
   )

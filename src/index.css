@@ -432,6 +432,12 @@
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
+.hb-seg button.is-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  padding: 0;
+}
 .hb-seg button.is-on {
   background: var(--surface-raised);
   color: var(--ink);
@@ -440,6 +446,13 @@
 .hb-seg button:focus-visible {
   outline: 2px solid transparent;
   box-shadow: var(--focus-ring);
+}
+
+/* gerade Trennlinie zwischen „heute“ und „noch ohne Tag“ */
+.hb-divider {
+  margin: var(--space-4) 0 var(--space-2);
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 
 /* Ablagen auf „Heute“: beim Ziehen sichtbar, Ziel hervorgehoben */
@@ -792,7 +805,19 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--ink-muted);
-  pointer-events: none;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+/* größere Tippfläche als der sichtbare Knopf */
+.hb-more::after {
+  content: "";
+  position: absolute;
+  inset: -10px -16px;
+}
+.hb-more:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
 }
 .hb-scroll-quiet {
   scrollbar-width: none;

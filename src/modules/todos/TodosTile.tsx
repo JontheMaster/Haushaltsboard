@@ -132,7 +132,9 @@ export function TodosTile({ size, delay }: TileProps) {
               )}
 
               {(noDay.length > 0 || active) && (
-                <Zone id={NO_DAY} dragging={!!active} className="mt-4 border-t border-line pt-3">
+                <>
+                <hr className="hb-divider" />
+                <Zone id={NO_DAY} dragging={!!active}>
                   <h3 className="mb-2 text-label text-ink-muted">Offen, noch ohne Tag</h3>
                   {noDay.length ? (
                     <div className={stacked ? '' : 'columns-2 gap-5'}>
@@ -147,6 +149,7 @@ export function TodosTile({ size, delay }: TileProps) {
                     <p className="text-label text-ink-muted">Hierher ziehen</p>
                   )}
                 </Zone>
+                </>
               )}
             </>
           )}
