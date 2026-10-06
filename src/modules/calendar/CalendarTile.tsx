@@ -6,6 +6,7 @@ import { useDevice } from '../../lib/device'
 import type { PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
 import { eventsOnDay } from './rules'
+import { liveInfo, soonLabel } from './live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from './Timeline'
 import type { TileProps } from '../types'
 import { useCalendar, type CalendarEvent } from './useCalendar'
@@ -27,7 +28,8 @@ function timeLabel(e: CalendarEvent, day: string): string {
 export function CalendarTile({ size, delay }: TileProps) {
   const today = useToday()
   const tomorrow = addDays(today, 1)
-  const now = useNow(60_000).toISOString()
+  const nowDate = useNow(30_000)
+  const now = nowDate.toISOString()
   const { device } = useDevice()
   const phone = device === 'phone'
   // Große Kachel an der Wand: Heute und Morgen nebeneinander
@@ -37,8 +39,8 @@ export function CalendarTile({ size, delay }: TileProps) {
 
   const todays = events ? eventsOnDay(events, today) : []
   const tomorrows = events ? eventsOnDay(events, tomorrow) : []
-  // Nächster Termin = der erste mit Uhrzeit, der noch nicht vorbei ist
-  const nextId = todays.find((e) => !e.allDay && e.end > now)?.id
+  // „bald“ nur für den nächsten Termin, der noch nicht läuft
+  const nextId = todays.find((e) => !e.allDay && e.start > now)?.id
   // Die Farbe zeigt den Kalender; als Text reicht die Person (Farbe steht nie allein)
   const meta = (e: CalendarEvent) => e.who ?? e.label ?? ''
 
@@ -77,7 +79,8 @@ export function CalendarTile({ size, delay }: TileProps) {
                   time={timeLabel(e, today)}
                   title={e.title}
                   meta={meta(e)}
-                  next={e.id === nextId}
+                  live={liveInfo(e, nowDate)}
+                  soon={e.id === nextId ? soonLabel(e, nowDate) : undefined}
                   past={!e.allDay && e.end <= now}
                   delay={i * 40}
                 />

@@ -132,11 +132,12 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx }: DayProp
           const top = Math.max(0, pct(p.start))
           const bottom = Math.min(100, pct(p.end))
           const past = p.e.end <= now.toISOString()
+          const live = p.e.start <= now.toISOString() && !past
           const short = p.end - p.start < 45
           return (
             <div
               key={p.e.id}
-              className={`hb-tl-event ${tone(p.e)} ${past ? 'is-past' : ''} ${short ? 'is-short' : ''}`}
+              className={`hb-tl-event ${tone(p.e)} ${past ? 'is-past' : ''} ${live ? 'is-live' : ''} ${short ? 'is-short' : ''}`}
               style={{
                 top: `${top}%`,
                 height: `${Math.max(bottom - top, 2)}%`,

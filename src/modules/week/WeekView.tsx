@@ -18,6 +18,7 @@ import { useDevice, useMedia } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, dayLabel, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import { eventsOnDay } from '../calendar/rules'
+import { liveInfo } from '../calendar/live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from '../calendar/Timeline'
 import { useCalendar, type CalendarEvent } from '../calendar/useCalendar'
 import { useTodos, type Todo } from '../todos/useTodos'
@@ -127,6 +128,7 @@ export function WeekView({ variant }: Props) {
         time={timeLabel(e, day)}
         title={e.title}
         week
+        live={day === today ? liveInfo(e, new Date()) : undefined}
         past={!e.allDay && e.end <= new Date().toISOString()}
       />
     ))

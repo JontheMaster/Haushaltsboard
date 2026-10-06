@@ -77,6 +77,79 @@
   text-overflow: ellipsis;
 }
 
+/* Läuft gerade: pulsierender Punkt, „Jetzt · bis …“, Fortschrittsbalken unten in der Kalenderfarbe */
+.hb-event {
+  --ev-bar: var(--ink-muted);
+}
+.hb-event.hb-person-a {
+  --ev-bar: var(--person-a);
+}
+.hb-event.hb-person-b {
+  --ev-bar: var(--person-b);
+}
+.hb-event.hb-cal-orange {
+  --ev-bar: var(--cal-orange);
+}
+.hb-event.hb-cal-yellow {
+  --ev-bar: var(--cal-yellow);
+}
+.hb-event.hb-cal-lilac {
+  --ev-bar: var(--cal-lilac);
+}
+.hb-event.hb-cal-purple {
+  --ev-bar: var(--cal-purple);
+}
+.hb-event.hb-cal-forest {
+  --ev-bar: var(--cal-forest);
+}
+.hb-event.hb-cal-lime {
+  --ev-bar: var(--cal-lime);
+}
+.hb-event.is-next {
+  box-shadow: none;
+}
+.hb-live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: var(--radius-full);
+  background: var(--ev-bar);
+  vertical-align: 1px;
+  animation: hb-pulse 1.6s ease-in-out infinite;
+}
+.hb-event-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--ev-bar);
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  transition: width var(--dur-calm) var(--ease-out);
+}
+.hb-event-soon {
+  flex: none;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+/* Zeitplan: laufender Termin bekommt den Punkt vor der Uhrzeit */
+.hb-tl-event.is-live .hb-tl-time::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: var(--radius-full);
+  background: var(--tl-bar);
+  vertical-align: 1px;
+  animation: hb-pulse 1.6s ease-in-out infinite;
+}
+
 /* Termine nie zusammendrücken (overflow: hidden würde sonst Schrumpfen erlauben), die Liste scrollt stattdessen */
 .hb-event {
   flex-shrink: 0;
@@ -600,16 +673,16 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  overflow: hidden;
   transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
 }
 .hb-card::before {
   content: "";
   position: absolute;
   left: 0;
-  top: var(--space-1);
-  bottom: var(--space-1);
+  top: 0;
+  bottom: 0;
   width: 4px;
-  border-radius: var(--radius-full);
   background: var(--ink-muted);
   transition: background-color var(--dur-base) var(--ease-out);
 }

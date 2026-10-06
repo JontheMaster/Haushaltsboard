@@ -52,8 +52,15 @@ export function ScrollList({ className = '', fit, children }: Props) {
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
-    const items = [...el.children].filter((c) => !(c as HTMLElement).dataset.more) as HTMLElement[]
-    for (const c of items) c.style.display = ''
+    // Nur Einträge wieder einblenden, die wir selbst ausgeblendet haben (andere versteckte Elemente,
+    // z. B. Hinweise für Screenreader, bleiben unangetastet)
+    for (const c of el.querySelectorAll<HTMLElement>(':scope > [data-fit-hidden]')) {
+      c.style.display = ''
+      delete c.dataset.fitHidden
+    }
+    const items = ([...el.children] as HTMLElement[]).filter(
+      (c) => !c.dataset.more && getComputedStyle(c).display !== 'none',
+    )
     if (!fitting) {
       setHidden(0)
       return
@@ -67,6 +74,7 @@ export function ScrollList({ className = '', fit, children }: Props) {
     for (const c of items) {
       if (count > 0 || c.offsetTop + c.offsetHeight > limit) {
         c.style.display = 'none'
+        c.dataset.fitHidden = '1'
         count++
       }
     }
