@@ -1,4 +1,4 @@
-// Termine aller Kalender laden und aufräumen. Genutzt von den Functions `calendar` (Board) und `alexa`.
+// Termine aller Kalender laden und aufräumen. Genutzt von den Functions `calendar` (Board), `alexa` und `transit`.
 // iCal-Adressen liegen als Secrets ICAL_<ID> vor. Versteckte Kalender verlassen den Server nie.
 import ICAL from 'npm:ical.js@2'
 import { adminClient } from './http.ts'
@@ -26,6 +26,8 @@ export type CalendarEvent = {
   color?: string
   /** Tage (YYYY-MM-DD), an denen dieser Ganztags-Eintrag nicht angezeigt wird (siehe tidy) */
   skipDays?: string[]
+  /** Feld „Ort“ aus dem Kalender (für Abfahrten), falls gesetzt */
+  location?: string
 }
 
 // ───────── Aufräumen ─────────
@@ -124,6 +126,12 @@ async function loadIcs(id: string): Promise<string> {
   return text
 }
 
+/** Ort des Termins, ohne Leerraum; leer = weglassen */
+function where(item: ICAL.Event): { location?: string } {
+  const loc = (item.location ?? '').replace(/\s+/g, ' ').trim()
+  return loc ? { location: loc } : {}
+}
+
 function expand(ics: string, calendar: string, person: string | null, fromDay: string, toDay: string): CalendarEvent[] {
   const root = new ICAL.Component(ICAL.parse(ics))
   for (const tz of root.getAllSubcomponents('vtimezone')) ICAL.TimezoneService.register(tz)
@@ -148,7 +156,7 @@ function expand(ics: string, calendar: string, person: string | null, fromDay: s
       const s = start.toString().slice(0, 10)
       const e = end.toString().slice(0, 10)
       if (s >= toDay || (e > s ? e : addDays(s, 1)) <= fromDay) return
-      out.push({ id: `${item.uid}_${s}`, calendar, person, title: (item.summary ?? '').trim(), start: s, end: e > s ? e : addDays(s, 1), allDay })
+      out.push({ id: `${item.uid}_${s}`, calendar, person, title: (item.summary ?? '').trim(), start: s, end: e > s ? e : addDays(s, 1), allDay, ...where(item) })
     } else {
       const s = start.toJSDate().getTime()
       const e = end.toJSDate().getTime()
@@ -161,6 +169,7 @@ function expand(ics: string, calendar: string, person: string | null, fromDay: s
         start: new Date(s).toISOString(),
         end: new Date(Math.max(e, s)).toISOString(),
         allDay,
+        ...where(item),
       })
     }
   }
@@ -187,8 +196,9 @@ function expand(ics: string, calendar: string, person: string | null, fromDay: s
 /**
  * Termine von Montag dieser Woche bis Sonntag nächster Woche.
  * `hideAlways`: Kalender mit „im Besuchsmodus ausblenden“ immer weglassen (z. B. beim Vorlesen durch Alexa).
+ * `all`: nichts weglassen, auch nicht im Besuchsmodus (nur für Auswertungen auf dem Server, z. B. Abfahrten).
  */
-export async function loadEvents({ hideAlways = false } = {}) {
+export async function loadEvents({ hideAlways = false, all = false } = {}) {
   const [{ data: settings }, { data: calendars }, { data: members }] = await Promise.all([
     db.from('settings').select('visit_mode').eq('id', 1).single(),
     db.from('calendars').select('id, owner, label, hide_in_visit, color'),
@@ -198,7 +208,7 @@ export async function loadEvents({ hideAlways = false } = {}) {
   const memberOf = new Map((members ?? []).map((m) => [m.id, m]))
   // Immer alle Kalender laden: die Aufräum-Regeln brauchen auch die versteckten.
   // Weggelassen wird erst ganz am Ende, so verlässt nichts Verstecktes den Server.
-  const hidden = new Set((calendars ?? []).filter((c) => (visitMode || hideAlways) && c.hide_in_visit).map((c) => c.id))
+  const hidden = new Set((calendars ?? []).filter((c) => !all && (visitMode || hideAlways) && c.hide_in_visit).map((c) => c.id))
 
   const fromDay = mondayOf(berlinDay(new Date()))
   const toDay = addDays(fromDay, 7 * WEEKS)

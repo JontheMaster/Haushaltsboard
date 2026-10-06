@@ -26,6 +26,12 @@ export type ModuleDef = {
   Settings?: ComponentType<{ onBack: () => void }>
   /** false = kein An/Aus-Schalter (z. B. Alexa, läuft über die Alexa-App) */
   toggle?: boolean
+  /**
+   * Kachel, die nur zeitweise erscheint (z. B. Abfahrten morgens): steht dann über der Kachel `stackOn`
+   * in deren Spalte, statt das Raster umzubauen. `useShow` sagt, ob sie gerade dran ist.
+   */
+  stackOn?: string
+  useShow?: () => boolean
 }
 
 /** Eine Kachel im Layout (Tabelle layouts, Feld tiles) */

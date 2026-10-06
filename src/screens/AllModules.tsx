@@ -1,4 +1,7 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, LogOut } from 'lucide-react'
+import { Button } from '../components/Button'
+import { useMembers } from '../lib/members'
+import { supabase } from '../lib/supabase'
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
 import { PageHeader } from '../components/PageHeader'
@@ -12,6 +15,7 @@ import { setModuleEnabled, useEnabledModules } from '../modules/useModules'
  */
 export function AllModules({ onBack, open }: { onBack: () => void; open: (id: string) => void }) {
   const enabled = useEnabledModules()
+  const { me } = useMembers()
   // Sofort umschalten, die Datenbank meldet den Stand dann live zurück
   const [pending, setPending] = useState<Map<string, boolean>>(new Map())
   const isOn = (id: string) => pending.get(id) ?? enabled?.has(id) ?? false
@@ -76,6 +80,9 @@ export function AllModules({ onBack, open }: { onBack: () => void; open: (id: st
           })}
         </section>
       )}
+      <Button variant="ghost" icon={<Icon icon={LogOut} size={18} />} onClick={() => supabase.auth.signOut()}>
+        Abmelden ({me.name})
+      </Button>
     </div>
   )
 }

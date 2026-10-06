@@ -1,4 +1,7 @@
-import { Bell, CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles } from 'lucide-react'
+import { Bell, CalendarDays, Clock, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, TrainFront } from 'lucide-react'
+import { DeparturesTile, useMorningBoard } from './transit/DeparturesBoard'
+import { TransitSettings } from './transit/TransitSettings'
+import { TransitHeader } from './transit/TripCard'
 import { ReminderSettings } from './reminders/ReminderSettings'
 import { AlexaHelp } from './alexa/AlexaHelp'
 import { CalendarSettings } from './calendar/CalendarSettings'
@@ -21,6 +24,8 @@ export const MODULES: ModuleDef[] = [
   { id: 'putzplan', title: 'Putzplan', description: 'Wiederkehrende Aufgaben, laufen bei den Todos mit', icon: Sparkles, phase: 2, sizes: [], Settings: PutzplanPage },
   { id: 'erinnerungen', title: 'Erinnerungen', description: 'Mitteilung aufs Handy, wenn ein Todo eine Uhrzeit hat', icon: Bell, phase: 5, sizes: [], Settings: ReminderSettings },
   { id: 'einkauf', title: 'Einkauf', description: 'Eure Bring!-Liste „Zuhause“', icon: ShoppingCart, phase: 1, sizes: ['s', 'm', 'l'], Tile: ShoppingTile },
+  // Abfahrten: Weg pro Person in der Kopfzeile (nur kurz vor dem Losgehen), morgens die Tafel über dem Einkauf
+  { id: 'abfahrten', title: 'Abfahrten', description: 'Wann ihr los müsst, mit Echtzeit von VAG und VGN', icon: TrainFront, phase: 5, sizes: ['s'], Tile: DeparturesTile, Header: TransitHeader, Settings: TransitSettings, stackOn: 'einkauf', useShow: useMorningBoard },
   // Spotify: nur sichtbar, solange etwas läuft (Kopfzeile statt fester Kachel)
   { id: 'spotify', title: 'Läuft gerade', description: 'Was bei euch auf Spotify läuft', icon: Music, phase: 5, sizes: ['m'], Tile: NowPlayingTile, Header: NowPlayingHeader, Settings: SpotifyPage },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary },

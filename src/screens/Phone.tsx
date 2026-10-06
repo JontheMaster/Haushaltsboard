@@ -1,10 +1,11 @@
-import { CalendarRange, House, ListChecks, LogOut, Plus, Settings2, ShoppingCart, Sparkles, type LucideIcon } from 'lucide-react'
+import { CalendarRange, House, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, type LucideIcon } from 'lucide-react'
+import { Sheet } from '../components/Sheet'
+import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
 import { useCallback, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Toast } from '../components/Toast'
 import { VisitToggle } from '../components/VisitToggle'
 import { DeviceProvider } from '../lib/device'
-import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
 import { shortDate, useNow } from '../lib/time'
 import { describe, type Weather } from '../modules/clock-weather/weather'
@@ -161,8 +162,9 @@ export function Phone({ weather }: { weather: Weather | null }) {
 
 function PhoneHeader({ weather, onMore }: { weather: Weather | null; onMore: () => void }) {
   const now = useNow(60_000)
-  const { me } = useMembers()
   const w = weather && describe(weather.now.code, weather.now.isDay)
+  const enabled = useEnabledModules()
+  const [board, setBoard] = useState(false)
 
   return (
     <header className="flex items-center gap-3 px-4 pt-[calc(var(--space-5)+env(safe-area-inset-top))] pb-4">
@@ -179,14 +181,16 @@ function PhoneHeader({ weather, onMore }: { weather: Weather | null; onMore: () 
       <button type="button" className="hb-icon-btn" aria-label="Alle Funktionen und Einstellungen" onClick={onMore}>
         <Icon icon={Settings2} size={22} />
       </button>
-      <button
-        type="button"
-        className="hb-icon-btn"
-        aria-label={`Abmelden (${me.name})`}
-        onClick={() => supabase.auth.signOut()}
-      >
-        <Icon icon={LogOut} size={20} />
-      </button>
+      {enabled?.has('abfahrten') && (
+        <button type="button" className="hb-icon-btn" aria-label="Abfahrten ab zuhause" onClick={() => setBoard(true)}>
+          <Icon icon={TrainFront} size={20} />
+        </button>
+      )}
+      {board && (
+        <Sheet title="Abfahrten ab zuhause" onClose={() => setBoard(false)}>
+          <DeparturesBoard />
+        </Sheet>
+      )}
     </header>
   )
 }

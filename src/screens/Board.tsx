@@ -15,9 +15,10 @@ import { MODULE_BY_ID, MODULES } from '../modules/registry'
 import type { TileSize } from '../modules/types'
 import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useModules'
 import { WeekView } from '../modules/week/WeekView'
+import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
 
-type View = 'heute' | 'woche'
-// Nach so langer Zeit ohne Berührung springt die Woche zurück auf Heute
+type View = 'heute' | 'woche' | 'abfahrten'
+// Nach so langer Zeit ohne Berührung springen Woche und Abfahrten zurück auf Heute
 const IDLE_MS = 2 * 60 * 1000
 
 // Kachelbreite im 12er-Raster an der Wand (DESIGN.md: s, m, l = 3, 4, 6 Spalten)
@@ -39,6 +40,9 @@ export function Board({ weather }: { weather: Weather | null }) {
   const enabled = useEnabledModules()
   const layout = useLayout('wall')
   const tiles = layout.filter((t) => enabled?.has(t.module))
+  // Hooks in fester Reihenfolge (MODULES ändert sich zur Laufzeit nicht)
+  const showNow = MODULES.map((m) => (m.useShow ? m.useShow() : false))
+  const stacked = MODULES.filter((m, i) => m.stackOn && showNow[i] && enabled?.has(m.id))
   const narrow = useMedia('(max-width: 1023px)')
   const [view, setView] = useState<View>('heute')
 
@@ -71,7 +75,7 @@ export function Board({ weather }: { weather: Weather | null }) {
   }
 
   useEffect(() => {
-    if (view !== 'woche') return
+    if (view === 'heute') return
     let t = setTimeout(() => setView('heute'), IDLE_MS)
     const touch = () => {
       clearTimeout(t)
@@ -102,6 +106,16 @@ export function Board({ weather }: { weather: Weather | null }) {
             <button type="button" className={`hb-choice ${view === 'woche' ? 'is-on' : ''}`} aria-pressed={view === 'woche'} onClick={() => setView('woche')}>
               Woche
             </button>
+            {enabled?.has('abfahrten') && (
+              <button
+                type="button"
+                className={`hb-choice ${view === 'abfahrten' ? 'is-on' : ''}`}
+                aria-pressed={view === 'abfahrten'}
+                onClick={() => setView('abfahrten')}
+              >
+                Abfahrten
+              </button>
+            )}
           </div>
           <VisitToggle />
           <button type="button" className="hb-choice" aria-label="Bildschirmschoner starten" title="Bildschirmschoner" onClick={() => setManualSaver(true)}>
@@ -119,13 +133,20 @@ export function Board({ weather }: { weather: Weather | null }) {
         <main className="flex min-h-0 flex-1 flex-col *:flex-1">
           <WeekView variant="wall" />
         </main>
+      ) : view === 'abfahrten' ? (
+        <main className="min-h-0 flex-1 overflow-y-auto hb-scroll-quiet">
+          <DeparturesBoard />
+        </main>
       ) : (
         <main className={`grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-5 ${narrow ? 'grid-cols-2' : 'grid-cols-12'}`}>
           {tiles.map((t, i) => {
             const mod = MODULE_BY_ID.get(t.module)!
             if (!mod.Tile) return null
+            // zeitweise Kacheln (z. B. Abfahrten morgens) stehen über dieser in derselben Spalte
+            const above = stacked.filter((m) => m.stackOn === t.module)
             return (
-              <div key={t.module} className={`flex min-h-0 flex-col *:flex-1 ${(narrow ? SPAN_NARROW : SPAN)[t.size]}`}>
+              <div key={t.module} className={`flex min-h-0 flex-col gap-5 *:min-h-0 *:flex-1 ${(narrow ? SPAN_NARROW : SPAN)[t.size]}`}>
+                {above.map((m) => m.Tile && <m.Tile key={m.id} size="s" delay={i * 40} />)}
                 <mod.Tile size={t.size} delay={i * 40} />
               </div>
             )
