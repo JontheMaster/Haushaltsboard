@@ -2,6 +2,7 @@
 // Alle Positionen in Prozent der Höhe – so füllt der Plan jede Kachel- oder Spaltenhöhe aus.
 import { useState } from 'react'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
+import { EventTitle } from './shorten'
 import type { CalendarEvent } from './useCalendar'
 
 export type HourRange = { from: number; to: number }
@@ -114,8 +115,8 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx }: DayProp
       {(allDaySlots ?? allDay.length) > 0 && (
         <div className="flex flex-col gap-1" style={{ height: `${(allDaySlots ?? allDay.length) * ALLDAY_SLOT_PX - 4}px` }}>
           {allDay.map((e) => (
-            <div key={e.id} className={`hb-tl-allday ${tone(e)}`} title={e.title}>
-              {e.title}
+            <div key={e.id} className={`hb-tl-allday ${tone(e)}`}>
+              <EventTitle title={e.title} size={14} />
             </div>
           ))}
         </div>
@@ -144,7 +145,9 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx }: DayProp
               }}
               title={`${hhmm(p.start)}–${hhmm(p.end)} ${p.e.title}`}
             >
-              <span className="hb-tl-title">{p.e.title}</span>
+              <span className="hb-tl-title">
+                <EventTitle title={p.e.title} size={15} />
+              </span>
               {!short && (
                 <span className="hb-tl-time">
                   {hhmm(p.start)}–{hhmm(p.end)}

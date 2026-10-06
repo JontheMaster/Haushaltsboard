@@ -61,6 +61,22 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
+/* Icon vor gekürzten Termintiteln (Torte, Video, Hantel …) */
+.hb-event-icon {
+  display: inline-block;
+  margin-right: var(--space-1);
+  vertical-align: -0.15em;
+}
+.hb-event-kind {
+  flex: none;
+  align-self: center;
+  color: var(--ink-muted);
+}
+.hb-tl-allday > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Termine nie zusammendrücken (overflow: hidden würde sonst Schrumpfen erlauben), die Liste scrollt stattdessen */
 .hb-event {
   flex-shrink: 0;
