@@ -11,16 +11,18 @@ type Props = {
   next?: boolean
   past?: boolean
   compact?: boolean
+  /** Wochenansicht: kleine Schrift, Titel bis drei Zeilen */
+  week?: boolean
   delay?: number
 }
 
 // Termin: farbiger Balken links, Fläche in Personenfarbe.
 // Oben Zeit und Kalender, darunter der Titel über die volle Breite (passt auch in schmale Kacheln).
-export function EventPill({ person, color, time, title, meta, next, past, compact, delay = 0 }: Props) {
+export function EventPill({ person, color, time, title, meta, next, past, compact, week, delay = 0 }: Props) {
   // blue und berry sind die Personenfarben, alle anderen eigene Kalenderfarben
   const tone =
     color === 'blue' ? 'hb-person-a' : color === 'berry' ? 'hb-person-b' : color ? `hb-cal-${color}` : `hb-person-${person}`
-  const cls = ['hb-event', tone, next && 'is-next', past && 'is-past', compact && 'hb-event-compact']
+  const cls = ['hb-event', tone, next && 'is-next', past && 'is-past', compact && 'hb-event-compact', week && 'hb-event-week']
     .filter(Boolean)
     .join(' ')
   return (

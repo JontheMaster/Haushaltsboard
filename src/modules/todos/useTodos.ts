@@ -87,8 +87,21 @@ export function useTodos(today: string) {
     [me.id, load],
   )
 
+  /** Felder sofort ändern (Ziehen, Person wechseln), danach speichern; bei Fehler neu laden */
+  const patchTodo = useCallback(
+    async (id: string, patch: Partial<Todo>) => {
+      setTodos((list) => list?.map((t) => (t.id === id ? { ...t, ...patch } : t)) ?? null)
+      const { error } = await supabase.from('todos').update(patch).eq('id', id)
+      if (error) {
+        setError(true)
+        load()
+      }
+    },
+    [load],
+  )
+
   /** Sortierschlüssel: erledigt (und schon eingereiht) = 1, sonst 0 */
   const doneRank = useCallback((t: Todo) => Number(!!t.done_at && !settling.has(t.id)), [settling])
 
-  return { todos, error, undoable, setDone, doneRank }
+  return { todos, error, undoable, setDone, doneRank, patchTodo }
 }

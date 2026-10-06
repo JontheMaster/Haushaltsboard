@@ -144,6 +144,118 @@
   font-size: 14px;
 }
 
+/* ───────── Woche ───────── */
+
+.hb-week-day {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.hb-week-day.is-today {
+  background: var(--highlight);
+  color: var(--highlight-ink);
+}
+.hb-week-day.is-past {
+  color: var(--ink-muted);
+}
+/* Ablage: Tagesspalte oder Bereich in „Ungeplant“ */
+.hb-drop {
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  transition: background-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.hb-week-unplanned .hb-drop {
+  background: var(--surface-sunken);
+  box-shadow: none;
+}
+.hb-drop.is-over {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.hb-drop.is-disabled {
+  background: transparent;
+  box-shadow: none;
+}
+.hb-week-unplanned {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+/* Karte in der Woche: Rand links in der Personenfarbe */
+.hb-card {
+  position: relative;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
+}
+.hb-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: var(--space-1);
+  bottom: var(--space-1);
+  width: 4px;
+  border-radius: var(--radius-full);
+  background: var(--ink-muted);
+  transition: background-color var(--dur-base) var(--ease-out);
+}
+.hb-card.hb-person-a::before {
+  background: var(--person-a);
+}
+.hb-card.hb-person-b::before {
+  background: var(--person-b);
+}
+.hb-card.is-done .hb-card-title {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+/* Gehoben beim Ziehen: hebt sich, kippt minimal (DESIGN.md: Karte ziehen) */
+.hb-card.is-lifted {
+  cursor: grabbing;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lift);
+  transform: rotate(-1.5deg) scale(1.03);
+  animation: none;
+}
+.hb-event-week {
+  animation: none;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+}
+.hb-event-week .hb-event-time {
+  font-size: 14px;
+}
+.hb-event-week .hb-event-title {
+  font-size: 15px;
+  line-height: 20px;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.hb-scroll-quiet {
+  scrollbar-width: none;
+}
+.hb-scroll-quiet::-webkit-scrollbar {
+  display: none;
+}
+
 /* ───────── Handy ───────── */
 
 /* Untere Leiste */

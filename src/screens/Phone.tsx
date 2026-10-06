@@ -1,4 +1,4 @@
-import { House, ListChecks, LogOut, Plus, ShoppingCart, type LucideIcon } from 'lucide-react'
+import { CalendarRange, House, ListChecks, LogOut, Plus, ShoppingCart, type LucideIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Toast } from '../components/Toast'
@@ -13,13 +13,15 @@ import { ShoppingTile } from '../modules/shopping/ShoppingTile'
 import { deleteTodo, restoreTodo } from '../modules/todos/todoActions'
 import { TodoSheet } from '../modules/todos/TodoSheet'
 import { TodosDetail } from '../modules/todos/TodosDetail'
+import { WeekView } from '../modules/week/WeekView'
 import type { Todo } from '../modules/todos/useTodos'
 import { useEnabledModules, useLayout } from '../modules/useModules'
 
-type Tab = 'start' | 'todos' | 'einkauf'
+type Tab = 'start' | 'woche' | 'todos' | 'einkauf'
 
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'start', label: 'Start', icon: House },
+  { id: 'woche', label: 'Woche', icon: CalendarRange },
   { id: 'todos', label: 'Todos', icon: ListChecks },
   { id: 'einkauf', label: 'Einkauf', icon: ShoppingCart },
 ]
@@ -27,7 +29,7 @@ const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
 function savedTab(): Tab {
   try {
     const t = localStorage.getItem('hb-tab')
-    return t === 'todos' || t === 'einkauf' ? t : 'start'
+    return t === 'woche' || t === 'todos' || t === 'einkauf' ? t : 'start'
   } catch {
     return 'start'
   }
@@ -78,6 +80,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
 
         <main className="flex flex-col gap-4 px-4">
           {tab === 'start' && <StartTab />}
+          {tab === 'woche' && <WeekView variant="phone" />}
           {tab === 'todos' && <TodosDetail />}
           {tab === 'einkauf' && <ShoppingTile size="m" delay={0} />}
         </main>

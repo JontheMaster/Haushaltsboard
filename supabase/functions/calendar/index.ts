@@ -1,10 +1,11 @@
-// Termine aller Kalender für heute und die nächsten 7 Tage (Europe/Berlin).
+// Termine aller Kalender von Montag dieser Woche bis Sonntag nächster Woche (Europe/Berlin).
 // iCal-Adressen liegen als Secrets ICAL_<ID> vor. Im Besuchsmodus fehlen versteckte Kalender ganz.
 import ICAL from 'npm:ical.js@2'
 import { adminClient, corsHeaders, json, requireMember } from '../_shared/http.ts'
 
 const TZ = 'Europe/Berlin'
-const DAYS = 8
+/** Zeitraum: diese und nächste Woche (für die Wochenansicht) */
+const WEEKS = 2
 const CACHE_MS = 4 * 60 * 1000
 
 type CalendarEvent = {
@@ -82,6 +83,13 @@ const cache = new Map<string, { at: number; text: string }>()
 
 function berlinDay(d: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d)
+}
+
+/** Montag der Woche, in der der Tag liegt */
+function mondayOf(day: string): string {
+  const [y, m, d] = day.split('-').map(Number)
+  const weekday = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7 // 0 = Mo
+  return addDays(day, -weekday)
 }
 
 function addDays(day: string, n: number): string {
@@ -194,8 +202,8 @@ Deno.serve(async (req) => {
   // Weggelassen wird erst ganz am Ende, so verlässt nichts Verstecktes den Server.
   const hidden = new Set((calendars ?? []).filter((c) => visitMode && c.hide_in_visit).map((c) => c.id))
 
-  const fromDay = berlinDay(new Date())
-  const toDay = addDays(fromDay, DAYS)
+  const fromDay = mondayOf(berlinDay(new Date()))
+  const toDay = addDays(fromDay, 7 * WEEKS)
 
   const errors: string[] = []
   const results = await Promise.all(

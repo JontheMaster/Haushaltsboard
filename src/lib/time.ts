@@ -41,6 +41,18 @@ export function addDays(day: string, n: number): string {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
 }
 
+/** Montag der Woche, in der der Tag liegt */
+export function mondayOf(day: string): string {
+  const [y, m, d] = day.split('-').map(Number)
+  const weekday = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7 // 0 = Mo
+  return addDays(day, -weekday)
+}
+
+/** „Mo 6.“ */
+export function dayLabel(day: string): string {
+  return `${weekdayShort(day)} ${Number(day.slice(8))}.`
+}
+
 /** „Mo“, „Di“ … für ein YYYY-MM-DD */
 export function weekdayShort(day: string): string {
   const [y, m, d] = day.split('-').map(Number)
