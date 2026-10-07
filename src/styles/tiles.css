@@ -1,0 +1,376 @@
+/* ───────── Zusatzkacheln der Handy-Startseite ───────── */
+
+/* Wetter mit Tageskurve: Satz als Pille */
+.hb-tile-sentence {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.hb-tile-sentence.is-rain {
+  background: var(--person-a-soft);
+}
+.hb-tile-sentence.is-rain .hb-icon {
+  color: var(--person-a);
+}
+
+/* Spruch des Tages */
+.hb-saying blockquote {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--ink);
+}
+.hb-saying blockquote::before {
+  content: '„';
+  margin-right: 2px;
+  color: var(--accent);
+}
+.hb-saying blockquote::after {
+  content: '“';
+  color: var(--accent);
+}
+.hb-saying figcaption {
+  margin-top: var(--space-2);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Kurze Zeile: Tag · Titel · Zeit (Essen, Putzplan) */
+.hb-mini-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+.hb-mini-row:active {
+  background: var(--surface-sunken);
+}
+.hb-mini-row.is-static {
+  cursor: default;
+}
+.hb-mini-day {
+  flex: none;
+  min-width: 64px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink-muted);
+}
+.hb-mini-day.is-late {
+  color: var(--warning);
+}
+
+/* Die nächsten Tage: ein Tag pro Zeile, links der Tag, rechts die Einträge */
+.hb-compact-week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hb-compact-day {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  column-gap: var(--space-2);
+  row-gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+.hb-compact-day > :not(.hb-compact-head) {
+  grid-column: 2;
+}
+.hb-compact-head {
+  grid-column: 1;
+  grid-row: 1 / span 6;
+}
+.hb-compact-head {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.hb-compact-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink);
+}
+.hb-compact-line i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+}
+.hb-compact-line.is-meal {
+  color: var(--accent);
+  font-weight: 600;
+}
+.hb-compact-time {
+  flex: none;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.hb-compact-empty {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.hb-compact-todos {
+  justify-self: start;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+/* Schnellaktionen */
+.hb-quick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.hb-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.hb-quick-btn:active {
+  transform: scale(0.96);
+}
+.hb-quick-btn .hb-icon {
+  color: var(--accent);
+}
+.hb-quick-btn.is-wrap {
+  cursor: default;
+  padding-left: var(--space-1);
+  gap: 2px;
+}
+.hb-quick-coin > button .hb-icon,
+.hb-quick-btn .hb-dice-btn {
+  color: var(--accent);
+}
+.hb-quick-coin {
+  display: flex;
+}
+.hb-quick-coin > button {
+  flex: 1;
+  white-space: nowrap;
+  padding: 0 var(--space-3);
+  font-size: 15px;
+  color: var(--ink);
+  min-height: 52px;
+  justify-content: flex-start;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-weight: 650;
+}
+
+/* Foto des Tages */
+.hb-photo-day {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+.hb-photo-day img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: hb-fade-in var(--dur-slow) var(--ease-out) both;
+}
+.hb-photo-day figcaption {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-raised) 85%, transparent);
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* ───────── Animationen in der App ───────── */
+
+/* „Alles erledigt“: Konfetti fliegt von der Mitte aus, die Pille ploppt auf */
+.hb-celebrate {
+  position: fixed;
+  inset: 0;
+  z-index: 97;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.hb-celebrate-burst {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+}
+.hb-celebrate-burst i {
+  position: absolute;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: hb-confetti 1.9s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+}
+@keyframes hb-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(0.6);
+  }
+  45% {
+    opacity: 1;
+    transform: translate(var(--x), var(--y)) rotate(calc(var(--r) / 2)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), calc(var(--y) + 40vh)) rotate(var(--r)) scale(1);
+  }
+}
+.hb-celebrate-pill {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-full);
+  background: var(--success-fill);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: var(--shadow-lift);
+  animation: hb-celebrate-pop 2.6s var(--ease-spring) both;
+}
+@keyframes hb-celebrate-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  15%,
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+/* Wetter-Symbol bewegt sich leicht passend zum Wetter (Kopfzeile, Kacheln) */
+.hb-wx {
+  transform-origin: center;
+}
+.hb-wx.is-sun {
+  animation: hb-wx-spin 40s linear infinite;
+}
+.hb-wx.is-cloud {
+  animation: hb-wx-drift 6s ease-in-out infinite;
+}
+.hb-wx.is-rain,
+.hb-wx.is-drizzle {
+  animation: hb-wx-bob 2.4s ease-in-out infinite;
+}
+.hb-wx.is-snow {
+  animation: hb-wx-sway 4s ease-in-out infinite;
+}
+.hb-wx.is-storm {
+  animation: hb-wx-flash 5s steps(1) infinite;
+}
+@keyframes hb-wx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hb-wx-drift {
+  50% {
+    transform: translateX(3px);
+  }
+}
+@keyframes hb-wx-bob {
+  50% {
+    transform: translateY(2px);
+  }
+}
+@keyframes hb-wx-sway {
+  25% {
+    transform: rotate(-6deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}
+@keyframes hb-wx-flash {
+  92% {
+    opacity: 1;
+  }
+  94% {
+    opacity: 0.4;
+  }
+  96% {
+    opacity: 1;
+  }
+}
+
+/* Figur in leeren Zuständen: klein neben dem Text */
+.hb-empty-fig {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.hb-fig.is-inline {
+  position: static;
+  flex: none;
+  width: 64px;
+  animation: hb-fade-in var(--dur-slow) var(--ease-out) both;
+}
+.hb-empty-fig.is-wall .hb-fig.is-inline {
+  width: 84px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hb-wx,
+  .hb-celebrate-burst i {
+    animation: none !important;
+  }
+}

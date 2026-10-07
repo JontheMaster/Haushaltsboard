@@ -79,9 +79,9 @@ export type Database = {
         ]
       }
       layouts: {
-        Row: { device: string | null; id: string; member: string | null; tiles: Json }
-        Insert: { device?: string | null; id?: string; member?: string | null; tiles?: Json }
-        Update: { device?: string | null; id?: string; member?: string | null; tiles?: Json }
+        Row: { device: string | null; id: string; member: string | null; tiles: Json; hidden_headers: string[] }
+        Insert: { device?: string | null; id?: string; member?: string | null; tiles?: Json; hidden_headers?: string[] }
+        Update: { device?: string | null; id?: string; member?: string | null; tiles?: Json; hidden_headers?: string[] }
         Relationships: [Rel<'layouts_member_fkey', 'member', 'members'>]
       }
       members: {

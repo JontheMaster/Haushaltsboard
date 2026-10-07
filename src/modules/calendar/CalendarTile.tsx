@@ -1,6 +1,7 @@
 import { CalendarDays } from 'lucide-react'
 import { EventPill } from '../../components/EventPill'
 import { ScrollList } from '../../components/ScrollList'
+import { EmptyFigure } from '../../components/EmptyFigure'
 import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
 import type { PersonKey } from '../../lib/members'
@@ -73,7 +74,9 @@ export function CalendarTile({ size, delay }: TileProps) {
           <div className={`flex min-w-0 flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
             {wide && <h3 className="text-label text-ink-muted">Heute</h3>}
             {todays.length === 0 && mealsOn(today).length === 0 ? (
-              <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>Heute keine Termine.</p>
+              <EmptyFigure wall={!phone}>
+                <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>Heute keine Termine. Ein freier Tag.</p>
+              </EmptyFigure>
             ) : (
               <ScrollList fit={!phone} className={`flex flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
                 {byTime(todays, mealsOn(today), today).map((s, i) => {

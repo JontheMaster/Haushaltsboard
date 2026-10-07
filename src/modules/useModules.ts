@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
-import { DEFAULT_PHONE_LAYOUT, DEFAULT_WALL_LAYOUT, MODULE_BY_ID } from './registry'
+import { DEFAULT_PHONE_LAYOUT, DEFAULT_WALL_LAYOUT, MODULE_BY_ID, PHONE_TILE_BY_KEY } from './registry'
 import type { LayoutTile } from './types'
 
 // Letzter bekannter Stand: neue Ansichten starten damit statt mit „alles aus“ (sonst springen Schalter sichtbar um)
@@ -93,7 +93,7 @@ export function useLayout(view: 'wall' | 'phone'): LayoutTile[] {
         const saved = data?.tiles as LayoutTile[] | undefined
         const next =
           Array.isArray(saved) && (saved.length || view === 'phone')
-            ? saved.filter((t) => MODULE_BY_ID.has(t.module))
+            ? saved.filter((t) => MODULE_BY_ID.has(t.module) || PHONE_TILE_BY_KEY.has(t.module))
             : view === 'wall'
               ? DEFAULT_WALL_LAYOUT
               : DEFAULT_PHONE_LAYOUT
@@ -139,4 +139,48 @@ async function writePhoneLayout(memberId: string, tiles: LayoutTile[] | null): P
   // Inzwischen von einem anderen Gerät angelegt: dann eben ändern
   if (error?.code === '23505') return !(await supabase.from('layouts').update({ tiles }).eq('member', memberId)).error
   return !error
+}
+
+// ───────── Karten oben auf der Handy-Startseite (pro Person ausblendbar) ─────────
+
+const lastHidden = new Map<string, string[]>()
+
+/** Module, deren Karte oben (Header) die Person am Handy ausgeblendet hat, live */
+export function useHiddenHeaders(): string[] {
+  const { me } = useMembers()
+  const [hidden, setHidden] = useState<string[]>(lastHidden.get(me.id) ?? [])
+  useEffect(() => {
+    const load = () =>
+      supabase
+        .from('layouts')
+        .select('hidden_headers')
+        .eq('member', me.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          const next = data?.hidden_headers ?? []
+          lastHidden.set(me.id, next)
+          setHidden(next)
+        })
+    load()
+    const channel = supabase
+      .channel(`hidden-headers-${crypto.randomUUID()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'layouts', filter: `member=eq.${me.id}` }, load)
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [me.id])
+  return hidden
+}
+
+/** Karten oben speichern (legt die Layout-Zeile mit dem aktuellen Kachel-Layout an, falls es noch keine gibt) */
+export function saveHiddenHeaders(memberId: string, hidden: string[], tiles: LayoutTile[]): Promise<boolean> {
+  lastHidden.set(memberId, hidden)
+  const run = saving.then(async () => {
+    const { data } = await supabase.from('layouts').select('id').eq('member', memberId).maybeSingle()
+    if (data) return !(await supabase.from('layouts').update({ hidden_headers: hidden }).eq('id', data.id)).error
+    return !(await supabase.from('layouts').insert({ member: memberId, tiles: tiles as never, hidden_headers: hidden })).error
+  })
+  saving = run.catch(() => false)
+  return run
 }

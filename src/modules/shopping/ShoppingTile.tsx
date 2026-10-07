@@ -1,6 +1,7 @@
 import { Plus, ShoppingCart } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Icon } from '../../components/Icon'
+import { EmptyFigure } from '../../components/EmptyFigure'
 import { useDevice } from '../../lib/device'
 import { TaskItem } from '../../components/TaskItem'
 import { Tile } from '../../components/Tile'
@@ -52,7 +53,9 @@ export function ShoppingTile({ size, delay }: TileProps) {
       {items === null ? (
         !error && <p className="text-body-wall text-ink-muted">Liste lädt …</p>
       ) : items.length === 0 ? (
-        <p className="text-body-wall text-ink-muted">{phone ? 'Alles da. Oben eintippen, was fehlt.' : 'Alles da. Neues kommt übers Handy oder die Bring!-App.'}</p>
+        <EmptyFigure wall={!phone}>
+          <p className="text-body-wall text-ink-muted">{phone ? 'Alles da. Oben eintippen, was fehlt.' : 'Alles da. Neues kommt übers Handy oder die Bring!-App.'}</p>
+        </EmptyFigure>
       ) : (
         <div ref={flip} className={`relative ${size === 'l' ? 'columns-2 gap-5' : ''}`}>
           {items.map((i) => (

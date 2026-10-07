@@ -65,7 +65,7 @@ export function useBriefingSlot(enabled: boolean): { time: string; dismiss: () =
 // ───────── Wetter in Worten ─────────
 
 /** Ein Satz zum Tag: Regen ja/nein (ab wann), dazu ein Hinweis bei Kälte oder Hitze */
-function weatherSentence(w: Weather, today: string, nowHour: number): { text: string; rain: boolean } {
+export function weatherSentence(w: Weather, today: string, nowHour: number): { text: string; rain: boolean } {
   const rest = w.hours.filter((h) => h.time.startsWith(today) && Number(h.time.slice(11, 13)) >= nowHour && Number(h.time.slice(11, 13)) <= 23)
   const wet = rest.find((h) => h.rain >= 50)
   const maxRain = Math.max(0, ...rest.map((h) => h.rain))

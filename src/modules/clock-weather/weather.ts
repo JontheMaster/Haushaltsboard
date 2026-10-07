@@ -77,3 +77,13 @@ export function useWeather(): Weather | null {
   }, [])
   return weather
 }
+
+/** Bewegung für das Wetter-Symbol (CSS-Klasse hb-wx is-…) */
+export function wxClass(code: number, isDay = true): string {
+  if (code <= 1) return isDay ? 'hb-wx is-sun' : 'hb-wx'
+  if (code <= 3 || code <= 48) return 'hb-wx is-cloud'
+  if (code <= 57) return 'hb-wx is-drizzle'
+  if (code <= 67 || (code >= 80 && code <= 82)) return 'hb-wx is-rain'
+  if (code <= 86) return 'hb-wx is-snow'
+  return 'hb-wx is-storm'
+}

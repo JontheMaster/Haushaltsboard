@@ -1,5 +1,6 @@
 import { CalendarRange, House, LayoutGrid, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 import { CookMode } from '../modules/meals/CookMode'
+import { Celebration } from '../components/Celebration'
 import { WeekRecap } from '../modules/recap/WeekRecap'
 import { WifiButton } from '../modules/wlan/Wifi'
 import { CoinButton } from '../modules/coin/CoinFlip'
@@ -13,8 +14,8 @@ import { VisitToggle } from '../components/VisitToggle'
 import { DeviceProvider } from '../lib/device'
 import { supabase } from '../lib/supabase'
 import { shortDate, useNow } from '../lib/time'
-import { describe, type Weather } from '../modules/clock-weather/weather'
-import { MODULE_BY_ID, MODULES } from '../modules/registry'
+import { describe, wxClass, type Weather } from '../modules/clock-weather/weather'
+import { MODULE_BY_ID, MODULES, PHONE_TILE_BY_KEY } from '../modules/registry'
 import { SpotifyPage, takeSpotifyResult } from '../modules/spotify/SpotifyPage'
 import { ShoppingTile } from '../modules/shopping/ShoppingTile'
 import { deleteTodo, restoreTodo } from '../modules/todos/todoActions'
@@ -26,7 +27,7 @@ import { PutzplanPage } from '../modules/chores/Putzplan'
 import { Button } from '../components/Button'
 import { AllModules } from './AllModules'
 import { PhoneLayoutEditor } from './PhoneLayoutEditor'
-import { useEnabledModules, useLayout } from '../modules/useModules'
+import { useEnabledModules, useHiddenHeaders, useLayout } from '../modules/useModules'
 
 type Tab = 'start' | 'woche' | 'todos' | 'einkauf' | 'essen'
 
@@ -113,7 +114,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
   }, [])
 
   return (
-    <DeviceProvider value={{ device: 'phone', openTodo, removeTodo }}>
+    <DeviceProvider value={{ device: 'phone', openTodo, removeTodo, newTodo: () => setSheet({}), goTab: (t) => go(t as Tab), showToast }}>
       <div className="min-h-dvh bg-surface pb-[calc(88px+env(safe-area-inset-bottom))]">
         <PhoneHeader weather={weather} onMore={() => setPage({ kind: 'all' })} />
 
@@ -179,6 +180,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
         {sheet && <TodoSheet todo={sheet.todo} onClose={() => setSheet(null)} onSaved={showToast} />}
         {toast && <Toast key={toast.id} message={toast.message} action={toast.action} onDone={hideToast} />}
         <CookMode />
+        <Celebration />
         <WeekRecap />
       </div>
     </DeviceProvider>
@@ -197,7 +199,7 @@ function PhoneHeader({ weather, onMore }: { weather: Weather | null; onMore: () 
         <h1 className="font-display text-title text-ink">{shortDate(now)}</h1>
         {weather && w && (
           <span className="flex items-center gap-1 text-label text-ink-muted">
-            <Icon icon={w.icon} size={18} label={w.label} className="text-accent" />
+            <Icon icon={w.icon} size={18} label={w.label} className={`text-accent ${wxClass(weather.now.code, weather.now.isDay)}`} />
             {weather.now.temp}° · bis {weather.days[0]?.max}°
           </span>
         )}
@@ -223,19 +225,22 @@ function PhoneHeader({ weather, onMore }: { weather: Weather | null; onMore: () 
 function StartTab({ onEdit }: { onEdit: () => void }) {
   const enabled = useEnabledModules()
   const layout = useLayout('phone')
+  const hiddenHeaders = useHiddenHeaders()
   return (
     <>
       {/* Besuch da: WLAN-Code als Zeile oben (in der Kopfzeile ist am Handy kein Platz mehr) */}
       <WifiButton variant="phone" />
-      {MODULES.filter((m) => m.Header && enabled?.has(m.id)).map((m) => {
+      {/* Karten oben, außer denen, die die Person in „Startseite anpassen“ ausgeblendet hat */}
+      {MODULES.filter((m) => m.Header && enabled?.has(m.id) && !hiddenHeaders.includes(m.id)).map((m) => {
         const Header = m.Header!
         return <Header key={m.id} variant="phone" />
       })}
       {layout
-        .filter((t) => enabled?.has(t.module))
-        .map((t, i) => {
-          const mod = MODULE_BY_ID.get(t.module)!
-          return mod.Tile && <mod.Tile key={t.module} size={t.size} delay={i * 40} />
+        .map((t) => ({ t, tile: PHONE_TILE_BY_KEY.get(t.module) }))
+        .filter(({ tile }) => tile && enabled?.has(tile.moduleId))
+        .map(({ t, tile }, i) => {
+          const Tile = tile!.Tile
+          return <Tile key={t.module} size={t.size} delay={i * 40} />
         })}
       <div className="flex flex-wrap gap-2">
         <Button variant="ghost" icon={<Icon icon={LayoutGrid} size={18} />} onClick={onEdit}>

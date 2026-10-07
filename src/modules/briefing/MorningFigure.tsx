@@ -6,12 +6,12 @@
 // Aufbau (hinten → vorn): Schatten, hinteres Bein, Schirm-Arm (bei Regen), vorderes Bein, Pulli (deckt die Hüfte),
 // Ausschnitt, Hals, Kopf, Arm mit Tasse. Maße: Hals (131 | 100), Hüfte auf Höhe 166, Boden auf 222.
 
-type Props = { rain: boolean; cold: boolean; hot: boolean; variant: 'f' | 'm' }
+type Props = { rain: boolean; cold: boolean; hot: boolean; variant: 'f' | 'm'; inline?: boolean }
 
-export function MorningFigure({ rain, cold, hot, variant }: Props) {
+export function MorningFigure({ rain, cold, hot, variant, inline }: Props) {
   const male = variant === 'm'
   return (
-    <svg className={`hb-fig is-${variant}`} viewBox="0 0 220 236" aria-hidden="true">
+    <svg className={`hb-fig is-${variant} ${inline ? 'is-inline' : ''}`} viewBox="0 0 220 236" aria-hidden="true">
       <ellipse cx="128" cy="226" rx="40" ry="5" className="hb-fig-shadow" />
 
       <g className="hb-fig-sway">

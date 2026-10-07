@@ -28,6 +28,12 @@ type DeviceState = {
   openTodo?: (id: string) => void
   /** Handy: Todo löschen, mit „Rückgängig“ */
   removeTodo?: (todo: Todo) => void
+  /** Handy: neues Todo anlegen (Fenster öffnen), z. B. aus den Schnellaktionen */
+  newTodo?: () => void
+  /** Handy: zu einem Reiter springen, z. B. „einkauf“ */
+  goTab?: (tab: string) => void
+  /** Handy: kurze Bestätigung unten */
+  showToast?: (message: string) => void
 }
 
 const DeviceCtx = createContext<DeviceState>({ device: 'wall' })

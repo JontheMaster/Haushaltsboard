@@ -3,6 +3,7 @@
 @import './styles/components.css';
 @import './styles/meals.css';
 @import './styles/briefing.css';
+@import './styles/tiles.css';
 
 @utility shadow-tile {
   box-shadow: var(--shadow-tile);

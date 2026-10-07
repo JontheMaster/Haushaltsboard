@@ -1,6 +1,6 @@
 import { Icon } from '../../components/Icon'
 import { berlinTime, longDate, useNow, weekdayShort } from '../../lib/time'
-import { describe, type Weather } from './weather'
+import { describe, wxClass, type Weather } from './weather'
 
 // Kopfzeile an der Wand: große Uhr, Datum, Wetter heute und die nächsten zwei Tage
 export function ClockWeather({ weather }: { weather: Weather | null }) {
@@ -34,7 +34,7 @@ function WeatherLine({ weather }: { weather: Weather }) {
   return (
     <div className="hb-weather">
       <span className="hb-weather-now">
-        <Icon icon={current.icon} size={26} label={current.label} />
+        <Icon icon={current.icon} size={26} label={current.label} className={wxClass(weather.now.code, weather.now.isDay)} />
         {weather.now.temp}°
       </span>
       {weather.days.map((d, i) => {

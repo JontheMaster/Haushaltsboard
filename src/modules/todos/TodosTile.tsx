@@ -7,6 +7,7 @@ import { PersonChip } from '../../components/PersonChip'
 import { SwipeToDelete } from '../../components/SwipeToDelete'
 import { TaskItem } from '../../components/TaskItem'
 import { Tile } from '../../components/Tile'
+import { EmptyFigure } from '../../components/EmptyFigure'
 import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
 import { useFlip } from '../../lib/useFlip'
@@ -100,9 +101,11 @@ export function TodosTile({ size, delay }: TileProps) {
           )}
 
           {empty ? (
-            <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>
-              {phone ? 'Heute ist frei. Tipp auf Plus für ein neues Todo.' : 'Heute ist frei. Neues Todo am Handy anlegen.'}
-            </p>
+            <EmptyFigure wall={!phone}>
+              <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>
+                {phone ? 'Heute ist frei. Tipp auf Plus für ein neues Todo.' : 'Heute ist frei. Neues Todo am Handy anlegen.'}
+              </p>
+            </EmptyFigure>
           ) : (
             <>
               <div className={stacked ? 'flex flex-col gap-3' : 'grid grid-cols-2 gap-5'}>

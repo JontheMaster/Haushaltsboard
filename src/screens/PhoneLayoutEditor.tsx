@@ -8,16 +8,16 @@ import { Icon } from '../components/Icon'
 import { PageHeader } from '../components/PageHeader'
 import { Toggle } from '../components/Toggle'
 import { useMembers } from '../lib/members'
-import { DEFAULT_PHONE_LAYOUT, PHONE_TILE_MODULES } from '../modules/registry'
+import { DEFAULT_PHONE_LAYOUT, MODULES, PHONE_TILE_BY_KEY, PHONE_TILES } from '../modules/registry'
 import type { LayoutTile } from '../modules/types'
-import { savePhoneLayout, useEnabledModules, useLayout } from '../modules/useModules'
+import { saveHiddenHeaders, savePhoneLayout, useEnabledModules, useHiddenHeaders, useLayout } from '../modules/useModules'
 
 type Row = { module: string; shown: boolean }
 
 /** Gespeichertes Layout → Zeilen: sichtbare in ihrer Reihenfolge, danach die ausgeblendeten */
 function toRows(tiles: LayoutTile[]): Row[] {
-  const shown = tiles.map((t) => t.module).filter((id) => PHONE_TILE_MODULES.some((m) => m.id === id))
-  const hidden = PHONE_TILE_MODULES.map((m) => m.id).filter((id) => !shown.includes(id))
+  const shown = tiles.map((t) => t.module).filter((key) => PHONE_TILE_BY_KEY.has(key))
+  const hidden = PHONE_TILES.map((t) => t.key).filter((key) => !shown.includes(key))
   return [...shown.map((module) => ({ module, shown: true })), ...hidden.map((module) => ({ module, shown: false }))]
 }
 
@@ -76,13 +76,14 @@ export function PhoneLayoutEditor({ onBack, showToast }: { onBack: () => void; s
               <LayoutRow
                 key={r.module}
                 row={r}
-                off={enabled ? !enabled.has(r.module) : false}
+                off={enabled ? !enabled.has(PHONE_TILE_BY_KEY.get(r.module)!.moduleId) : false}
                 onToggle={(shown) => change(rows.map((x) => (x.module === r.module ? { ...x, shown } : x)))}
               />
             ))}
           </section>
         </SortableContext>
       </DndContext>
+      <HeaderToggles tiles={toTiles(rows)} />
       <Button variant="ghost" icon={<Icon icon={RotateCcw} size={18} />} onClick={reset}>
         Standard wiederherstellen
       </Button>
@@ -91,7 +92,7 @@ export function PhoneLayoutEditor({ onBack, showToast }: { onBack: () => void; s
 }
 
 function LayoutRow({ row, off, onToggle }: { row: Row; off: boolean; onToggle: (shown: boolean) => void }) {
-  const mod = PHONE_TILE_MODULES.find((m) => m.id === row.module)!
+  const mod = PHONE_TILE_BY_KEY.get(row.module)!
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: row.module })
   const on = row.shown && !off
 
@@ -122,5 +123,58 @@ function LayoutRow({ row, off, onToggle }: { row: Row; off: boolean; onToggle: (
       </div>
       <Toggle hideLabel label={`${mod.title} ${row.shown ? 'ausblenden' : 'einblenden'}`} checked={row.shown} onChange={onToggle} />
     </div>
+  )
+}
+
+// Karten, die von selbst oben auf der Startseite erscheinen, wenn sie dran sind
+const HEADER_TEXT: Record<string, { title: string; description: string }> = {
+  abfahrten: { title: 'Dein Weg', description: 'Wann du losmusst, vor Terminen mit Ort' },
+  spotify: { title: 'Läuft gerade', description: 'Was ihr gerade auf Spotify hört' },
+  essensplan: { title: 'Essen von heute', description: 'Kurz vor dem Kochen, antippen = Kochmodus' },
+  wochenrueckblick: { title: 'Wochenrückblick', description: 'Sonntags ab 15 Uhr' },
+  jubilaeum: { title: 'Jubiläen', description: 'An besonderen Tagen' },
+}
+
+/** Karten oben: pro Person einzeln aus- und einblenden */
+function HeaderToggles({ tiles }: { tiles: LayoutTile[] }) {
+  const { me } = useMembers()
+  const enabled = useEnabledModules()
+  const saved = useHiddenHeaders()
+  const [hidden, setHidden] = useState<string[]>(saved)
+  useEffect(() => setHidden(saved), [saved])
+  const headers = MODULES.filter((m) => m.Header && enabled?.has(m.id))
+  if (!headers.length) return null
+
+  function toggle(id: string, show: boolean) {
+    const next = show ? hidden.filter((x) => x !== id) : [...hidden, id]
+    setHidden(next)
+    saveHiddenHeaders(me.id, next, tiles)
+  }
+
+  return (
+    <>
+      <h3 className="mt-2 font-display text-body-wall font-semibold text-ink">Oben auf der Startseite</h3>
+      <p className="-mt-2 text-label text-ink-muted">Diese Karten erscheinen von selbst, wenn sie gerade dran sind.</p>
+      <section className="hb-tile hb-tile-static hb-list-tile">
+        {headers.map((m) => {
+          const text = HEADER_TEXT[m.id] ?? { title: m.title, description: m.description }
+          const on = !hidden.includes(m.id)
+          return (
+            <div key={m.id} className="hb-module-row">
+              <div className="hb-module-open">
+                <span className={`hb-tile-icon ${on ? '' : 'is-off'}`}>
+                  <Icon icon={m.icon} size={20} />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col text-left">
+                  <span className={`text-body font-semibold ${on ? 'text-ink' : 'text-ink-muted'}`}>{text.title}</span>
+                  <span className="text-label text-ink-muted">{text.description}</span>
+                </span>
+              </div>
+              <Toggle hideLabel label={`${text.title} ${on ? 'ausblenden' : 'einblenden'}`} checked={on} onChange={(v) => toggle(m.id, v)} />
+            </div>
+          )
+        })}
+      </section>
+    </>
   )
 }

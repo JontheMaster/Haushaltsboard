@@ -547,6 +547,19 @@
 .hb-curve-hours span:last-child {
   transform: translateX(-100%);
 }
+/* schmale Kachel: kleinere Beschriftung, Ränder nicht abschneiden */
+.hb-curve.is-compact .hb-curve-temp {
+  font-size: 14px;
+}
+.hb-curve.is-compact .hb-curve-temp.is-first {
+  transform: translate(0, -150%);
+}
+.hb-curve.is-compact .hb-curve-temp.is-last {
+  transform: translate(-100%, -150%);
+}
+.hb-curve.is-compact .hb-curve-hours span {
+  font-size: 13px;
+}
 
 /* ── Rechts: wenige Karten mit Symbol ── */
 .hb-brief-side {

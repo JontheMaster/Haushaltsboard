@@ -2,6 +2,7 @@ import { Image, LogOut } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Toast } from '../components/Toast'
 import { CookMode } from '../modules/meals/CookMode'
+import { Celebration } from '../components/Celebration'
 import { MorningBriefing, useBriefingSlot } from '../modules/briefing/MorningBriefing'
 import { WeekRecap } from '../modules/recap/WeekRecap'
 import { WifiButton } from '../modules/wlan/Wifi'
@@ -212,6 +213,7 @@ export function Board({ weather }: { weather: Weather | null }) {
         </main>
       )}
       <CookMode />
+      <Celebration />
       {briefing && (
         <MorningBriefing
           weather={weather}

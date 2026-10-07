@@ -32,7 +32,17 @@ export type ModuleDef = {
    */
   stackOn?: string
   useShow?: () => boolean
+  /**
+   * Weitere Kacheln nur für die Handy-Startseite („Startseite anpassen“), z. B. „Wetter mit Tageskurve“.
+   * Im Layout stehen sie als „modul.kachel“; sie erscheinen nur, solange das Modul an ist.
+   */
+  phoneTiles?: PhoneTileDef[]
 }
+
+export type PhoneTileDef = { id: string; title: string; description: string; icon: LucideIcon; Tile: ComponentType<TileProps> }
+
+/** Eine wählbare Kachel der Handy-Startseite (Hauptkachel eines Moduls oder eine seiner phoneTiles) */
+export type PhoneTile = PhoneTileDef & { key: string; moduleId: string }
 
 /** Eine Kachel im Layout (Tabelle layouts, Feld tiles) */
 export type LayoutTile = { module: string; size: TileSize }

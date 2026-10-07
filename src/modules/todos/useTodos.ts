@@ -4,6 +4,7 @@ import { useMembers } from '../../lib/members'
 import { supabase } from '../../lib/supabase'
 import { berlinMidnightISO, mondayOf } from '../../lib/time'
 import { useEnabledModules } from '../useModules'
+import { celebrate } from '../../components/Celebration'
 
 type ChoreTask = Tables<'chore_tasks'>
 
@@ -147,10 +148,23 @@ export function useTodos(today: string) {
     }
   }, [load])
 
+  // aktuelle Liste für „Alles erledigt“ (ohne setDone bei jeder Änderung neu zu erzeugen)
+  const todosRef = useRef(todos)
+  useEffect(() => {
+    todosRef.current = todos
+  }, [todos])
+
   const setDone = useCallback(
     async (id: string, done: boolean) => {
       const patch = done ? { done_at: new Date().toISOString(), done_by: me.id } : { done_at: null, done_by: null }
       setTodos((list) => list?.map((t) => (t.id === id ? { ...t, ...patch } : t)) ?? null)
+
+      // letztes offenes Todo von heute abgehakt: kurz feiern
+      if (done) {
+        const dueToday = (t: Todo) => !t.done_at && !!t.due_date && t.due_date <= today
+        const before = (todosRef.current ?? []).filter(dueToday)
+        if (before.length === 1 && before[0].id === id) celebrate()
+      }
 
       clearTimeout(timers.current.get(id))
       setUndoable((s) => {
@@ -173,7 +187,7 @@ export function useTodos(today: string) {
         load()
       }
     },
-    [me.id, load],
+    [me.id, load, today],
   )
 
   /** Felder sofort ändern (Ziehen, Person wechseln), danach speichern; bei Fehler neu laden */

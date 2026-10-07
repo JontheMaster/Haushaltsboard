@@ -30,7 +30,7 @@ function smooth(points: [number, number][]): string {
  * Der Tag auf einen Blick: Temperaturkurve 6–24 Uhr mit Fläche bis unten, darunter die Uhrzeiten.
  * Regen erscheint nur, wenn er wahrscheinlich ist: blaue Balken von unten mit Prozentangabe.
  */
-export function DayCurve({ weather, today, nowHour }: { weather: Weather; today: string; nowHour: number }) {
+export function DayCurve({ weather, today, nowHour, compact }: { weather: Weather; today: string; nowHour: number; compact?: boolean }) {
   // bis Mitternacht: 0 Uhr des nächsten Tages zählt als Stunde 24
   const midnight = (() => {
     const [y, m, d] = today.split('-').map(Number)
@@ -57,7 +57,7 @@ export function DayCurve({ weather, today, nowHour }: { weather: Weather; today:
   const nowY = y(before.temp + (after.temp - before.temp) * f)
 
   return (
-    <div className="hb-curve">
+    <div className={`hb-curve ${compact ? 'is-compact' : ''}`}>
       <div className="hb-curve-plot">
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
           <path d={area} className="hb-curve-area" />
@@ -80,8 +80,12 @@ export function DayCurve({ weather, today, nowHour }: { weather: Weather; today:
           {nowHour >= FROM && nowHour <= TO && <line x1={x(nowHour)} x2={x(nowHour)} y1={nowY} y2={BOTTOM} className="hb-curve-now" />}
         </svg>
         {/* Beschriftung als HTML: bleibt scharf, egal wie breit die Karte ist */}
-        {labels.map((h) => (
-          <span key={h.time} className="hb-curve-temp" style={{ left: `${(x(hourOf(h.time)) / W) * 100}%`, top: `${(y(h.temp) / H) * 100}%` }}>
+        {labels.map((h, i) => (
+          <span
+            key={h.time}
+            className={`hb-curve-temp ${i === 0 ? 'is-first' : i === labels.length - 1 ? 'is-last' : ''}`}
+            style={{ left: `${(x(hourOf(h.time)) / W) * 100}%`, top: `${(y(h.temp) / H) * 100}%` }}
+          >
             {h.temp}°
           </span>
         ))}
@@ -100,7 +104,8 @@ export function DayCurve({ weather, today, nowHour }: { weather: Weather; today:
       <div className="hb-curve-hours">
         {labels.map((h) => (
           <span key={h.time} style={{ left: `${(x(hourOf(h.time)) / W) * 100}%` }}>
-            {hourOf(h.time) === 24 ? 0 : hourOf(h.time)} Uhr
+            {hourOf(h.time) === 24 ? 0 : hourOf(h.time)}
+            {compact ? '' : ' Uhr'}
           </span>
         ))}
       </div>
