@@ -110,7 +110,7 @@ function TomorrowView({ weather, day }: { weather: Weather; day: string }) {
 function rainFrom(weather: Weather, day: string): string | null {
   const daytime = weather.hours.filter((h) => h.time.startsWith(day) && hourOf(h) >= 7 && hourOf(h) <= 22)
   const wet = daytime.find((h) => h.rain >= 50)
-  if (wet) return `Ab ${hourOf(wet)} Uhr Regen, Schirm einpacken.`
+  if (wet) return `Ab ${hourOf(wet)} Uhr Regen.`
   const max = Math.max(0, ...daytime.map((h) => h.rain))
   return max >= 30 ? `Vielleicht ein paar Tropfen (bis ${max} %).` : null
 }

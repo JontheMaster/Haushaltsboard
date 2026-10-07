@@ -1,3 +1,4 @@
+import { Droplet } from 'lucide-react'
 import type { Weather } from '../clock-weather/weather'
 
 const FROM = 6
@@ -49,6 +50,16 @@ export function DayCurve({ weather, today, nowHour, compact }: { weather: Weathe
   const area = `${line} L ${pts.at(-1)![0]} ${BOTTOM} L ${pts[0][0]} ${BOTTOM} Z`
   const labels = hours.filter((h) => hourOf(h.time) % 3 === 0)
   const rainy = hours.filter((h) => h.rain >= RAIN_MIN)
+  // zusammenhängende Regenstunden → jeweils die Stunde mit der höchsten Wahrscheinlichkeit
+  const peaks: typeof hours = []
+  let run: typeof hours = []
+  for (const h of [...hours, null]) {
+    if (h && h.rain >= RAIN_MIN) run.push(h)
+    else if (run.length) {
+      peaks.push(run.reduce((a, b) => (b.rain > a.rain ? b : a)))
+      run = []
+    }
+  }
   const barW = W / (TO - FROM + 1) - 12
   // Temperatur jetzt (zwischen zwei vollen Stunden geschätzt) für den Punkt auf der Kurve
   const before = hours.filter((h) => hourOf(h.time) <= nowHour).at(-1) ?? hours[0]
@@ -89,18 +100,22 @@ export function DayCurve({ weather, today, nowHour, compact }: { weather: Weathe
             {h.temp}°
           </span>
         ))}
-        {rainy
-          .filter((h) => hourOf(h.time) % 3 === 0)
-          .map((h) => (
-            <span key={h.time} className="hb-curve-rainlabel" style={{ left: `${(x(hourOf(h.time)) / W) * 100}%` }}>
-              {h.rain} %
-            </span>
-          ))}
         {/* jetzt: pulsierender Punkt auf der Kurve (als HTML, damit er rund bleibt) */}
         {nowHour >= FROM && nowHour <= TO && (
           <span className="hb-curve-dot" style={{ left: `${(x(nowHour) / W) * 100}%`, top: `${(nowY / H) * 100}%` }} aria-label="jetzt" />
         )}
       </div>
+      {/* Regen: pro Regenphase nur der Höchstwert, in eigener Zeile unter der Kurve (über den Balken war er schlecht lesbar) */}
+      {peaks.length > 0 && (
+        <div className="hb-curve-rainrow">
+          {peaks.map((h) => (
+            <span key={h.time} style={{ left: `${(x(hourOf(h.time)) / W) * 100}%` }}>
+              <Droplet size={compact ? 12 : 14} strokeWidth={2.25} aria-hidden="true" />
+              {h.rain} %
+            </span>
+          ))}
+        </div>
+      )}
       <div className="hb-curve-hours">
         {labels.map((h) => (
           <span key={h.time} style={{ left: `${(x(hourOf(h.time)) / W) * 100}%` }}>

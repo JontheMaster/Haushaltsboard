@@ -445,7 +445,7 @@
   min-height: 0;
   margin-top: var(--space-5);
 }
-.hb-curve svg {
+.hb-curve-plot > svg {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -504,13 +504,24 @@
   font-variant-numeric: tabular-nums;
   animation: hb-fade-in var(--dur-slow) var(--ease-out) 1.2s both;
 }
-.hb-curve-rainlabel {
+.hb-curve-rainrow {
+  position: relative;
+  height: 22px;
+}
+.hb-curve-rainrow span {
   position: absolute;
-  bottom: var(--space-1);
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--person-a-soft);
   transform: translateX(-50%);
   font-size: 13px;
   font-weight: 700;
   color: var(--person-a-ink);
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 .hb-curve-dot {
