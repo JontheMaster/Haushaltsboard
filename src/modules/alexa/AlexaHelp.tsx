@@ -2,7 +2,7 @@ import { PageHeader } from '../../components/PageHeader'
 
 type Example = { say: string; does: string }
 
-// Immer „Alexa, sag Haushaltsboard, …“ davor; danach geht fast jede natürliche Formulierung
+// Immer „Alexa, sag unserem Haushalt, …“ davor (Aufrufname des Skills, Entscheidung Jonathan 7.10.2026); danach geht fast jede natürliche Formulierung
 const GROUPS: { title: string; examples: Example[] }[] = [
   {
     title: 'Todo eintragen',
@@ -38,7 +38,7 @@ export function AlexaHelp({ onBack }: { onBack: () => void }) {
     <div className="flex flex-col gap-4">
       <PageHeader title="Alexa" onBack={onBack} />
       <p className="text-body text-ink-muted">
-        Fang immer mit „Alexa, sag Haushaltsboard …“ an, danach sag es einfach so, wie du es meinst. Per Sprache angelegte Todos sind
+        Fang immer mit „Alexa, sag unserem Haushalt …“ an, danach sag es einfach so, wie du es meinst. Per Sprache angelegte Todos sind
         immer „Offen“. Alexa liest keine Kalender vor, die im Besuchsmodus verschwinden.
       </p>
       {GROUPS.map((g) => (
