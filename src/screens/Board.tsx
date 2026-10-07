@@ -2,6 +2,7 @@ import { Image, LogOut } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Toast } from '../components/Toast'
 import { CookMode } from '../modules/meals/CookMode'
+import { MorningBriefing, useBriefingSlot } from '../modules/briefing/MorningBriefing'
 import { WeekRecap } from '../modules/recap/WeekRecap'
 import { WifiButton } from '../modules/wlan/Wifi'
 import { CoinButton } from '../modules/coin/CoinFlip'
@@ -59,14 +60,19 @@ export function Board({ weather }: { weather: Weather | null }) {
   const now = useNow(30_000)
   // Beim Kochen bleiben Nachtmodus und Bildschirmschoner aus
   const cooking = useCook().session !== null
-  const night = useIsNight(settings) && me.is_board && enabled?.has('nachtmodus') !== false && !cooking
+  // Morgen-Briefing (nur am Wand-Tablet, zu den Uhrzeiten aus den Einstellungen) geht vor Nachtmodus und Bildschirmschoner.
+  // ?morgen in der Adresse zeigt es zum Ausprobieren sofort.
+  const briefingSlot = useBriefingSlot(me.is_board && (enabled?.has('morgen') ?? false) && !cooking)
+  const [briefingPreview, setBriefingPreview] = useState(() => new URLSearchParams(location.search).has('morgen'))
+  const briefing = briefingPreview || !!briefingSlot
+  const night = useIsNight(settings) && me.is_board && enabled?.has('nachtmodus') !== false && !cooking && !briefing
   const [wakeUntil, setWakeUntil] = useState(0)
   const nightActive = night && now.getTime() > wakeUntil
 
   // Bildschirmschoner: am Wand-Tablet von selbst nach x Minuten ohne Berührung, überall per Knopf
   const saverConfig = useModuleConfig('bildschirmschoner', SCREENSAVER_DEFAULTS)
   const saverEnabled = enabled?.has('bildschirmschoner') ?? false
-  const [idle, resetIdle] = useIdle(saverConfig.idle_minutes * 60_000, me.is_board && saverEnabled && !nightActive && !cooking)
+  const [idle, resetIdle] = useIdle(saverConfig.idle_minutes * 60_000, me.is_board && saverEnabled && !nightActive && !cooking && !briefing)
   const [manualSaver, setManualSaver] = useState(false)
   const saverOn = !nightActive && (manualSaver || idle)
   // Nach dem Schließen (Bildschirmschoner, Nachtmodus) fängt kurz eine unsichtbare Fläche alle Berührungen ab,
@@ -206,6 +212,17 @@ export function Board({ weather }: { weather: Weather | null }) {
         </main>
       )}
       <CookMode />
+      {briefing && (
+        <MorningBriefing
+          weather={weather}
+          onClose={() => {
+            setBriefingPreview(false)
+            briefingSlot?.dismiss()
+            resetIdle()
+            setShield(true)
+          }}
+        />
+      )}
       <WeekRecap />
       {toast && <Toast key={toast.id} message={toast.message} onDone={hideToast} />}
       {saverOn && <Screensaver onClose={closeSaver} />}

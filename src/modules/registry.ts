@@ -1,8 +1,9 @@
-import { Bell, CalendarDays, Clock, Coins, Heart, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, TrainFront, Trophy, UtensilsCrossed, Wifi } from 'lucide-react'
+import { Bell, CalendarDays, Clock, Coins, Heart, Image, ListChecks, Mic, Moon, Music, ShoppingCart, Sparkles, Sunrise, TrainFront, Trophy, UtensilsCrossed, Wifi } from 'lucide-react'
 import { JubileeHeader, JubileeSettings } from './jubilee/Jubilee'
 import { RecapHeader } from './recap/RecapHeader'
 import { RecapSettings } from './recap/RecapSettings'
 import { WifiSettings } from './wlan/Wifi'
+import { BriefingSettings } from './briefing/BriefingSettings'
 import { MealHeader } from './meals/MealHeader'
 import { MealSettings } from './meals/MealSettings'
 import { DeparturesTile, useMorningBoard } from './transit/DeparturesBoard'
@@ -46,6 +47,8 @@ export const MODULES: ModuleDef[] = [
   // Münzwurf: Knopf an der Wand in der Kopfzeile, am Handy unten auf Start (CoinButton)
   { id: 'muenzwurf', title: 'Münzwurf', description: 'J oder L: wer ist dran mit Müll, Abwasch …', icon: Coins, phase: 5, sizes: [] },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary },
+  // Morgen-Briefing: zu festen Uhrzeiten an der Wand (nur Board-Konto), Wetter, Termine, Spruch
+  { id: 'morgen', title: 'Morgen-Briefing', description: 'Morgens an der Wand: Wetter, Termine, Dringendes und ein Spruch', icon: Sunrise, phase: 5, sizes: [], Settings: BriefingSettings },
   { id: 'nachtmodus', title: 'Nachtmodus', description: 'Nachts nur eine gedimmte Uhr an der Wand', icon: Moon, phase: 2, sizes: [], Settings: NightSettings },
   { id: 'alexa', title: 'Alexa', description: 'Todos per Sprache eintragen und vorlesen lassen', icon: Mic, phase: 3, sizes: [], Settings: AlexaHelp, toggle: false },
 ]
