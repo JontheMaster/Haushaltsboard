@@ -80,8 +80,9 @@ export function useWeather(): Weather | null {
 
 /** Bewegung für das Wetter-Symbol (CSS-Klasse hb-wx is-…) */
 export function wxClass(code: number, isDay = true): string {
-  if (code <= 1) return isDay ? 'hb-wx is-sun' : 'hb-wx'
-  if (code <= 3 || code <= 48) return 'hb-wx is-cloud'
+  // nur das reine Sonnen-Symbol (Code 0) dreht sich; Sonne mit Wolke (1–2) wandert wie eine Wolke
+  if (code === 0) return isDay ? 'hb-wx is-sun' : 'hb-wx'
+  if (code <= 48) return 'hb-wx is-cloud'
   if (code <= 57) return 'hb-wx is-drizzle'
   if (code <= 67 || (code >= 80 && code <= 82)) return 'hb-wx is-rain'
   if (code <= 86) return 'hb-wx is-snow'
