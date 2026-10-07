@@ -1,4 +1,4 @@
-import { CloudSun, Shirt, Umbrella } from 'lucide-react'
+import { CloudSun, Shirt, Droplet } from 'lucide-react'
 import { useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { Tile } from '../../components/Tile'
@@ -61,7 +61,7 @@ function TodayView({ weather, today, hour, minute }: { weather: Weather; today: 
         </span>
       </div>
       <p className={`hb-tile-sentence ${sentence.rain ? 'is-rain' : ''}`}>
-        {sentence.rain && <Icon icon={Umbrella} size={18} />}
+        {sentence.rain && <Icon icon={Droplet} size={18} />}
         {sentence.text}
       </p>
       <div className="h-[150px]">
@@ -94,7 +94,7 @@ function TomorrowView({ weather, day }: { weather: Weather; day: string }) {
       </p>
       {rain && (
         <p className="hb-tile-sentence is-rain">
-          <Icon icon={Umbrella} size={18} />
+          <Icon icon={Droplet} size={18} />
           {rain}
         </p>
       )}
@@ -106,7 +106,7 @@ function TomorrowView({ weather, day }: { weather: Weather; day: string }) {
   )
 }
 
-/** Regen tagsüber (7–22 Uhr): „Ab 8 Uhr Regen, Schirm einpacken.“ oder null */
+/** Regen tagsüber (7–22 Uhr): „Ab 8 Uhr Regen.“ oder null */
 function rainFrom(weather: Weather, day: string): string | null {
   const daytime = weather.hours.filter((h) => h.time.startsWith(day) && hourOf(h) >= 7 && hourOf(h) <= 22)
   const wet = daytime.find((h) => h.rain >= 50)

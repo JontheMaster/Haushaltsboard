@@ -1,4 +1,4 @@
-import { CalendarDays, TrainFront, TriangleAlert, Umbrella, UtensilsCrossed } from 'lucide-react'
+import { CalendarDays, TrainFront, TriangleAlert, Droplet, UtensilsCrossed } from 'lucide-react'
 import { useEffect, useState, type CSSProperties } from 'react'
 import { Icon } from '../../components/Icon'
 import { useMembers } from '../../lib/members'
@@ -72,8 +72,8 @@ export function weatherSentence(w: Weather, today: string, nowHour: number): { t
   const maxRain = Math.max(0, ...rest.map((h) => h.rain))
   const max = w.days[0]?.max ?? w.now.temp
   let text: string
-  if (wet && Number(wet.time.slice(11, 13)) <= nowHour) text = 'Gerade nass draußen, Schirm mitnehmen.'
-  else if (wet) text = `Ab ${Number(wet.time.slice(11, 13))} Uhr Regen, Schirm mitnehmen.`
+  if (wet && Number(wet.time.slice(11, 13)) <= nowHour) text = 'Gerade nass draußen.'
+  else if (wet) text = `Ab ${Number(wet.time.slice(11, 13))} Uhr Regen.`
   else if (maxRain >= 30) text = `Vielleicht ein paar Tropfen (bis ${maxRain} %).`
   else text = 'Bleibt trocken.'
   if (max <= 3) text += ' Warm anziehen, es bleibt kalt.'
@@ -187,7 +187,7 @@ export function MorningBriefing({ weather, onClose }: { weather: Weather | null;
               </div>
               {sentence && (
                 <p className={`hb-brief-sentence ${sentence.rain ? 'is-rain' : ''}`}>
-                  <Icon icon={sentence.rain ? Umbrella : w.icon} size={28} />
+                  <Icon icon={sentence.rain ? Droplet : w.icon} size={28} />
                   {sentence.text}
                 </p>
               )}
