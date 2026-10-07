@@ -504,26 +504,6 @@
   font-variant-numeric: tabular-nums;
   animation: hb-fade-in var(--dur-slow) var(--ease-out) 1.2s both;
 }
-.hb-curve-rainrow {
-  position: relative;
-  height: 22px;
-}
-.hb-curve-rainrow span {
-  position: absolute;
-  top: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 1px var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--person-a-soft);
-  transform: translateX(-50%);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--person-a-ink);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
 .hb-curve-dot {
   position: absolute;
   width: 14px;
@@ -541,7 +521,7 @@
 }
 .hb-curve-hours {
   position: relative;
-  height: 20px;
+  height: 22px;
 }
 .hb-curve-hours span {
   position: absolute;
@@ -552,10 +532,10 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.hb-curve-hours span:first-child {
+.hb-curve-hours span.is-first {
   transform: none;
 }
-.hb-curve-hours span:last-child {
+.hb-curve-hours span.is-last {
   transform: translateX(-100%);
 }
 /* schmale Kachel: kleinere Beschriftung, Ränder nicht abschneiden */
@@ -567,6 +547,17 @@
 }
 .hb-curve.is-compact .hb-curve-temp.is-last {
   transform: translate(-100%, -150%);
+}
+.hb-curve-hours .hb-curve-rainpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  top: -1px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--person-a-soft);
+  font-weight: 700;
+  color: var(--person-a-ink);
 }
 .hb-curve.is-compact .hb-curve-hours span {
   font-size: 13px;

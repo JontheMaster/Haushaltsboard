@@ -10,6 +10,8 @@ const TOP = 30
 const BOTTOM = H
 /** Regen erst ab dieser Wahrscheinlichkeit zeigen (sonst nur Rauschen) */
 const RAIN_MIN = 30
+/** so viele Stunden links und rechts der Regen-Pille fallen die Uhrzeiten weg */
+const PILL_HOURS = 2.5
 
 /** Weiche Linie durch die Punkte (Catmull-Rom → Bézier) */
 function smooth(points: [number, number][]): string {
@@ -105,22 +107,24 @@ export function DayCurve({ weather, today, nowHour, compact }: { weather: Weathe
           <span className="hb-curve-dot" style={{ left: `${(x(nowHour) / W) * 100}%`, top: `${(nowY / H) * 100}%` }} aria-label="jetzt" />
         )}
       </div>
-      {/* Regen: pro Regenphase nur der Höchstwert, in eigener Zeile unter der Kurve (über den Balken war er schlecht lesbar) */}
-      {peaks.length > 0 && (
-        <div className="hb-curve-rainrow">
-          {peaks.map((h) => (
-            <span key={h.time} style={{ left: `${(x(hourOf(h.time)) / W) * 100}%` }}>
-              <Droplet size={compact ? 12 : 14} strokeWidth={2.25} aria-hidden="true" />
-              {h.rain} %
+      {/* Uhrzeiten; Regen (pro Regenphase nur der Höchstwert) steht als Pille in derselben Zeile und verdrängt die Uhrzeiten daneben */}
+      <div className="hb-curve-hours">
+        {labels
+          .filter((h) => !peaks.some((p) => Math.abs(hourOf(p.time) - hourOf(h.time)) < PILL_HOURS))
+          .map((h) => (
+            <span
+              key={h.time}
+              className={h === labels[0] ? 'is-first' : h === labels.at(-1) ? 'is-last' : ''}
+              style={{ left: `${(x(hourOf(h.time)) / W) * 100}%` }}
+            >
+              {hourOf(h.time) === 24 ? 0 : hourOf(h.time)}
+              {compact ? '' : ' Uhr'}
             </span>
           ))}
-        </div>
-      )}
-      <div className="hb-curve-hours">
-        {labels.map((h) => (
-          <span key={h.time} style={{ left: `${(x(hourOf(h.time)) / W) * 100}%` }}>
-            {hourOf(h.time) === 24 ? 0 : hourOf(h.time)}
-            {compact ? '' : ' Uhr'}
+        {peaks.map((h) => (
+          <span key={h.time} className="hb-curve-rainpill" style={{ left: `${(x(hourOf(h.time)) / W) * 100}%` }}>
+            <Droplet size={compact ? 12 : 14} strokeWidth={2.25} aria-hidden="true" />
+            {h.rain} %
           </span>
         ))}
       </div>
