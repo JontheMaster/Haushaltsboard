@@ -12,6 +12,7 @@ import { useTodos } from '../todos/useTodos'
 import { hm, usePlans } from '../transit/api'
 import { useEnabledModules, useModuleConfig } from '../useModules'
 import { DayCurve } from './DayCurve'
+import { RevealText } from './RevealText'
 import { seasonOf, SkyScene, skyWeather, type Season } from './SkyScene'
 import { MorningFigure } from './MorningFigure'
 import { sayingOf, type SayingMode } from './sayings'
@@ -283,7 +284,10 @@ export function MorningBriefing({ weather, onClose }: { weather: Weather | null;
           <span className="hb-brief-quote-mark" aria-hidden="true">
             „
           </span>
-          <p>{quote.text}</p>
+          <p>
+            {/* nach Wetter und Karten: Wörter tauchen nacheinander auf */}
+            <RevealText text={quote.text} start={900} />
+          </p>
           <span className="hb-brief-quote-from">{quote.from}</span>
         </footer>
       )}

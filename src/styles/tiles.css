@@ -468,3 +468,76 @@
     animation: none !important;
   }
 }
+
+/* Spruch: Wörter tauchen nacheinander auf, danach zeichnet sich unter der Quelle eine Linie */
+.hb-reveal-word {
+  display: inline;
+  opacity: 0;
+  filter: blur(4px);
+  animation: hb-reveal 0.7s var(--ease-out) forwards;
+}
+@keyframes hb-reveal {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+.hb-brief-quote-from,
+.hb-saying figcaption {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 4px;
+}
+.hb-brief-quote-from::after,
+.hb-saying figcaption::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.6;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: hb-underline 0.9s var(--ease-out) forwards;
+  animation-delay: 2.6s;
+}
+.hb-saying figcaption::after {
+  animation-delay: 1.4s;
+}
+@keyframes hb-underline {
+  to {
+    transform: scaleX(1);
+  }
+}
+/* großes Anführungszeichen atmet leise */
+.hb-brief-quote-mark {
+  animation: hb-quote-breathe 6s ease-in-out 2s infinite;
+}
+@keyframes hb-quote-breathe {
+  50% {
+    transform: translateY(-4px) rotate(-4deg);
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-reveal-word {
+    animation: none;
+    opacity: 1;
+    filter: none;
+  }
+  .hb-brief-quote-from::after,
+  .hb-saying figcaption::after {
+    animation: none;
+    transform: scaleX(1);
+  }
+  .hb-brief-quote-mark {
+    animation: none;
+  }
+}
