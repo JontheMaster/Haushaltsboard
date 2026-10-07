@@ -34,7 +34,11 @@ export function TodosTile({ size, delay }: TileProps) {
 
   const sensors = useTodoDragSensors()
 
-  const list = todos ?? []
+  // An der Wand ist wenig Platz: Erledigtes verschwindet nach dem Rückgängig-Fenster (Entscheidung Jonathan 7.10.2026).
+  // Am Handy bleibt es bis Mitternacht durchgestrichen stehen.
+  const all = todos ?? []
+  const list = phone ? all : all.filter((t) => !t.done_at || undoable.has(t.id))
+  const doneToday = all.some((t) => t.done_at && dueOn(t, today, today))
   // Fällig heute (oder überfällig, falls der Nachtjob noch nicht lief)
   const dueToday = list.filter((t) => dueOn(t, today, today)).sort(byDone)
   const noDay = list.filter((t) => unplannedNow(t, mondayOf(today))).sort(byDone)
@@ -103,7 +107,11 @@ export function TodosTile({ size, delay }: TileProps) {
           {empty ? (
             <EmptyFigure wall={!phone}>
               <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>
-                {phone ? 'Heute ist frei. Tipp auf Plus für ein neues Todo.' : 'Heute ist frei. Neues Todo am Handy anlegen.'}
+                {phone
+                  ? 'Heute ist frei. Tipp auf Plus für ein neues Todo.'
+                  : doneToday
+                    ? 'Alles erledigt für heute. Abgehaktes steht am Handy unter Todos.'
+                    : 'Heute ist frei. Neues Todo am Handy anlegen.'}
               </p>
             </EmptyFigure>
           ) : (
