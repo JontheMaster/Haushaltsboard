@@ -1,0 +1,182 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "haushaltsboard",
+      "intents": [
+        {
+          "name": "TodoAnlegen",
+          "slots": [
+            {
+              "name": "titel",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "trag {titel} ein",
+            "trage {titel} ein",
+            "schreib {titel} auf",
+            "schreibe {titel} auf",
+            "notiere {titel}",
+            "notier {titel}",
+            "füge {titel} hinzu",
+            "füg {titel} hinzu",
+            "neues todo {titel}",
+            "todo {titel}",
+            "neue aufgabe {titel}",
+            "aufgabe {titel}",
+            "setz {titel} auf die todo liste",
+            "setz {titel} auf die todoliste",
+            "pack {titel} auf die todo liste",
+            "wir müssen {titel}",
+            "wir müssen noch {titel}",
+            "wir sollten {titel}",
+            "wir sollten noch {titel}",
+            "ich muss {titel}",
+            "ich muss noch {titel}",
+            "ich sollte {titel}",
+            "ich sollte noch {titel}",
+            "jemand muss {titel}",
+            "jemand muss noch {titel}",
+            "einer muss {titel}",
+            "einer von uns muss {titel}",
+            "dass wir {titel} müssen",
+            "dass wir noch {titel} müssen",
+            "dass ich {titel} muss",
+            "dass ich noch {titel} muss",
+            "vergiss nicht {titel}",
+            "nicht vergessen {titel}",
+            "denk an {titel}",
+            "denkt an {titel}",
+            "denk dran {titel}",
+            "erinner uns an {titel}",
+            "erinnere uns an {titel}",
+            "erinner mich an {titel}",
+            "erinnere mich an {titel}",
+            "merk dir {titel}",
+            "merke dir {titel}",
+            "merk {titel} vor",
+            "wir haben noch {titel} vor",
+            "es steht noch {titel} an",
+            "auf die todo liste kommt {titel}",
+            "noch zu tun {titel}",
+            "zu tun ist {titel}",
+            "{titel} muss erledigt werden",
+            "{titel} muss noch erledigt werden",
+            "{titel} steht an",
+            "{titel} ist fällig"
+          ]
+        },
+        {
+          "name": "EinkaufHinzufuegen",
+          "slots": [
+            {
+              "name": "artikel",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "setz {artikel} auf die einkaufsliste",
+            "setze {artikel} auf die einkaufsliste",
+            "schreib {artikel} auf die einkaufsliste",
+            "pack {artikel} auf die einkaufsliste",
+            "füge {artikel} zur einkaufsliste hinzu",
+            "füg {artikel} zur einkaufsliste hinzu",
+            "trag {artikel} auf der einkaufsliste ein",
+            "{artikel} auf die einkaufsliste",
+            "setz {artikel} auf die liste",
+            "setz {artikel} auf die bring liste",
+            "{artikel} zu bring",
+            "wir brauchen {artikel}",
+            "wir brauchen noch {artikel}",
+            "wir brauchen neue {artikel}",
+            "wir brauchen wieder {artikel}",
+            "ich brauche {artikel}",
+            "ich brauche noch {artikel}",
+            "uns fehlt {artikel}",
+            "uns fehlen {artikel}",
+            "uns fehlt noch {artikel}",
+            "es fehlt {artikel}",
+            "es fehlen {artikel}",
+            "{artikel} ist alle",
+            "{artikel} sind alle",
+            "{artikel} ist leer",
+            "{artikel} sind leer",
+            "{artikel} ist aus",
+            "{artikel} geht zur neige",
+            "{artikel} ist fast leer",
+            "kauf {artikel} ein",
+            "einkaufen {artikel}",
+            "auf die einkaufsliste kommt {artikel}",
+            "noch einkaufen {artikel}",
+            "wir müssen {artikel} einkaufen",
+            "wir müssen noch {artikel} einkaufen",
+            "beim nächsten einkauf {artikel}"
+          ]
+        },
+        {
+          "name": "WasStehtAn",
+          "slots": [],
+          "samples": [
+            "was steht heute an",
+            "was steht an",
+            "was ist heute los",
+            "was ist los",
+            "was haben wir heute vor",
+            "was haben wir heute",
+            "was gibt es heute",
+            "was gibt es zu tun",
+            "was muss ich heute machen",
+            "was müssen wir heute machen",
+            "was müssen wir heute erledigen",
+            "was ist heute zu tun",
+            "was ist zu tun",
+            "was liegt heute an",
+            "welche termine haben wir heute",
+            "welche termine stehen heute an",
+            "gibt es heute termine",
+            "haben wir heute termine",
+            "was steht auf dem board",
+            "was steht auf dem plan",
+            "lies mir den tag vor",
+            "wie sieht der tag aus",
+            "wie sieht heute aus",
+            "wie sieht unser tag aus",
+            "was ist heute offen",
+            "was ist noch offen",
+            "welche todos sind offen",
+            "welche aufgaben sind offen",
+            "überblick",
+            "tagesüberblick",
+            "gib mir einen überblick"
+          ]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": [
+            "was kann ich sagen",
+            "was kannst du",
+            "hilfe",
+            "wie funktioniert das"
+          ]
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        }
+      ],
+      "types": []
+    }
+  }
+}

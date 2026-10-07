@@ -118,6 +118,22 @@ function whenText(when: When, today: string): string {
   return `für ${label}, den ${d}. ${MONTHS[m - 1][0].toUpperCase() + MONTHS[m - 1].slice(1)}`
 }
 
+// ───────── Füllwörter ─────────
+
+// Je nach Satz („wir müssen noch …“, „dass wir … müssen“) landen Reste im freien Text. Vorn und hinten abschneiden.
+const TODO_HEAD = /^(?:(?:dass|daß|bitte|noch|mal|unbedingt|auch|wir|ich|jemand|einer|müssen|muss|sollten|sollte)\s+)+/
+const TODO_TAIL = /(?:\s+(?:müssen|muss|sollten|sollte|eintragen|aufschreiben|notieren|hinzufügen|vormerken|nicht vergessen|bitte))+$/
+const ITEM_HEAD = /^(?:(?:bitte|noch|mal|wieder|unbedingt|auch|wir|ich|brauchen|brauche)\s+)+/
+const ITEM_TAIL = /\s+(?:(?:(?:ist|sind)\s+)?(?:alle|leer|aus|fast leer)|einkaufen|kaufen|besorgen|bitte)$/
+
+function cleanTodo(text: string): string {
+  return text.replace(TODO_HEAD, '').replace(TODO_TAIL, '').trim()
+}
+
+function cleanItem(text: string): string {
+  return text.replace(ITEM_HEAD, '').replace(ITEM_TAIL, '').trim()
+}
+
 // ───────── Intents ─────────
 
 // „… auf die Einkaufsliste“ am Ende: das ist Einkauf, kein Todo (falls Alexa den falschen Intent wählt)
@@ -125,7 +141,7 @@ const SHOPPING = /\s+(auf|zur|in die|zu der)\s+(die\s+)?(einkaufsliste|einkaufs 
 
 /** Artikel auf die Bring!-Liste „Zuhause“ */
 async function addShopping(raw: string | undefined): Promise<Response> {
-  const text = raw?.trim().replace(SHOPPING, '')
+  const text = cleanItem(raw?.trim().toLowerCase().replace(SHOPPING, '') ?? '')
   if (!text) return speak('Was soll auf die Einkaufsliste?', { end: false, reprompt: 'Sag zum Beispiel: setz Milch auf die Einkaufsliste.' })
   const items = parseItems(text)
   try {
@@ -140,15 +156,17 @@ async function addShopping(raw: string | undefined): Promise<Response> {
 }
 
 async function addTodo(slots: Record<string, { value?: string }> | undefined): Promise<Response> {
-  const raw = slots?.titel?.value?.trim()
+  const raw = cleanTodo(slots?.titel?.value?.trim().toLowerCase() ?? '')
   if (raw && SHOPPING.test(raw)) return addShopping(raw)
   if (!raw) return speak('Was soll ich eintragen? Sag zum Beispiel: trag Müll rausbringen für morgen ein.', { end: false, reprompt: 'Was soll ich eintragen?' })
 
   const today = berlinDay(new Date())
   const split = splitDay(raw, today)
   const when = fromDateSlot(slots?.tag?.value, today) ?? split.when
+  // nach dem Abtrennen des Tages können wieder Füllwörter vorn stehen („morgen noch …“)
+  const clean = cleanTodo(split.title) || split.title
   // Alexa liefert alles klein: wenigstens der Anfang groß
-  const title = split.title[0].toUpperCase() + split.title.slice(1)
+  const title = clean[0].toUpperCase() + clean.slice(1)
 
   // Per Sprache angelegte Todos sind immer „Offen“ (Alexa weiß nicht, wer spricht)
   const { error } = await db.from('todos').insert({ title, assignee: null, ...when })
@@ -250,9 +268,9 @@ Deno.serve(async (req) => {
   const r = body.request
   try {
     if (r.type === 'LaunchRequest') {
-      return speak('Hallo! Was soll ich eintragen? Oder frag mich, was heute ansteht.', {
+      return speak('Hallo! Was steht an? Oder frag mich, was heute los ist.', {
         end: false,
-        reprompt: 'Sag zum Beispiel: trag Müll rausbringen für morgen ein.',
+        reprompt: 'Sag zum Beispiel: wir müssen morgen den Müll rausbringen, oder: wir brauchen Milch.',
       })
     }
     if (r.type === 'SessionEndedRequest') return Response.json({ version: '1.0', response: {} })
@@ -267,9 +285,14 @@ Deno.serve(async (req) => {
         return await addShopping(r.intent.slots?.artikel?.value)
       case 'AMAZON.HelpIntent':
         return speak(
-          'Du kannst ein Todo eintragen, zum Beispiel: trag Müll rausbringen für morgen ein. Oder etwas auf die Einkaufsliste setzen: setz Milch auf die Einkaufsliste. Oder frag: was steht heute an?',
+          'Sag einfach, was ansteht, zum Beispiel: wir müssen morgen den Müll rausbringen. Oder was fehlt: wir brauchen Milch. Oder frag: was steht heute an?',
           { end: false, reprompt: 'Was möchtest du tun?' },
         )
+      case 'AMAZON.FallbackIntent':
+        return speak('Das habe ich nicht verstanden. Sag zum Beispiel: wir müssen den Müll rausbringen, oder: wir brauchen Milch.', {
+          end: false,
+          reprompt: 'Was soll ich eintragen?',
+        })
       case 'AMAZON.StopIntent':
       case 'AMAZON.CancelIntent':
       case 'AMAZON.NavigateHomeIntent':
