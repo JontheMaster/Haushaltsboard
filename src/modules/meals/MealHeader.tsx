@@ -62,7 +62,10 @@ export function MealHeader(_: { variant: 'wall' | 'phone' }) {
       )}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="hb-meal-card-when">
-          <Icon icon={UtensilsCrossed} size={14} />
+          {/* Besteck dampft: das Essen ist gleich dran */}
+          <span className="hb-steam">
+            <Icon icon={UtensilsCrossed} size={14} />
+          </span>
           {when(meal, now, today)}
         </span>
         <span className="hb-meal-card-title">{meal.title}</span>

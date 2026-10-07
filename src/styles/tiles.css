@@ -364,13 +364,107 @@
   width: 64px;
   animation: hb-fade-in var(--dur-slow) var(--ease-out) both;
 }
+/* an der Wand: Figur über dem Text, mittig in der Kachel */
+.hb-empty-fig.is-wall {
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 100%;
+  text-align: center;
+}
 .hb-empty-fig.is-wall .hb-fig.is-inline {
-  width: 84px;
+  width: 96px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hb-wx,
   .hb-celebrate-burst i {
+    animation: none !important;
+  }
+}
+
+/* Wochenrückblick: Balken wachsen nach dem Hochzählen mit */
+.hb-recap-bar-fill {
+  transform-origin: left center;
+  animation: hb-recap-grow 1.2s var(--ease-out) 400ms both;
+}
+@keyframes hb-recap-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+.hb-recap-big {
+  animation: hb-pop var(--dur-base) var(--ease-spring) both;
+}
+
+/* Kochmodus: Ring um das Timer-Symbol läuft ab */
+.hb-timer-ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+}
+.hb-timer-ring-svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+.hb-timer-ring-track {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  opacity: 0.2;
+}
+.hb-timer-ring-fill {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  transition: stroke-dashoffset 1s linear;
+}
+
+/* Essen gleich dran: aus dem Besteck steigt Dampf */
+.hb-steam {
+  position: relative;
+  display: inline-grid;
+}
+.hb-steam::before,
+.hb-steam::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  bottom: 100%;
+  width: 2px;
+  height: 7px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0;
+  animation: hb-steam 2.4s ease-out infinite;
+}
+.hb-steam::after {
+  left: 9px;
+  animation-delay: 1.2s;
+}
+@keyframes hb-steam {
+  0% {
+    opacity: 0;
+    transform: translateY(3px) scaleY(0.6);
+  }
+  35% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scaleY(1.1) translateX(1px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-recap-bar-fill,
+  .hb-steam::before,
+  .hb-steam::after {
     animation: none !important;
   }
 }

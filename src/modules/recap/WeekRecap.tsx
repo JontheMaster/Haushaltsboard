@@ -1,6 +1,7 @@
 import { CalendarCheck, ChevronLeft, ChevronRight, Image, ListChecks, Sparkles, Trophy, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from '../../components/Icon'
+import { CountUp } from '../../components/CountUp'
 import { PersonChip } from '../../components/PersonChip'
 import { useMembers } from '../../lib/members'
 import { addDays, dayLabel, mondayOf, useToday } from '../../lib/time'
@@ -97,7 +98,9 @@ function RecapContent({ recap }: { recap: Recap }) {
   return (
     <>
       <section className="hb-recap-hero">
-        <span className="hb-recap-big">{done}</span>
+        <span className="hb-recap-big">
+          <CountUp value={done} />
+        </span>
         <span className="flex flex-col">
           <span className="font-display text-title text-ink">{done === 1 ? 'Sache erledigt' : 'Sachen erledigt'}</span>
           <span className="text-body text-ink-muted">
@@ -114,7 +117,9 @@ function RecapContent({ recap }: { recap: Recap }) {
               <li key={r.id} className="flex flex-col gap-1">
                 <span className="flex items-center justify-between gap-2">
                   <PersonChip person={r.key} name={r.name} />
-                  <span className="text-body font-semibold text-ink tabular-nums">{r.n}</span>
+                  <span className="text-body font-semibold text-ink tabular-nums">
+                    <CountUp value={r.n} delay={400} />
+                  </span>
                 </span>
                 <span className="hb-recap-bar">
                   <span className={`hb-recap-bar-fill hb-person-${r.key}`} style={{ width: `${(r.n / max) * 100}%`, minWidth: r.n ? undefined : 0 }} />

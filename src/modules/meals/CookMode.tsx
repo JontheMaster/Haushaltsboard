@@ -260,7 +260,21 @@ function TimerBar({ timers }: { timers: Timer[] }) {
               aria-label={t.done ? `${t.label} ist fertig, wegtippen` : `${t.label}, ${t.endsAt ? 'pausieren' : 'weiterlaufen lassen'}`}
               onClick={() => (t.done ? removeTimer(t.id) : toggleTimer(t.id))}
             >
-              <Icon icon={t.done ? AlarmClock : t.endsAt ? Pause : Play} size={20} />
+              {/* Ring zeigt, wie viel noch übrig ist (läuft ab wie eine Uhr) */}
+              <span className="hb-timer-ring">
+                <svg viewBox="0 0 36 36" className="hb-timer-ring-svg" aria-hidden="true">
+                  <circle cx="18" cy="18" r="15" className="hb-timer-ring-track" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="15"
+                    pathLength={1}
+                    className="hb-timer-ring-fill"
+                    style={{ strokeDashoffset: t.done ? 1 : 1 - left / Math.max(1, t.total) }}
+                  />
+                </svg>
+                <Icon icon={t.done ? AlarmClock : t.endsAt ? Pause : Play} size={16} />
+              </span>
               <span className="hb-timer-time">{t.done ? 'Fertig' : clock(left)}</span>
               <span className="min-w-0 truncate text-label">{t.label}</span>
             </button>

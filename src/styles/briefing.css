@@ -949,7 +949,8 @@
   }
 }
 @media (max-width: 1023px) {
-  .hb-fig {
+  /* nur die große Figur im Briefing; die kleine bei leeren Zuständen bleibt */
+  .hb-fig:not(.is-inline) {
     display: none;
   }
 }
