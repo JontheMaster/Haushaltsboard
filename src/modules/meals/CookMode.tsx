@@ -1,10 +1,12 @@
-import { AlarmClock, Check, ChevronLeft, ChevronRight, Pause, Play, Timer as TimerIcon, X } from 'lucide-react'
+import { AlarmClock, ArrowLeft, Check, ChevronLeft, ChevronRight, Package, Pause, Play, Timer as TimerIcon, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { useMedia } from '../../lib/device'
 import { useNow } from '../../lib/time'
 import { addTimer, clock, findTimes, remaining, removeTimer, setCookServings, setStep, stopCooking, tickTimers, toggleTimer, useCook, type Timer } from './cookStore'
-import { baseName, quantity, type Ingredient } from './ingredients'
+import { baseName, isPantry, quantity, type Ingredient } from './ingredients'
+import { MEAL_DEFAULTS } from './MealSettings'
+import { useModuleConfig } from '../useModules'
 import { ServingsStepper } from './RecipeDetail'
 import { ring, unlockAudio } from './alarm'
 
@@ -51,6 +53,7 @@ function CookScreen() {
   const wide = useMedia('(min-width: 900px)')
   const [tab, setTab] = useState<'steps' | 'ingredients'>('steps')
   const [checked, setChecked] = useState<Set<number>>(new Set())
+  const { pantry } = useModuleConfig('essensplan', MEAL_DEFAULTS)
   const [leaving, setLeaving] = useState(false)
   useWakeLock()
 
@@ -105,6 +108,17 @@ function CookScreen() {
                 <span className="font-semibold">{quantity(i, factor)} </span>
                 {i.name}
               </span>
+              {/* Symbole statt Farbe: jetzt im Schritt gebraucht, meist im Vorrat */}
+              {used.includes(n) && !on && (
+                <span className="hb-cook-tag is-now" title="Jetzt in diesem Schritt">
+                  <Icon icon={ArrowLeft} size={16} label="Jetzt dran" />
+                </span>
+              )}
+              {isPantry(i.name, pantry) && (
+                <span className="hb-cook-tag" title="Habt ihr meist im Vorrat">
+                  <Icon icon={Package} size={16} label="Im Vorrat" />
+                </span>
+              )}
             </button>
           </li>
         )
