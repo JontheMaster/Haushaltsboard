@@ -205,6 +205,7 @@ export type Database = {
           address: string
           buffer_min: number
           created_at: string
+          late_ok_min: number
           id: string
           keywords: string[]
           lat: number
@@ -218,6 +219,7 @@ export type Database = {
           address: string
           buffer_min?: number
           id?: string
+          late_ok_min?: number
           keywords?: string[]
           lat: number
           lon: number

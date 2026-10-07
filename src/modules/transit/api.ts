@@ -26,6 +26,8 @@ export type Plan = {
   trip: Trip | null
   earlier: Trip | null
   status: 'ok' | 'tight' | 'late' | 'none'
+  /** Minuten nach Beginn, die man ankommt (bei „kleine Verspätung erlauben“) */
+  lateMin?: number
 }
 export type Unknown = { eventId: string; title: string; start: string; location: string | null }
 type PlansResponse = { plans: Plan[]; unknown: Unknown[]; wallMinutes: number; onWall: string[] }

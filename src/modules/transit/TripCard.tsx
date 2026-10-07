@@ -3,15 +3,32 @@ import { useState } from 'react'
 import { AssignSheet } from './TransitSettings'
 import { Icon } from '../../components/Icon'
 import { useMembers } from '../../lib/members'
-import { useNow } from '../../lib/time'
+import { berlinDay, berlinTime, useNow } from '../../lib/time'
 import { depRt, hm, usePlans, type Leg, type Plan, type Unknown } from './api'
 
 // Wie lange vorher das Handy den nächsten Weg zeigt (Wand: einstellbar, Standard 30 Min)
 const PHONE_AHEAD_MS = 18 * 60 * 60 * 1000
+// Wege für morgen erst ab diesem Abend-Zeitpunkt zeigen (Entscheidung Jonathan 7.10.2026)
+const EVENING_FROM = '21:30'
+
+/** Liegt das Losgehen erst morgen (oder später), zeigt das Handy den Weg erst ab 21:30 am Vorabend */
+function shownYet(leaveIso: string, now: number): boolean {
+  if (berlinDay(new Date(leaveIso)) <= berlinDay(new Date(now))) return true
+  const { hh, mm } = berlinTime(new Date(now))
+  return `${hh}:${mm}` >= EVENING_FROM
+}
 
 /** Linie als kleines Schild in der Farbe des Verkehrsmittels (S-Bahn, U-Bahn, Tram, Bus) */
 export function LineChip({ line, product }: { line: string; product: string }) {
-  const kind = /s-?bahn/i.test(product) ? 's' : /u-?bahn/i.test(product) ? 'u' : /tram|straßenbahn/i.test(product) ? 'tram' : /bus/i.test(product) ? 'bus' : 'zug'
+  const kind = /s-?bahn/i.test(product)
+    ? 's'
+    : /u-?bahn/i.test(product)
+      ? 'u'
+      : /tram|straßenbahn/i.test(product)
+        ? 'tram'
+        : /bus/i.test(product)
+          ? 'bus'
+          : 'zug'
   return <span className={`hb-line hb-line-${kind}`}>{line}</span>
 }
 
@@ -74,14 +91,19 @@ function PhoneTripCard({ plan }: { plan: Plan }) {
   const status =
     plan.status === 'late'
       ? { cls: 'is-late', text: 'zu spät – früher los' }
-      : plan.status === 'tight'
-        ? { cls: 'is-tight', text: 'knapp' }
-        : plan.status === 'none'
-          ? { cls: 'is-late', text: 'keine Verbindung gefunden' }
-          : { cls: 'is-ok', text: 'pünktlich da' }
+      : plan.lateMin
+        ? { cls: 'is-tight', text: `${plan.lateMin} Min zu spät` }
+        : plan.status === 'tight'
+          ? { cls: 'is-tight', text: 'knapp' }
+          : plan.status === 'none'
+            ? { cls: 'is-late', text: 'keine Verbindung gefunden' }
+            : { cls: 'is-ok', text: 'pünktlich da' }
 
   return (
-    <article className={`hb-trip hb-person-${person} ${wall ? 'is-wall' : ''}`} aria-label={`Weg für ${name} nach ${plan.target.place.name}`}>
+    <article
+      className={`hb-trip hb-person-${person} ${wall ? 'is-wall' : ''}`}
+      aria-label={`Weg für ${name} nach ${plan.target.place.name}`}
+    >
       <header className="hb-trip-head">
         <span className="hb-trip-event">
           {hm(plan.target.start)} · {wall ? name : plan.target.title}
@@ -134,12 +156,12 @@ export function TransitHeader({ variant }: { variant: 'wall' | 'phone' }) {
   if (!data) return null
   const unknown = variant === 'phone' ? data.unknown : []
   const visible = data.plans.filter((p) => {
-    if (!p.trip) return variant === 'phone' && p.memberId === me.id
+    if (!p.trip) return variant === 'phone' && p.memberId === me.id && shownYet(p.target.start, now)
     const leave = Date.parse(p.trip.leaveAt)
     const first = p.trip.legs.find((l) => !l.walk)
     const gone = first ? Date.parse(depRt(first)) < now : leave < now
     if (gone) return false
-    if (variant === 'phone') return p.memberId === me.id && leave - now < PHONE_AHEAD_MS
+    if (variant === 'phone') return p.memberId === me.id && leave - now < PHONE_AHEAD_MS && shownYet(p.trip.leaveAt, now)
     return data.onWall.includes(p.memberId) && leave - now <= data.wallMinutes * 60_000
   })
   if (!visible.length && !unknown.length) return null
@@ -176,7 +198,13 @@ function WallTripCard({ plan }: { plan: Plan }) {
   const first = trip?.legs.find((l) => !l.walk)
   const name = byId.get(plan.memberId)?.name ?? ''
   const status =
-    plan.status === 'late' ? { cls: 'is-late', text: 'zu spät' } : plan.status === 'tight' ? { cls: 'is-tight', text: 'knapp' } : { cls: 'is-ok', text: 'pünktlich' }
+    plan.status === 'late'
+      ? { cls: 'is-late', text: 'zu spät' }
+      : plan.lateMin
+        ? { cls: 'is-tight', text: `${plan.lateMin} Min zu spät` }
+        : plan.status === 'tight'
+          ? { cls: 'is-tight', text: 'knapp' }
+          : { cls: 'is-ok', text: 'pünktlich' }
   if (!trip || !first) return null
   return (
     <article

@@ -30,6 +30,8 @@ type Place = {
   keywords: string[]
   weekdays: number[]
   buffer_min: number
+  /** kleine Verspätung erlaubt (Minuten, 0 = aus) */
+  late_ok_min?: number
   transit: boolean
 }
 type Leg = {
@@ -70,8 +72,10 @@ type Plan = {
   trip: Trip | null
   /** frühere Verbindung als Reserve */
   earlier: Trip | null
-  /** ok | knapp (Ankunft nach dem Puffer) | spät (Ankunft nach Beginn) | keine Verbindung */
+  /** ok | knapp (Ankunft nach dem Puffer oder erlaubt verspätet) | spät (zu spät) | keine Verbindung */
   status: 'ok' | 'tight' | 'late' | 'none'
+  /** Minuten nach Beginn, die man ankommt (0 = pünktlich); wird immer angezeigt */
+  lateMin: number
 }
 type Unknown = { eventId: string; title: string; start: string; location: string | null }
 
@@ -324,7 +328,8 @@ async function withRealtime(trip: Trip): Promise<Trip> {
  * Dazu eine frühere als Reserve.
  */
 async function bestTrip(stops: Stop[], place: Place, start: string): Promise<{ trip: Trip | null; earlier: Trip | null }> {
-  const arriveBy = addMin(start, -place.buffer_min)
+  // Ziel mit „kleine Verspätung erlaubt“: so viele Minuten nach Beginn ist auch noch in Ordnung
+  const arriveBy = addMin(start, -place.buffer_min + (place.late_ok_min ?? 0))
   const results = await Promise.allSettled(stops.map((s) => efaTrips(s, place, arriveBy)))
   // Auskunft gar nicht erreichbar: lieber den letzten guten Stand behalten als „keine Verbindung“ melden
   if (results.every((r) => r.status === 'rejected')) throw new Error(`EFA nicht erreichbar: ${(results[0] as PromiseRejectedResult).reason}`)
@@ -488,14 +493,15 @@ async function planFor(member: string, events: CalendarEvent[], unknown: Unknown
       if (Date.parse(first.dep) + (first.delay ?? 0) * 60000 < Date.now()) continue
     }
     const arriveBy = Date.parse(addMin(c.target.start, -c.place.buffer_min))
+    const lateMin = trip ? Math.max(0, Math.ceil((Date.parse(trip.arrivalRt) - Date.parse(c.target.start)) / 60000)) : 0
     const status: Plan['status'] = !trip
       ? 'none'
-      : Date.parse(trip.arrivalRt) > Date.parse(c.target.start)
+      : lateMin > (c.place.late_ok_min ?? 0)
         ? 'late'
-        : Date.parse(trip.arrivalRt) > arriveBy || (trip.minTransfer !== null && trip.minTransfer < TIGHT_TRANSFER_MIN)
+        : lateMin > 0 || Date.parse(trip.arrivalRt) > arriveBy || (trip.minTransfer !== null && trip.minTransfer < TIGHT_TRANSFER_MIN)
           ? 'tight'
           : 'ok'
-    return { memberId: member, target: c.target, trip, earlier, status }
+    return { memberId: member, target: c.target, trip, earlier, status, lateMin }
   }
   return null
 }

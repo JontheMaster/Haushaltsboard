@@ -20,6 +20,8 @@ export type Place = {
   keywords: string[]
   weekdays: number[]
   buffer_min: number
+  /** kleine Verspätung erlaubt (Minuten, 0 = aus) */
+  late_ok_min?: number
   transit: boolean
 }
 type Prefs = {
@@ -121,6 +123,7 @@ export function TransitSettings({ onBack }: { onBack: () => void }) {
                   p.keywords.length ? `Stichwörter: ${p.keywords.join(', ')}` : '',
                   p.weekdays.length ? p.weekdays.map((d) => WEEKDAYS[d - 1]).join(', ') : '',
                   `${p.buffer_min} Min vorher da`,
+                  p.late_ok_min ? `bis ${p.late_ok_min} Min zu spät okay` : '',
                 ]
                   .filter(Boolean)
                   .join(' · ')}
@@ -253,6 +256,8 @@ export function PlaceSheet({ place, onClose, onSaved }: { place: Partial<Place>;
   const [weekdays, setWeekdays] = useState<number[]>(place.weekdays ?? [])
   const [buffer, setBuffer] = useState(place.buffer_min ?? 10)
   const [transit, setTransit] = useState(place.transit ?? true)
+  // Standard aus; eingeschaltet 5 Min (Entscheidung Jonathan 7.10.2026)
+  const [lateOk, setLateOk] = useState(place.late_ok_min ?? 0)
   const [error, setError] = useState<string | null>(null)
 
   async function search() {
@@ -278,6 +283,7 @@ export function PlaceSheet({ place, onClose, onSaved }: { place: Partial<Place>;
         .filter(Boolean),
       weekdays,
       buffer_min: buffer,
+      late_ok_min: lateOk,
       transit,
     }
     const { data, error } = await supabase.from('transit_places').upsert(row).select().single()
@@ -365,6 +371,13 @@ export function PlaceSheet({ place, onClose, onSaved }: { place: Partial<Place>;
         <span className="flex-1 text-body text-ink">So früh da sein</span>
         <Stepper value={buffer} unit="Min vorher" min={0} max={45} step={5} onChange={setBuffer} />
       </div>
+      <Toggle label="Kleine Verspätung erlauben" checked={lateOk > 0} onChange={(on) => setLateOk(on ? 5 : 0)} />
+      {lateOk > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="flex-1 text-body text-ink-muted">Höchstens so viel zu spät (steht dann immer auf der Karte)</span>
+          <Stepper value={lateOk} unit="Min" min={1} max={15} onChange={setLateOk} />
+        </div>
+      )}
       <Toggle label="Mit Öffis (sonst keine Abfahrten)" checked={transit} onChange={setTransit} />
       {error && (
         <p role="alert" className="rounded-md bg-urgent-soft px-4 py-3 text-label text-urgent">
