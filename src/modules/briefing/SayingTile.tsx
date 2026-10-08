@@ -1,4 +1,5 @@
 import { Quote } from 'lucide-react'
+import { PlayInView } from '../../components/PlayInView'
 import { Tile } from '../../components/Tile'
 import { useToday } from '../../lib/time'
 import type { TileProps } from '../types'
@@ -16,12 +17,14 @@ export function SayingTile({ delay }: TileProps) {
   return (
     <Tile title="Spruch des Tages" icon={Quote} delay={delay}>
       {quote && (
-        <figure className="hb-saying">
-          <blockquote>
-            <RevealText text={quote.text} start={200} step={55} />
-          </blockquote>
-          <figcaption>{quote.from}</figcaption>
-        </figure>
+        <PlayInView>
+          <figure className="hb-saying">
+            <blockquote>
+              <RevealText text={quote.text} start={200} step={55} />
+            </blockquote>
+            <figcaption>{quote.from}</figcaption>
+          </figure>
+        </PlayInView>
       )}
     </Tile>
   )

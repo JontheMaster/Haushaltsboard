@@ -1,6 +1,7 @@
 import { CloudSun, Shirt, Droplet } from 'lucide-react'
 import { useState } from 'react'
 import { Icon } from '../../components/Icon'
+import { PlayInView } from '../../components/PlayInView'
 import { Tile } from '../../components/Tile'
 import { addDays, berlinTime, useNow, useToday } from '../../lib/time'
 import { DayCurve } from '../briefing/DayCurve'
@@ -64,9 +65,9 @@ function TodayView({ weather, today, hour, minute }: { weather: Weather; today: 
         {sentence.rain && <Icon icon={Droplet} size={18} />}
         {sentence.text}
       </p>
-      <div className="h-[150px]">
+      <PlayInView className="h-[150px]">
         <DayCurve weather={weather} today={today} nowHour={hour + minute / 60} compact />
-      </div>
+      </PlayInView>
     </div>
   )
 }
@@ -98,10 +99,10 @@ function TomorrowView({ weather, day }: { weather: Weather; day: string }) {
           {rain}
         </p>
       )}
-      <div className="h-[150px]">
+      <PlayInView className="h-[150px]">
         {/* kein „jetzt“-Punkt: es ist ja noch nicht morgen */}
         <DayCurve weather={weather} today={day} nowHour={-1} compact />
-      </div>
+      </PlayInView>
     </div>
   )
 }

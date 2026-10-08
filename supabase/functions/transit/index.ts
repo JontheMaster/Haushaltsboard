@@ -533,7 +533,8 @@ async function watch(): Promise<unknown> {
     const toLeave = Date.parse(plan.trip.leaveAt) - Date.now()
     const where = plan.target.place.name
     if (prefs.push_leave && toLeave <= prefs.push_leave_min * 60_000 && toLeave > -60_000) {
-      await notifyOnce(m.id, plan.target.key, 'leave', `In ${Math.max(0, minutes(toLeave))} Min losgehen`, `${lineText(plan.trip)} → ${where}, an ${berlinParts(plan.trip.arrivalRt).hhmm}`)
+      // Losgehzeit zuerst (Jonathan 8.10.2026: nur die Abfahrt an der Haltestelle reicht nicht)
+      await notifyOnce(m.id, plan.target.key, 'leave', `Los um ${berlinParts(plan.trip.leaveAt).hhmm} (in ${Math.max(0, minutes(toLeave))} Min)`, `${lineText(plan.trip)} → ${where}, an ${berlinParts(plan.trip.arrivalRt).hhmm}`)
       sent++
     }
     if (prefs.push_delay && toLeave < 90 * 60_000) {

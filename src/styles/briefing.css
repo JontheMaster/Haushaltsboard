@@ -671,6 +671,8 @@
   position: relative;
   max-width: 960px;
   justify-self: center;
+  /* rechts bleibt Platz für die Figur auf dem Hügel (right 5 %, 170 px breit), sonst verdeckt ein langer Spruch sie */
+  margin-right: calc(5vw + 170px);
   padding: var(--space-4) var(--space-6) var(--space-3);
   border-radius: var(--radius-lg);
   /* ruhige Fläche über Hügeln und Sonne, damit der Spruch gut lesbar bleibt */
@@ -732,6 +734,10 @@
   }
   .hb-brief-main {
     grid-template-columns: 1fr;
+  }
+  /* Figur ist hier ausgeblendet */
+  .hb-brief-quote {
+    margin-right: 0;
   }
 }
 

@@ -541,3 +541,9 @@
     animation: none;
   }
 }
+
+/* PlayInView: Animationen erst, wenn man hinscrollt */
+.hb-await.is-waiting,
+.hb-await.is-waiting * {
+  animation-play-state: paused !important;
+}
