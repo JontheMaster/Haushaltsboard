@@ -1,12 +1,11 @@
 import type { LucideIcon } from 'lucide-react'
-import { createContext, useContext, useEffect, useRef, useState, type ComponentType, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ComponentType, type PointerEvent as ReactPointerEvent } from 'react'
 import type { TileProps } from '../modules/types'
-import { Icon } from './Icon'
 
 /**
  * Kachel-Stapel an der Wand (wie das Stapel-Widget am iPhone): mehrere Kacheln liegen übereinander,
- * seitlich wischen oder unten antippen wechselt. Unten steht pro Karte ein Symbol mit Zahl,
- * damit man auch Verdecktes im Blick hat (z. B. „Einkauf 7“).
+ * seitlich wischen wechselt. Unten in der Karte zeigen Punkte, wie viele Karten es gibt (antippbar).
+ * Keine Leiste und keine hervorschauenden Karten (Entscheidung Jonathan 8.10.2026): die Karte ist so hoch wie ihre Nachbarn.
  * Karten mit `front` (Abfahrten zur Losgehzeit) kommen von selbst nach vorn.
  * Nach 2 Minuten ohne Berührung springt der Stapel zurück auf die erste Karte.
  */
@@ -16,21 +15,9 @@ const IDLE_MS = 2 * 60 * 1000
 /** so weit (px) muss man wischen, damit die Karte wechselt */
 const SWIPE_PX = 60
 
-// Kacheln im Stapel melden ihre Zahl (offene Todos, Artikel) für die Leiste unten
-const BadgeCtx = createContext<((n: number | null) => void) | null>(null)
-
-/** In einer Kachel aufrufen: Zahl für die Stapel-Leiste (außerhalb eines Stapels ohne Wirkung) */
-export function useStackBadge(n: number | null) {
-  const set = useContext(BadgeCtx)
-  useEffect(() => {
-    set?.(n)
-  }, [set, n])
-}
-
 export function TileStack({ cards, size, delay }: { cards: StackCard[]; size: TileProps['size']; delay: number }) {
   const home = cards.find((c) => c.front)?.id ?? cards[0].id
   const [activeId, setActiveId] = useState(home)
-  const [badges, setBadges] = useState<Record<string, number | null>>({})
   const [dx, setDx] = useState(0)
   const drag = useRef<{ x: number; y: number; id: number; swiping: boolean } | null>(null)
   const swallowClick = useRef(false)
@@ -112,50 +99,34 @@ export function TileStack({ cards, size, delay }: { cards: StackCard[]; size: Ti
       >
         {cards.map((c, i) => {
           const depth = (i - index + cards.length) % cards.length
-          const setBadge = (n: number | null) => setBadges((b) => (b[c.id] === n ? b : { ...b, [c.id]: n }))
           return (
-            <BadgeSlot key={c.id} set={setBadge}>
-              <div
-                className="hb-stack-card"
-                data-depth={Math.min(depth, 2)}
-                inert={depth !== 0}
-                aria-hidden={depth !== 0}
-                // nur die oberste Karte folgt dem Finger; ohne Wischen keine transform (Ziehen der Todos braucht das)
-                style={depth === 0 && dx ? { transform: `translateX(${dx}px) rotate(${dx / 60}deg)` } : undefined}
-              >
-                <c.Tile size={size} delay={delay} />
-              </div>
-            </BadgeSlot>
+            <div
+              key={c.id}
+              className="hb-stack-card"
+              data-depth={Math.min(depth, 2)}
+              inert={depth !== 0}
+              aria-hidden={depth !== 0}
+              // nur die oberste Karte folgt dem Finger; ohne Wischen keine transform (Ziehen der Todos braucht das)
+              style={depth === 0 && dx ? { transform: `translateX(${dx}px) rotate(${dx / 60}deg)` } : undefined}
+            >
+              <c.Tile size={size} delay={delay} />
+            </div>
           )
         })}
-      </div>
-      <div className="hb-stack-bar" role="tablist" aria-label="Kacheln im Stapel">
-        {cards.map((c, i) => {
-          const n = badges[c.id]
-          return (
+        <div className="hb-stack-dots" role="tablist" aria-label="Kacheln im Stapel">
+          {cards.map((c, i) => (
             <button
               key={c.id}
               type="button"
               role="tab"
               aria-selected={i === index}
-              aria-label={`${c.title}${n ? `, ${n}` : ''}`}
-              className={`hb-stack-tab ${i === index ? 'is-on' : ''}`}
+              aria-label={c.title}
+              className={i === index ? 'is-on' : ''}
               onClick={() => setActiveId(c.id)}
-            >
-              <Icon icon={c.icon} size={18} />
-              {n ? <span>{n}</span> : null}
-            </button>
-          )
-        })}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )
-}
-
-/** Eigener Setter pro Karte (stabil, damit useStackBadge nicht dauernd neu meldet) */
-function BadgeSlot({ set, children }: { set: (n: number | null) => void; children: ReactNode }) {
-  const ref = useRef(set)
-  ref.current = set
-  const [stable] = useState(() => (n: number | null) => ref.current(n))
-  return <BadgeCtx.Provider value={stable}>{children}</BadgeCtx.Provider>
 }

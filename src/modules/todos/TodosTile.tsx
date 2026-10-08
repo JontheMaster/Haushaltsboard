@@ -8,7 +8,6 @@ import { SwipeToDelete } from '../../components/SwipeToDelete'
 import { TaskItem } from '../../components/TaskItem'
 import { Tile } from '../../components/Tile'
 import { EmptyFigure } from '../../components/EmptyFigure'
-import { useStackBadge } from '../../components/TileStack'
 import { useDevice } from '../../lib/device'
 import { useMembers } from '../../lib/members'
 import { useFlip } from '../../lib/useFlip'
@@ -45,8 +44,6 @@ export function TodosTile({ size, delay }: TileProps) {
   const noDay = list.filter((t) => unplannedNow(t, mondayOf(today))).sort(byDone)
   const openToday = dueToday.filter((t) => !t.assignee)
   const active = list.find((t) => t.id === activeId)
-  // Zahl für die Stapel-Leiste an der Wand: offen für heute
-  useStackBadge(todos ? dueToday.filter((t) => !t.done_at).length || null : null)
 
   const sinceHint = (t: Todo) => sinceLabel(t, today, weekdayShort, addDays(today, -1))
 

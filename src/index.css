@@ -20,6 +20,9 @@
    Strich sitzt am inneren Text-Span; clone zeichnet ihn bei Umbruch pro Zeile. */
 .hb-task-label {
   background-image: none;
+  /* lange Wörter („schneiden+einfrieren“) umbrechen statt an den Rand der Kachel zu laufen */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 .hb-task-text {
   background-image: linear-gradient(var(--ink-muted), var(--ink-muted));

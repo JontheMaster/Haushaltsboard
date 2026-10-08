@@ -2,7 +2,6 @@ import { Plus, ShoppingCart } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Icon } from '../../components/Icon'
 import { EmptyFigure } from '../../components/EmptyFigure'
-import { useStackBadge } from '../../components/TileStack'
 import { useDevice } from '../../lib/device'
 import { TaskItem } from '../../components/TaskItem'
 import { Tile } from '../../components/Tile'
@@ -17,8 +16,6 @@ export function ShoppingTile({ size, delay }: TileProps) {
   const phone = useDevice().device === 'phone'
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
-  // Zahl für die Stapel-Leiste an der Wand
-  useStackBadge(items ? items.filter((i) => !done.has(i.name)).length || null : null)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
