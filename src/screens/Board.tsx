@@ -21,7 +21,8 @@ import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
 import { ClockWeather } from '../modules/clock-weather/ClockWeather'
 import type { Weather } from '../modules/clock-weather/weather'
-import { MODULE_BY_ID, MODULES } from '../modules/registry'
+import { MODULE_BY_ID, MODULES, PHONE_TILE_BY_KEY } from '../modules/registry'
+import { TileStack, type StackCard } from '../components/TileStack'
 import type { TileSize } from '../modules/types'
 import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useModules'
 import { WeekView } from '../modules/week/WeekView'
@@ -49,7 +50,9 @@ export function Board({ weather }: { weather: Weather | null }) {
   const { me } = useMembers()
   const enabled = useEnabledModules()
   const layout = useLayout('wall')
-  const tiles = layout.filter((t) => enabled?.has(t.module))
+  // „modul.kachel“ (z. B. uhr-wetter.kurve) gehört zum Modul davor
+  const isOn = (key: string) => enabled?.has(key.split('.')[0]) ?? false
+  const tiles = layout.filter((t) => isOn(t.module))
   // Hooks in fester Reihenfolge (MODULES ändert sich zur Laufzeit nicht)
   const showNow = MODULES.map((m) => (m.useShow ? m.useShow() : false))
   const stacked = MODULES.filter((m, i) => m.stackOn && showNow[i] && enabled?.has(m.id))
@@ -196,17 +199,32 @@ export function Board({ weather }: { weather: Weather | null }) {
       ) : (
         <main className={`grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-5 ${narrow ? 'grid-cols-2' : 'grid-cols-12'}`}>
           {tiles.map((t, i) => {
-            const mod = MODULE_BY_ID.get(t.module)!
-            if (!mod.Tile) return null
-            // zeitweise Kacheln (z. B. Abfahrten morgens) stehen über dieser in derselben Spalte
-            const above = stacked.filter((m) => m.stackOn === t.module)
+            const span = (narrow ? SPAN_NARROW : SPAN)[t.size]
+            // Stapel: Hauptkachel + weitere aus dem Layout + zeitweise Kacheln (Abfahrten), die darauf liegen
+            const keys = [t.module, ...(t.stack ?? []).filter(isOn)]
+            const timed = stacked.filter((m) => m.stackOn && keys.includes(m.stackOn))
+            if (keys.length > 1) {
+              const cards: StackCard[] = [
+                ...keys.flatMap((k) => {
+                  const card = cardOf(k)
+                  return card ? [card] : []
+                }),
+                ...timed.flatMap((m) => (m.Tile ? [{ id: m.id, title: m.title, icon: m.icon, Tile: m.Tile, front: true }] : [])),
+              ]
+              if (!cards.length) return null
+              return (
+                <div key={t.module} className={`flex min-h-0 flex-col *:min-h-0 *:flex-1 ${span}`}>
+                  <TileStack cards={cards} size={t.size} delay={i * 40} />
+                </div>
+              )
+            }
+            const card = cardOf(t.module)
+            if (!card) return null
+            // ohne Stapel: zeitweise Kacheln (z. B. Abfahrten morgens) stehen über dieser in derselben Spalte
             return (
-              <div
-                key={t.module}
-                className={`flex min-h-0 flex-col gap-5 *:min-h-0 *:flex-1 ${(narrow ? SPAN_NARROW : SPAN)[t.size]}`}
-              >
-                {above.map((m) => m.Tile && <m.Tile key={m.id} size="s" delay={i * 40} />)}
-                <mod.Tile size={t.size} delay={i * 40} />
+              <div key={t.module} className={`flex min-h-0 flex-col gap-5 *:min-h-0 *:flex-1 ${span}`}>
+                {timed.map((m) => m.Tile && <m.Tile key={m.id} size="s" delay={i * 40} />)}
+                <card.Tile size={t.size} delay={i * 40} />
               </div>
             )
           })}
@@ -239,4 +257,12 @@ export function Board({ weather }: { weather: Weather | null }) {
       {shield && <div className="fixed inset-0 z-[100]" aria-hidden="true" />}
     </div>
   )
+}
+
+/** Kachel zu einem Layout-Schlüssel: Hauptkachel eines Moduls oder Zusatzkachel „modul.kachel“ */
+function cardOf(key: string): StackCard | null {
+  const mod = MODULE_BY_ID.get(key)
+  if (mod?.Tile) return { id: key, title: mod.title, icon: mod.icon, Tile: mod.Tile }
+  const extra = PHONE_TILE_BY_KEY.get(key)
+  return extra ? { id: key, title: extra.title, icon: extra.icon, Tile: extra.Tile } : null
 }

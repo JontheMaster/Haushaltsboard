@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { PlayInView } from '../../components/PlayInView'
 import { Tile } from '../../components/Tile'
+import { useDevice } from '../../lib/device'
 import { addDays, berlinTime, useNow, useToday } from '../../lib/time'
 import { DayCurve } from '../briefing/DayCurve'
 import { weatherSentence } from '../briefing/MorningBriefing'
@@ -13,7 +14,7 @@ import { describe, useWeather, wxClass, type Weather } from './weather'
 const EVENING_FROM = 18
 
 /**
- * Handy-Kachel: Wetter jetzt, Satz zum Tag und die Tageskurve bis Mitternacht (wie im Morgen-Briefing).
+ * Wetter-Kachel (Handy-Startseite und an der Wand neben dem Todo-Stapel): Wetter jetzt, Satz zum Tag und die Tageskurve bis Mitternacht (wie im Morgen-Briefing).
  * Umschalter „Heute | Morgen“: morgen mit Kleidungstipp, abends von selbst vorgewählt.
  */
 export function WeatherCurveTile({ delay }: TileProps) {
@@ -22,6 +23,8 @@ export function WeatherCurveTile({ delay }: TileProps) {
   const { hh, mm } = berlinTime(useNow(60_000))
   const [picked, setPicked] = useState<'today' | 'tomorrow' | null>(null)
   const view = picked ?? (Number(hh) >= EVENING_FROM ? 'tomorrow' : 'today')
+  // an der Wand ist die Kachel schmal und hoch: Umschalter in die Kachel, Kurve füllt die Höhe
+  const wall = useDevice().device !== 'phone'
 
   const switcher = (
     <div className="hb-seg" role="group" aria-label="Tag">
@@ -35,27 +38,30 @@ export function WeatherCurveTile({ delay }: TileProps) {
   )
 
   return (
-    <Tile title="Wetter" icon={CloudSun} delay={delay} action={switcher}>
-      {!weather ? (
-        <p className="text-body text-ink-muted">Wetter lädt …</p>
-      ) : view === 'today' ? (
-        <TodayView weather={weather} today={today} hour={Number(hh)} minute={Number(mm)} />
-      ) : (
-        <TomorrowView weather={weather} day={addDays(today, 1)} />
-      )}
+    <Tile title="Wetter" icon={CloudSun} delay={delay} action={wall ? undefined : switcher}>
+      <div className={wall ? 'flex h-full flex-col gap-3' : 'flex flex-col gap-3'}>
+        {wall && <div className="hb-weather-wall-switch">{switcher}</div>}
+        {!weather ? (
+          <p className="text-body text-ink-muted">Wetter lädt …</p>
+        ) : view === 'today' ? (
+          <TodayView weather={weather} today={today} hour={Number(hh)} minute={Number(mm)} wall={wall} />
+        ) : (
+          <TomorrowView weather={weather} day={addDays(today, 1)} wall={wall} />
+        )}
+      </div>
     </Tile>
   )
 }
 
-function TodayView({ weather, today, hour, minute }: { weather: Weather; today: string; hour: number; minute: number }) {
+function TodayView({ weather, today, hour, minute, wall }: { weather: Weather; today: string; hour: number; minute: number; wall: boolean }) {
   const w = describe(weather.now.code, weather.now.isDay)
   const sentence = weatherSentence(weather, today, hour)
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
+    <>
+      <div className={`flex items-center gap-3 ${wall ? 'flex-wrap' : ''}`}>
         <Icon icon={w.icon} size={44} label={w.label} className={`text-accent ${wxClass(weather.now.code, weather.now.isDay)}`} />
         <span className="font-display text-[44px] font-bold leading-none tracking-tight text-ink">{weather.now.temp}°</span>
-        <span className="text-label text-ink-muted">
+        <span className={`text-label text-ink-muted ${wall ? 'basis-full' : ''}`}>
           {w.label}
           <br />
           bis {weather.days[0]?.max}° · nachts {weather.days[0]?.min}°
@@ -65,25 +71,25 @@ function TodayView({ weather, today, hour, minute }: { weather: Weather; today: 
         {sentence.rain && <Icon icon={Droplet} size={18} />}
         {sentence.text}
       </p>
-      <PlayInView className="h-[150px]">
+      <PlayInView className={wall ? 'flex min-h-[150px] flex-1 flex-col' : 'h-[150px]'}>
         <DayCurve weather={weather} today={today} nowHour={hour + minute / 60} compact />
       </PlayInView>
-    </div>
+    </>
   )
 }
 
-function TomorrowView({ weather, day }: { weather: Weather; day: string }) {
+function TomorrowView({ weather, day, wall }: { weather: Weather; day: string; wall: boolean }) {
   const d = weather.days.find((x) => x.day === day)
   if (!d) return <p className="text-body text-ink-muted">Für morgen gibt es noch keine Vorhersage.</p>
   const w = describe(d.code, true)
   const rain = rainFrom(weather, day)
   const tip = clothingTip(weather, day, d.max)
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
+    <>
+      <div className={`flex items-center gap-3 ${wall ? 'flex-wrap' : ''}`}>
         <Icon icon={w.icon} size={44} label={w.label} className={`text-accent ${wxClass(d.code, true)}`} />
         <span className="font-display text-[44px] font-bold leading-none tracking-tight text-ink">{d.max}°</span>
-        <span className="text-label text-ink-muted">
+        <span className={`text-label text-ink-muted ${wall ? 'basis-full' : ''}`}>
           {w.label}
           <br />
           morgens {tip.morning}° · nachts {d.min}°
@@ -99,11 +105,11 @@ function TomorrowView({ weather, day }: { weather: Weather; day: string }) {
           {rain}
         </p>
       )}
-      <PlayInView className="h-[150px]">
+      <PlayInView className={wall ? 'flex min-h-[150px] flex-1 flex-col' : 'h-[150px]'}>
         {/* kein „jetzt“-Punkt: es ist ja noch nicht morgen */}
         <DayCurve weather={weather} today={day} nowHour={-1} compact />
       </PlayInView>
-    </div>
+    </>
   )
 }
 

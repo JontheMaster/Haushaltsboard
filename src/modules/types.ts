@@ -45,4 +45,9 @@ export type PhoneTileDef = { id: string; title: string; description: string; ico
 export type PhoneTile = PhoneTileDef & { key: string; moduleId: string }
 
 /** Eine Kachel im Layout (Tabelle layouts, Feld tiles) */
-export type LayoutTile = { module: string; size: TileSize }
+export type LayoutTile = {
+  module: string
+  size: TileSize
+  /** nur Wand: weitere Kacheln im selben Platz als Stapel (seitlich wischen), z. B. Einkauf unter Todos */
+  stack?: string[]
+}

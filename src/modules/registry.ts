@@ -65,11 +65,12 @@ export const MODULE_BY_ID = new Map(MODULES.map((m) => [m.id, m]))
 
 // Standard-Layout an der Wand (Phase 1 fest, Bearbeiten-Modus kommt in Phase 2).
 // Uhr und Wetter steht an der Wand immer als Kopfzeile, nicht im Raster.
-// Termine am größten (links), daneben Todos und Einkauf gleich breit (Entscheidung Jonathan 5.10.2026)
+// Termine am größten (links), daneben Todos und Einkauf als Stapel (wischen), rechts das Wetter über den Tag
+// (Entscheidung Jonathan 8.10.2026; vorher Todos und Einkauf nebeneinander)
 export const DEFAULT_WALL_LAYOUT: LayoutTile[] = [
   { module: 'kalender', size: 'l' },
-  { module: 'todos', size: 's' },
-  { module: 'einkauf', size: 's' },
+  { module: 'todos', size: 's', stack: ['einkauf'] },
+  { module: 'uhr-wetter.kurve', size: 's' },
 ]
 
 // Standard am Handy, pro Person änderbar („Startseite anpassen“). Kacheln stehen untereinander.

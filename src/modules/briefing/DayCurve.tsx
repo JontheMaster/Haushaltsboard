@@ -1,4 +1,5 @@
 import { Droplet } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import type { Weather } from '../clock-weather/weather'
 
 const FROM = 6
@@ -34,6 +35,16 @@ function smooth(points: [number, number][]): string {
  * Regen erscheint nur, wenn er wahrscheinlich ist: blaue Balken von unten mit Prozentangabe.
  */
 export function DayCurve({ weather, today, nowHour, compact }: { weather: Weather; today: string; nowHour: number; compact?: boolean }) {
+  // schmale Kachel (z. B. an der Wand neben dem Stapel): Temperaturen nur alle 6 Stunden, sonst stehen sie aufeinander
+  const ref = useRef<HTMLDivElement>(null)
+  const [narrow, setNarrow] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setNarrow(el.clientWidth < 300))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   // bis Mitternacht: 0 Uhr des nächsten Tages zählt als Stunde 24
   const midnight = (() => {
     const [y, m, d] = today.split('-').map(Number)
@@ -51,6 +62,7 @@ export function DayCurve({ weather, today, nowHour, compact }: { weather: Weathe
   const line = smooth(pts)
   const area = `${line} L ${pts.at(-1)![0]} ${BOTTOM} L ${pts[0][0]} ${BOTTOM} Z`
   const labels = hours.filter((h) => hourOf(h.time) % 3 === 0)
+  const tempLabels = narrow ? labels.filter((h) => hourOf(h.time) % 6 === 0) : labels
   const rainy = hours.filter((h) => h.rain >= RAIN_MIN)
   // zusammenhängende Regenstunden → jeweils die Stunde mit der höchsten Wahrscheinlichkeit
   const peaks: typeof hours = []
@@ -70,7 +82,7 @@ export function DayCurve({ weather, today, nowHour, compact }: { weather: Weathe
   const nowY = y(before.temp + (after.temp - before.temp) * f)
 
   return (
-    <div className={`hb-curve ${compact ? 'is-compact' : ''}`}>
+    <div ref={ref} className={`hb-curve ${compact ? 'is-compact' : ''}`}>
       <div className="hb-curve-plot">
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
           <path d={area} className="hb-curve-area" />
@@ -93,10 +105,10 @@ export function DayCurve({ weather, today, nowHour, compact }: { weather: Weathe
           {nowHour >= FROM && nowHour <= TO && <line x1={x(nowHour)} x2={x(nowHour)} y1={nowY} y2={BOTTOM} className="hb-curve-now" />}
         </svg>
         {/* Beschriftung als HTML: bleibt scharf, egal wie breit die Karte ist */}
-        {labels.map((h, i) => (
+        {tempLabels.map((h, i) => (
           <span
             key={h.time}
-            className={`hb-curve-temp ${i === 0 ? 'is-first' : i === labels.length - 1 ? 'is-last' : ''}`}
+            className={`hb-curve-temp ${i === 0 ? 'is-first' : i === tempLabels.length - 1 ? 'is-last' : ''}`}
             style={{ left: `${(x(hourOf(h.time)) / W) * 100}%`, top: `${(y(h.temp) / H) * 100}%` }}
           >
             {h.temp}°
