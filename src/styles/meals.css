@@ -1276,3 +1276,59 @@ button.hb-meal-card:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .hb-jubilee-heart > svg, .hb-jubilee-heart i, .hb-jubilee-big svg { animation: none; }
 }
+
+/* Wand-Planer: Essen als kräftige Karte über den grauen Terminen (Bild, Uhrzeit, Name) */
+.hb-plan-meal {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 4px 6px 4px 4px;
+  container-type: inline-size;
+  overflow: hidden;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-tile);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  animation: hb-rise var(--dur-base) var(--ease-out) both;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.hb-plan-meal:active {
+  transform: scale(0.97);
+}
+.hb-plan-meal.is-past {
+  opacity: 0.55;
+}
+.hb-plan-meal-img {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+}
+.hb-plan-meal-time {
+  font-size: 12px;
+  line-height: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.hb-plan-meal-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 650;
+  word-break: break-word;
+}
+/* schmale Spalte: Bild weg, damit der Name Platz hat */
+@container (max-width: 110px) {
+  .hb-plan-meal-img { display: none; }
+}

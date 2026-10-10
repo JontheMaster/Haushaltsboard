@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Tables } from './database.types'
+import { MOTION_EVENT } from './fully'
 import { berlinTime, useNow } from './time'
 
-const ACTIVITY = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const
+// Bewegung vor dem Tablet (Fully Kiosk) zählt wie eine Berührung: wer davorsteht, bekommt keinen Bildschirmschoner
+const ACTIVITY = ['pointerdown', 'keydown', 'wheel', 'touchstart', MOTION_EVENT] as const
 
 /**
  * true, sobald `ms` lang niemand das Gerät berührt hat; jede Berührung setzt zurück.

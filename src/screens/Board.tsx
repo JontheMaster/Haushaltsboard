@@ -14,6 +14,7 @@ import { HeaderSlot } from '../components/HeaderSlot'
 import { VisitToggle } from '../components/VisitToggle'
 import { useMedia } from '../lib/device'
 import { useIdle, useIsNight } from '../lib/idle'
+import { bindFullyMotion, MOTION_EVENT } from '../lib/fully'
 import { useSettings } from '../lib/settings'
 import { useNow } from '../lib/time'
 import { NightScreen, Screensaver, SCREENSAVER_DEFAULTS } from '../modules/photos/Screensaver'
@@ -131,6 +132,21 @@ export function Board({ weather }: { weather: Weather | null }) {
     setView('heute')
     setShield(true)
   }
+
+  // Jemand läuft vorbei (Kamera über Fully Kiosk): von selbst gestarteter Bildschirmschoner geht zu.
+  // Von Hand gestarteter bleibt (man will ja Fotos sehen), Nachtmodus bleibt dunkel (Entscheidung 10.10.2026).
+  useEffect(() => {
+    if (!me.is_board) return
+    bindFullyMotion()
+    const onMotion = () => {
+      if (idle && !manualSaver) {
+        resetIdle()
+        setView('heute')
+      }
+    }
+    addEventListener(MOTION_EVENT, onMotion)
+    return () => removeEventListener(MOTION_EVENT, onMotion)
+  })
 
   const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])

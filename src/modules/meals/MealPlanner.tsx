@@ -10,7 +10,7 @@ import { DayTimeline, hourRange, TimeLabels } from '../calendar/Timeline'
 import { useCalendar } from '../calendar/useCalendar'
 import { startCooking } from './cookStore'
 import { formatDuration } from './ingredients'
-import { MEAL_PREFIX, useMeals, useWithMeals } from './mealStore'
+import { hm, mealEvent, useMeals, type Meal } from './mealStore'
 import { RecipeDice } from './RecipeDice'
 import { usePlanFlow } from './MealsTab'
 import { DEFAULT_TIME } from './PlanSheet'
@@ -64,8 +64,7 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
   const [offset, setOffset] = useState(0)
   const monday = addDays(mondayOf(today), 7 * offset)
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
-  const { events: raw } = useCalendar()
-  const events = useWithMeals(raw)
+  const { events } = useCalendar()
   const meals = useMeals()
   const { recipes } = useRecipes()
   const categories = useCategories()
@@ -76,8 +75,11 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
   const [hover, setHover] = useState<{ day: string; slot: SlotId } | null>(null)
   const [open, setOpen] = useState<Recipe | null>(null)
 
+  // Termine grau im Hintergrund, Essen als eigene Karten darüber (Entscheidung Jonathan 10.10.2026: Essen auf einen Blick erkennen)
   const weekEvents = days.map((day) => ({ day, events: events ? eventsOnDay(events, day) : [] }))
-  const range = hourRange(weekEvents)
+  const mealsOn = (day: string) => (meals ?? []).filter((m) => m.day === day)
+  // Stundenbereich so, dass auch früh oder spät geplante Essen hineinpassen
+  const range = hourRange(days.map((day, i) => ({ day, events: [...weekEvents[i].events, ...mealsOn(day).map(mealEvent)] })))
   const allDaySlots = Math.max(0, ...weekEvents.map((d) => d.events.filter((e) => e.allDay).length))
 
   // Finger: kurz halten, dann ziehen (Wischen scrollt die Rezepte). Maus: ziehen ab 6 px.
@@ -103,11 +105,6 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
     flow.setPlan({ recipe, day, time: slot?.time ?? DEFAULT_TIME })
   }
 
-  const tapEvent = (id: string) => {
-    if (!id.startsWith(MEAL_PREFIX)) return
-    const meal = meals?.find((m) => m.id === id.slice(MEAL_PREFIX.length))
-    if (meal) flow.setPlan({ meal })
-  }
 
   return (
     <DndContext
@@ -148,7 +145,7 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
                 Nächste Woche
               </button>
             </div>
-            <span className="text-label text-ink-muted">Mit Besteck: eure Essen. Grau: Termine.</span>
+            <span className="text-label text-ink-muted">Farbig: eure Essen. Grau: Termine.</span>
           </div>
           <div className="hb-planner-grid">
             <div style={{ gridColumn: 1, gridRow: 2 }} className="flex min-h-0 flex-col">
@@ -162,9 +159,11 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
                 past={day < today}
                 today={day === today}
                 events={weekEvents[i].events}
+                meals={mealsOn(day)}
+                recipeOf={flow.recipeOf}
                 range={range}
                 allDaySlots={allDaySlots}
-                onTapEvent={tapEvent}
+                onTapMeal={(meal) => flow.setPlan({ meal })}
                 dragging={!!dragging}
                 hoverSlot={hover?.day === day ? hover.slot : null}
               />
@@ -220,9 +219,11 @@ function DayColumn({
   past,
   today,
   events,
+  meals,
+  recipeOf,
   range,
   allDaySlots,
-  onTapEvent,
+  onTapMeal,
   dragging,
   hoverSlot,
 }: {
@@ -233,9 +234,11 @@ function DayColumn({
   past: boolean
   today: boolean
   events: ReturnType<typeof eventsOnDay>
+  meals: Meal[]
+  recipeOf: (id: string | null | undefined) => Recipe | null
   range: { from: number; to: number }
   allDaySlots: number
-  onTapEvent: (id: string) => void
+  onTapMeal: (meal: Meal) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `day:${day}`, disabled: past })
   return (
@@ -249,7 +252,13 @@ function DayColumn({
         className={`hb-drop hb-drop-plain hb-planner-day flex min-h-0 flex-col ${isOver ? 'is-over' : ''} ${past ? 'is-disabled' : ''}`}
         style={{ gridColumn: col, gridRow: 2 }}
       >
-        <DayTimeline day={day} events={events} range={range} allDaySlots={allDaySlots} onTapEvent={onTapEvent} />
+        <DayTimeline
+          day={day}
+          events={events}
+          range={range}
+          allDaySlots={allDaySlots}
+          overlay={(at) => <MealCards meals={meals} recipeOf={recipeOf} at={at} past={past} onTap={onTapMeal} />}
+        />
         {dragging && !past && (
           <div className="hb-slot-zones" aria-hidden="true">
             {SLOTS.map((s) => (
@@ -263,6 +272,50 @@ function DayColumn({
       </div>
     </>
   )
+}
+
+const minutesOf = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+
+/**
+ * Essen im Wand-Planer: kräftige Karten über die ganze Tagesbreite (Bild, Uhrzeit, Name), mindestens gut lesbar hoch,
+ * auch bei kurzer Kochzeit. Ohne Uhrzeit oben im Tag. Essen kurz hintereinander teilen sich die Breite.
+ */
+function MealCards({ meals, recipeOf, at, past, onTap }: { meals: Meal[]; recipeOf: (id: string | null) => Recipe | null; at: (minutes: number) => number; past: boolean; onTap: (m: Meal) => void }) {
+  const sorted = [...meals].sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''))
+  // Spuren: liegt ein Essen weniger als 90 Min nach dem vorigen, kommt es daneben
+  const lanes: { meal: Meal; lane: number; group: number }[] = []
+  let group = 0
+  sorted.forEach((m, i) => {
+    const prev = lanes[i - 1]
+    const t = hm(m.start_time)
+    const pt = prev && hm(prev.meal.start_time)
+    const close = prev && t && pt && minutesOf(t) - minutesOf(pt) < 90
+    if (!close && prev) group++
+    lanes.push({ meal: m, lane: close ? prev.lane + 1 : 0, group })
+  })
+  const width = (g: number) => Math.max(...lanes.filter((l) => l.group === g).map((l) => l.lane)) + 1
+
+  return lanes.map(({ meal, lane, group: g }) => {
+    const t = hm(meal.start_time)
+    const n = width(g)
+    const recipe = recipeOf(meal.recipe_id)
+    return (
+      <button
+        key={meal.id}
+        type="button"
+        className={`hb-plan-meal ${past ? 'is-past' : ''}`}
+        style={{ top: `${t ? at(minutesOf(t)) : 0}%`, left: `calc(${(lane / n) * 100}% + 2px)`, width: `calc(${100 / n}% - 4px)` }}
+        onClick={() => onTap(meal)}
+        aria-label={`${t ?? 'Ohne Uhrzeit'} ${meal.title}, ändern`}
+      >
+        {recipe ? <RecipeImage recipe={recipe} className="hb-plan-meal-img" /> : null}
+        <span className="flex min-w-0 flex-col">
+          <span className="hb-plan-meal-time">{t ?? 'ohne Zeit'}</span>
+          <span className="hb-plan-meal-title">{meal.title}</span>
+        </span>
+      </button>
+    )
+  })
 }
 
 function DraggableRecipe({ recipe, categories, onTap }: { recipe: Recipe; categories: Category[]; onTap: () => void }) {

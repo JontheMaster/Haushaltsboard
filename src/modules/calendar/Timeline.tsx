@@ -1,6 +1,6 @@
 // Zeitplan: Stundenleiste, Termine als Blöcke nach Dauer, Ganztägiges oben, Linie für „jetzt“.
 // Alle Positionen in Prozent der Höhe – so füllt der Plan jede Kachel- oder Spaltenhöhe aus.
-import { useRef, useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
 import { CalendarClock, List, UtensilsCrossed } from 'lucide-react'
 import { Icon } from '../../components/Icon'
@@ -109,10 +109,12 @@ type DayProps = {
   onTapEvent?: (id: string) => void
   /** Hinterlegte Zeiten ohne eigene Spalte, z. B. geplante Essen (zartes Band über die ganze Breite) */
   bands?: CalendarEvent[]
+  /** Eigene Ebene über den Terminen; `at` rechnet eine Uhrzeit (Minuten seit Mitternacht) in Prozent der Höhe um */
+  overlay?: (at: (minutes: number) => number) => ReactNode
 }
 
 /** Ein Tag als Zeitplan */
-export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEvent, bands }: DayProps) {
+export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEvent, bands, overlay }: DayProps) {
   const today = useToday()
   const now = useNow(60_000)
   const span = (range.to - range.from) * 60
@@ -173,6 +175,7 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEven
             />
           )
         })}
+        {overlay?.((min) => Math.min(100, Math.max(0, pct(min))))}
         {nowMin !== null && nowMin >= range.from * 60 && nowMin <= range.to * 60 && (
           <div className="hb-tl-now" style={{ top: `${pct(nowMin)}%` }} aria-label="Jetzt" />
         )}
