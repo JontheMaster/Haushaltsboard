@@ -267,7 +267,7 @@
   }
   100% {
     opacity: 0;
-    transform: translate(var(--x), calc(var(--y) + 40vh)) rotate(var(--r)) scale(1);
+    transform: translate(var(--x), calc(var(--y) + calc(40vh / var(--zoom, 1)))) rotate(var(--r)) scale(1);
   }
 }
 .hb-celebrate-pill {

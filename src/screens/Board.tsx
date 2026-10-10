@@ -54,15 +54,28 @@ export function Board({ weather }: { weather: Weather | null }) {
   const { me } = useMembers()
   // Wand-Tablet mit hoher Vergrößerung (z. B. neues Tablet: 1097 × 685 bei 1,75×): Seite so zeigen, als wäre sie
   // WALL_WIDTH breit. Alles wird kleiner, es passt mehr in die Höhe, und auf dem großen Bildschirm wirkt es wie
-  // vorher am iPad. Nur am Board-Konto, Handys und Laptop bleiben bei device-width.
+  // vorher am iPad. Nur am Board-Konto, Handys und Laptop bleiben unverändert.
+  // Per CSS-Zoom statt Viewport-Breite: die verkleinerte Viewport-Breite zeichnete scrollende Bereiche (Fenster)
+  // am Tablet unscharf (10.10.2026). Höhen in dvh teilen dafür durch --zoom, siehe Board und Sheet.
   useEffect(() => {
     if (!me.is_board) return
-    const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
-    if (!meta || screen.width >= WALL_WIDTH || screen.width < 900) return
-    const before = meta.content
-    meta.content = `width=${WALL_WIDTH}, user-scalable=no, viewport-fit=cover`
+    const root = document.documentElement
+    const apply = () => {
+      // innerWidth bleibt vom Zoom unberührt (clientWidth würde nach dem Zoomen die gezoomte Breite liefern)
+      const w = innerWidth
+      const on = w >= 900 && w < WALL_WIDTH
+      const z = on ? w / WALL_WIDTH : 1
+      root.style.zoom = on ? String(z) : ''
+      root.style.setProperty('--zoom', String(z))
+      root.classList.toggle('hb-zoomed', on)
+    }
+    apply()
+    addEventListener('resize', apply)
     return () => {
-      meta.content = before
+      removeEventListener('resize', apply)
+      root.style.zoom = ''
+      root.style.removeProperty('--zoom')
+      root.classList.remove('hb-zoomed')
     }
   }, [me.is_board])
 
@@ -76,6 +89,7 @@ export function Board({ weather }: { weather: Weather | null }) {
         config: {
           width: innerWidth,
           height: innerHeight,
+          zoom: document.documentElement.style.zoom || '1',
           dpr: devicePixelRatio,
           screen: `${screen.width}x${screen.height}`,
           ua: navigator.userAgent,
@@ -179,7 +193,7 @@ export function Board({ weather }: { weather: Weather | null }) {
   }, [view, cooking])
 
   return (
-    <div className="flex h-dvh flex-col bg-surface p-6">
+    <div className="flex flex-col bg-surface p-6" style={{ height: 'calc(100dvh / var(--zoom, 1))' }}>
       <header className="mb-7 flex flex-wrap items-stretch justify-between gap-4">
         {/* links Uhr und Knöpfe untereinander, rechts der feste Platz für Musik und Wege (nur bei Bedarf) */}
         <div className="flex min-w-0 flex-col gap-3">

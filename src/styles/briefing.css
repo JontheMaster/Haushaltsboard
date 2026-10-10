@@ -189,7 +189,7 @@
 }
 @keyframes hb-sky-fall {
   to {
-    transform: translate(-40px, 110vh);
+    transform: translate(-40px, calc(110vh / var(--zoom, 1)));
   }
 }
 /* Schnee */
@@ -202,13 +202,13 @@
 }
 @keyframes hb-sky-snow {
   33% {
-    transform: translate(24px, 36vh);
+    transform: translate(24px, calc(36vh / var(--zoom, 1)));
   }
   66% {
-    transform: translate(-18px, 72vh);
+    transform: translate(-18px, calc(72vh / var(--zoom, 1)));
   }
   to {
-    transform: translate(12px, 110vh);
+    transform: translate(12px, calc(110vh / var(--zoom, 1)));
   }
 }
 /* Nebel */
@@ -264,16 +264,16 @@
     transform: translate(0, 0) rotate(0deg);
   }
   25% {
-    transform: translate(40px, 28vh) rotate(90deg);
+    transform: translate(40px, calc(28vh / var(--zoom, 1))) rotate(90deg);
   }
   50% {
-    transform: translate(-10px, 56vh) rotate(200deg);
+    transform: translate(-10px, calc(56vh / var(--zoom, 1))) rotate(200deg);
   }
   75% {
-    transform: translate(50px, 84vh) rotate(290deg);
+    transform: translate(50px, calc(84vh / var(--zoom, 1))) rotate(290deg);
   }
   100% {
-    transform: translate(10px, 112vh) rotate(380deg);
+    transform: translate(10px, calc(112vh / var(--zoom, 1))) rotate(380deg);
   }
 }
 
