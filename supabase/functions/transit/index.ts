@@ -2,7 +2,8 @@
 //   GET  ?action=board          → nächste Abfahrten an den Haltestellen zuhause (VAG, mit Echtzeit)
 //   GET  ?action=plans          → nächster Weg pro Person (aus dem Kalender) + unbekannte Ziele des Aufrufers
 //   GET  ?action=geocode&q=…    → Adresse suchen (OpenStreetMap), für neue Ziele
-//   POST {action:'watch'}  + x-cron-key → Mitteilungen „Losgehen“ und „Verspätung“ (Cron jede Minute)
+//   POST {action:'watch'}  + x-cron-key → Mitteilungen „Losgehen“ und „Verspätung“ (Cron jede Minute);
+//                                         schreibt dabei den nächsten Weg pro Person nach transit_plans (Handy-Widget)
 // Verbindungen rechnet die VGN-Fahrplanauskunft (EFA), Echtzeit kommt von der VAG.
 import { loadEvents, type CalendarEvent } from '../_shared/calendar.ts'
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
@@ -529,6 +530,8 @@ async function watch(): Promise<unknown> {
   for (const m of s.members) {
     const prefs = s.prefs.get(m.id)
     const plan = await planFor(m.id, events, null).catch(() => null)
+    // fürs Handy-Widget merken (liest die Tabelle, rechnet nicht selbst)
+    await db.from('transit_plans').upsert({ member_id: m.id, plan, updated_at: new Date().toISOString() })
     if (!prefs || !(prefs.push_leave || prefs.push_delay) || !plan?.trip) continue
     const toLeave = Date.parse(plan.trip.leaveAt) - Date.now()
     const where = plan.target.place.name

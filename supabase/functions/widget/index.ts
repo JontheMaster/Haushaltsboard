@@ -1,5 +1,6 @@
 // Daten fürs Handy-Widget (Scriptable am iPhone, KWGT an Android).
-//   GET ?t=<geheimer Link aus widget_tokens> → kompakte Übersicht für diese Person (nur lesen)
+//   GET ?t=<geheimer Link aus widget_tokens> → kompakte Übersicht für diese Person (nur lesen),
+//   inkl. nächstem Weg aus dem Kalender (rechnet transit jede Minute vor, Tabelle transit_plans)
 // Kein Login: das Widget kann sich nicht anmelden. Der Link ist pro Person und lässt sich in der App erneuern.
 import { addDays, berlinDay, eventsOnDay, loadEvents, type CalendarEvent } from '../_shared/calendar.ts'
 import { adminClient, corsHeaders } from '../_shared/http.ts'
@@ -7,7 +8,7 @@ import { adminClient, corsHeaders } from '../_shared/http.ts'
 const db = adminClient()
 const WEATHER =
   'https://api.open-meteo.com/v1/forecast?latitude=49.45&longitude=11.08' +
-  '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=1'
+  '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FBerlin&forecast_days=2'
 
 const hhmm = (iso: string) =>
   new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso))
@@ -23,7 +24,14 @@ async function weather() {
   try {
     const r = await fetch(WEATHER, { signal: AbortSignal.timeout(6000) })
     const d = await r.json()
-    return { temp: Math.round(d.current.temperature_2m), code: d.current.weather_code, isDay: d.current.is_day === 1, max: Math.round(d.daily.temperature_2m_max[0]), min: Math.round(d.daily.temperature_2m_min[0]) }
+    return {
+      temp: Math.round(d.current.temperature_2m),
+      code: d.current.weather_code,
+      isDay: d.current.is_day === 1,
+      max: Math.round(d.daily.temperature_2m_max[0]),
+      min: Math.round(d.daily.temperature_2m_min[0]),
+      tomorrow: { max: Math.round(d.daily.temperature_2m_max[1]), min: Math.round(d.daily.temperature_2m_min[1]), code: d.daily.weather_code[1] },
+    }
   } catch {
     return null
   }
@@ -39,6 +47,9 @@ function upcoming(events: CalendarEvent[], name: string, today: string) {
     allDay: e.allDay,
     time: e.allDay ? null : hhmm(e.start),
     end: e.allDay ? null : hhmm(e.end),
+    // für den live mitlaufenden Countdown im Widget
+    startIso: e.allDay ? null : e.start,
+    endIso: e.allDay ? null : e.end,
     now: !e.allDay && Date.parse(e.start) <= now && Date.parse(e.end) > now,
   })
   const todayList = eventsOnDay(mine, today)
@@ -47,6 +58,42 @@ function upcoming(events: CalendarEvent[], name: string, today: string) {
   const tomorrow = addDays(today, 1)
   const tomorrowList = eventsOnDay(mine, tomorrow).map((e) => shape(e, tomorrow))
   return { today: todayList, tomorrow: tomorrowList }
+}
+
+type Leg = { walk: boolean; line: string; product: string; from: string; dep: string; delay: number | null; minutes?: number }
+type PlanRow = {
+  target: { title: string; start: string; place: { name: string } }
+  trip: { leaveAt: string; stop: string; walk: number; legs: Leg[]; arrivalRt: string } | null
+  status: 'ok' | 'tight' | 'late' | 'none'
+  lateMin: number
+}
+
+/** Nächster Weg fürs Widget: wann los, womit, wohin. Nur wenn transit ihn gerade (< 10 Min) gerechnet hat. */
+function tripOf(row: { plan: PlanRow | null; updated_at: string } | null) {
+  if (!row?.plan || Date.now() - Date.parse(row.updated_at) > 10 * 60_000) return null
+  const { target, trip, status, lateMin } = row.plan
+  const rides = trip ? trip.legs.filter((l) => !l.walk) : []
+  const first = rides[0]
+  const depRt = first ? new Date(Date.parse(first.dep) + (first.delay ?? 0) * 60_000).toISOString() : null
+  return {
+    title: target.title,
+    start: target.start,
+    startTime: hhmm(target.start),
+    place: target.place.name,
+    status,
+    lateMin,
+    leaveAt: trip?.leaveAt ?? null,
+    leaveTime: trip ? hhmm(trip.leaveAt) : null,
+    arrival: trip ? hhmm(trip.arrivalRt) : null,
+    walk: trip?.walk ?? null,
+    line: first?.line ?? null,
+    product: first?.product ?? null,
+    from: first?.from ?? trip?.stop ?? null,
+    dep: depRt,
+    depTime: depRt ? hhmm(depRt) : null,
+    delay: first?.delay ?? null,
+    changes: Math.max(0, rides.length - 1),
+  }
 }
 
 Deno.serve(async (req) => {
@@ -62,12 +109,13 @@ Deno.serve(async (req) => {
 
     const today = berlinDay(new Date())
     // alles weglassen, was die Person nicht betrifft: eigene oder offene Aufgaben, die heute oder früher fällig sind
-    const [wx, cal, { data: todos }, { data: chores }, { data: meals }] = await Promise.all([
+    const [wx, cal, { data: todos }, { data: chores }, { data: meals }, { data: planRow }] = await Promise.all([
       weather(),
       loadEvents({ all: true }).catch(() => null),
       db.from('todos').select('title, assignee, due_date, moved_since').is('done_at', null).lte('due_date', today).or(`assignee.eq.${me.id},assignee.is.null`).order('due_date'),
       db.from('chore_tasks').select('assignee, due_date, chore_rules(title, active)').is('done_at', null).lte('due_date', today).or(`assignee.eq.${me.id},assignee.is.null`).order('due_date'),
       db.from('meals').select('title, start_time, day').eq('day', today).order('start_time', { nullsFirst: false }),
+      db.from('transit_plans').select('plan, updated_at').eq('member_id', me.id).maybeSingle(),
     ])
 
     const choreItems = (chores ?? [])
@@ -91,6 +139,7 @@ Deno.serve(async (req) => {
       events: cal ? upcoming(cal.events, me.name, today) : null,
       todos: { count: items.length, items: items.slice(0, 6) },
       meal: meal ? { title: meal.title, time: meal.start_time ? meal.start_time.slice(0, 5) : null } : null,
+      trip: tripOf(planRow as { plan: PlanRow | null; updated_at: string } | null),
     })
   } catch (e) {
     console.error(e)
