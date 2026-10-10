@@ -622,11 +622,13 @@
   opacity: 1;
 }
 
-/* Wetter-Kachel an der Wand: Umschalter über die ganze Breite */
-.hb-weather-wall-switch .hb-seg {
-  display: flex;
-  width: 100%;
+/* kleiner Umschalter (Wetter-Kachel an der Wand: passt neben den Titel, spart eine Zeile) */
+.hb-seg.is-small {
+  flex: none;
+  padding: 2px;
 }
-.hb-weather-wall-switch .hb-seg > button {
-  flex: 1;
+.hb-seg.is-small button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
 }

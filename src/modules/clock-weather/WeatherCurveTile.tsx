@@ -23,11 +23,11 @@ export function WeatherCurveTile({ delay }: TileProps) {
   const { hh, mm } = berlinTime(useNow(60_000))
   const [picked, setPicked] = useState<'today' | 'tomorrow' | null>(null)
   const view = picked ?? (Number(hh) >= EVENING_FROM ? 'tomorrow' : 'today')
-  // an der Wand ist die Kachel schmal und hoch: Umschalter in die Kachel, Kurve füllt die Höhe
+  // an der Wand ist die Kachel schmal und hoch: kleiner Umschalter in der Titelzeile, Kurve füllt die Höhe
   const wall = useDevice().device !== 'phone'
 
   const switcher = (
-    <div className="hb-seg" role="group" aria-label="Tag">
+    <div className={`hb-seg ${wall ? 'is-small' : ''}`} role="group" aria-label="Tag">
       <button type="button" aria-pressed={view === 'today'} className={view === 'today' ? 'is-on' : ''} onClick={() => setPicked('today')}>
         Heute
       </button>
@@ -38,9 +38,8 @@ export function WeatherCurveTile({ delay }: TileProps) {
   )
 
   return (
-    <Tile title="Wetter" icon={CloudSun} delay={delay} action={wall ? undefined : switcher}>
+    <Tile title="Wetter" icon={CloudSun} delay={delay} action={switcher}>
       <div className={wall ? 'flex h-full flex-col gap-3' : 'flex flex-col gap-3'}>
-        {wall && <div className="hb-weather-wall-switch">{switcher}</div>}
         {!weather ? (
           <p className="text-body text-ink-muted">Wetter lädt …</p>
         ) : view === 'today' ? (
