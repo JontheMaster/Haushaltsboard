@@ -640,3 +640,26 @@
   padding: 0 10px;
   font-size: 13px;
 }
+
+/* Handy-Widget einrichten: Schritte und Code zum Kopieren */
+.hb-widget-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: 1.2em;
+  list-style: decimal;
+  font-size: 15px;
+  color: var(--ink);
+}
+.hb-widget-code {
+  max-height: 160px;
+  overflow: auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font-size: 11px;
+  line-height: 15px;
+  white-space: pre;
+  user-select: all;
+}

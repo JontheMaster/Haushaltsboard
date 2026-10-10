@@ -1,4 +1,5 @@
-import { Bell, CalendarDays, CalendarRange, Clock, CloudSun, Coins, Heart, Image, ListChecks, Mic, Moon, Music, Quote, ShoppingCart, Sparkles, Sunrise, TrainFront, Trophy, UtensilsCrossed, Wifi, Zap } from 'lucide-react'
+import { Bell, CalendarDays, CalendarRange, Clock, CloudSun, Coins, Heart, Image, ListChecks, Mic, Moon, Music, Quote, ShoppingCart, Smartphone, Sparkles, Sunrise, TrainFront, Trophy, UtensilsCrossed, Wifi, Zap } from 'lucide-react'
+import { WidgetSettings } from './widget/WidgetSettings'
 import { JubileeHeader, JubileeSettings } from './jubilee/Jubilee'
 import { RecapHeader } from './recap/RecapHeader'
 import { RecapSettings } from './recap/RecapSettings'
@@ -54,6 +55,8 @@ export const MODULES: ModuleDef[] = [
   { id: 'jubilaeum', title: 'Jubiläen', description: 'Besondere Tage, seit ihr zusammen seid', icon: Heart, phase: 5, sizes: [], Header: JubileeHeader, Settings: JubileeSettings },
   // Münzwurf: Knopf an der Wand in der Kopfzeile, am Handy unten auf Start (CoinButton)
   { id: 'muenzwurf', title: 'Münzwurf', description: 'J oder L: wer ist dran mit Müll, Abwasch …', icon: Coins, phase: 5, sizes: [] },
+  // Handy-Widget (Scriptable am iPhone, KWGT an Android): nur Einrichtung, kein Schalter; Daten über Edge Function `widget`
+  { id: 'widget', title: 'Handy-Widget', description: 'Termine, Todos und Essen auf dem Home-Bildschirm', icon: Smartphone, phase: 5, sizes: [], Settings: WidgetSettings, toggle: false },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary , phoneTiles: [{ id: 'foto', title: 'Foto des Tages', description: 'Jeden Tag ein Bild aus eurer Fotobibliothek', icon: Image, Tile: PhotoOfDayTile }] },
   // Morgen-Briefing: zu festen Uhrzeiten an der Wand (nur Board-Konto), Wetter, Termine, Spruch
   { id: 'morgen', title: 'Morgen-Briefing', description: 'Morgens an der Wand: Wetter, Termine, Dringendes und ein Spruch', icon: Sunrise, phase: 5, sizes: [], Settings: BriefingSettings , phoneTiles: [{ id: 'spruch', title: 'Spruch des Tages', description: 'Bibelvers oder Zitat, wie im Morgen-Briefing', icon: Quote, Tile: SayingTile }] },

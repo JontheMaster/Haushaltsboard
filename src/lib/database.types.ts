@@ -84,6 +84,12 @@ export type Database = {
         Update: { device?: string | null; id?: string; member?: string | null; tiles?: Json; hidden_headers?: string[] }
         Relationships: [Rel<'layouts_member_fkey', 'member', 'members'>]
       }
+      widget_tokens: {
+        Row: { member_id: string; token: string; created_at: string }
+        Insert: { member_id: string; token?: string; created_at?: string }
+        Update: { member_id?: string; token?: string; created_at?: string }
+        Relationships: [Rel<'widget_tokens_member_id_fkey', 'member_id', 'members'>]
+      }
       members: {
         Row: { color: string; id: string; is_board: boolean; name: string }
         Insert: { color: string; id: string; is_board?: boolean; name: string }
