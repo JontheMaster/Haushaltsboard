@@ -29,8 +29,9 @@ import { WeekView } from '../modules/week/WeekView'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
 
 type View = 'heute' | 'woche' | 'abfahrten' | 'essen'
-// So breit rechnet die Seite am Wand-Tablet (siehe unten), passt zu einem großen 16:10-Tablet wie früher das iPad
-const WALL_WIDTH = 1280
+// So breit rechnet die Seite am Wand-Tablet (siehe unten): auf dem neuen 16:10-Tablet sind die Elemente damit
+// so groß wie früher am iPad (1180 × 820), mit mehr Platz (Entscheidung Jonathan 10.10.2026)
+const WALL_WIDTH = 1366
 // Nach so langer Zeit ohne Berührung springen Woche und Abfahrten zurück auf Heute
 const IDLE_MS = 2 * 60 * 1000
 
@@ -51,7 +52,7 @@ const SPAN_NARROW: Record<TileSize, string> = {
 export function Board({ weather }: { weather: Weather | null }) {
   const { me } = useMembers()
   // Wand-Tablet mit hoher Vergrößerung (z. B. neues Tablet: 1097 × 685 bei 1,75×): Seite so zeigen, als wäre sie
-  // 1280 breit. Alles wird etwas kleiner, es passt mehr in die Höhe, und auf dem großen Bildschirm wirkt es wie
+  // WALL_WIDTH breit. Alles wird kleiner, es passt mehr in die Höhe, und auf dem großen Bildschirm wirkt es wie
   // vorher am iPad. Nur am Board-Konto, Handys und Laptop bleiben bei device-width.
   useEffect(() => {
     if (!me.is_board) return

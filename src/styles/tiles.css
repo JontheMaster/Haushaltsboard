@@ -622,6 +622,14 @@
   opacity: 1;
 }
 
+/* Wetter an der Wand: Umschalter neben dem Titel; ist die Kachel zu schmal, rutscht er darunter statt „Wetter“ zu verdecken */
+.hb-weather-wall .hb-tile-head {
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+}
+.hb-weather-wall .hb-tile-title {
+  flex: 1 0 auto;
+}
 /* kleiner Umschalter (Wetter-Kachel an der Wand: passt neben den Titel, spart eine Zeile) */
 .hb-seg.is-small {
   flex: none;

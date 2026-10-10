@@ -38,7 +38,7 @@ export function WeatherCurveTile({ delay }: TileProps) {
   )
 
   return (
-    <Tile title="Wetter" icon={CloudSun} delay={delay} action={switcher}>
+    <Tile title="Wetter" icon={CloudSun} delay={delay} action={switcher} className={wall ? 'hb-weather-wall' : ''}>
       <div className={wall ? 'flex h-full flex-col gap-3' : 'flex flex-col gap-3'}>
         {!weather ? (
           <p className="text-body text-ink-muted">Wetter lädt …</p>
