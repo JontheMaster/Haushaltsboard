@@ -1,6 +1,5 @@
 import {
   DndContext,
-  DragOverlay,
   MouseSensor,
   PointerSensor,
   TouchSensor,
@@ -11,6 +10,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
+import { DragOverlay } from '../../components/DragOverlay'
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EventPill } from '../../components/EventPill'
 import { Icon } from '../../components/Icon'

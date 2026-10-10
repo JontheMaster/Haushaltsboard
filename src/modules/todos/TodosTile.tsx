@@ -1,4 +1,5 @@
-import { DndContext, DragOverlay, useDroppable, type DragEndEvent } from '@dnd-kit/core'
+import { DndContext, useDroppable, type DragEndEvent } from '@dnd-kit/core'
+import { DragOverlay } from '../../components/DragOverlay'
 import { ListChecks } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Badge } from '../../components/Badge'

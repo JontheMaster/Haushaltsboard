@@ -1,4 +1,5 @@
-import { DndContext, DragOverlay, MouseSensor, pointerWithin, TouchSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragMoveEvent } from '@dnd-kit/core'
+import { DndContext, MouseSensor, pointerWithin, TouchSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragMoveEvent } from '@dnd-kit/core'
+import { DragOverlay } from '../../components/DragOverlay'
 import { CalendarPlus, ChefHat, Clock } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../../components/Button'
