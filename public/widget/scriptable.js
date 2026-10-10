@@ -3,7 +3,7 @@
 // Änderungen hier wirken beim nächsten Aktualisieren des Widgets von selbst.
 //
 // Das Widget passt sich an: oben steht immer, was gerade am wichtigsten ist („Fokus“):
-//   Weg (wann los, womit) > laufender/gleich beginnender Termin > Kochen > abends: morgen > sonst: der Tag.
+//   Weg (ab 1 Std vor dem Losgehen) > laufender/gleich beginnender Termin > Kochen > abends: morgen > sonst: der Tag.
 
 const API = 'https://cdfjglisfkhbkrklkxek.supabase.co/functions/v1/widget?t='
 const APP = 'https://jonthemaster.github.io/Haushaltsboard/'
@@ -67,8 +67,8 @@ function pickFocus(data) {
   if (t && t.leaveAt) {
     const leave = minsUntil(at(t.leaveAt))
     const dep = minsUntil(at(t.dep))
-    // ab 3 Stunden vorher, bis die Bahn weg ist
-    if (leave < 180 && dep > -1) return { kind: 'trip', trip: t }
+    // ab 1 Stunde vor dem Losgehen, bis die Bahn weg ist (Entscheidung Jonathan 10.10.2026)
+    if (leave < 60 && dep > -1) return { kind: 'trip', trip: t }
   }
   const timed = todayLeft(data).filter((e) => !e.allDay)
   const running = timed.find(isRunning)
