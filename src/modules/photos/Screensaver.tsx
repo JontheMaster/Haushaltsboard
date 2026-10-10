@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSettings } from '../../lib/settings'
 import { addDays, berlinTime, longDate, useNow, useToday } from '../../lib/time'
 import { eventsOnDay } from '../calendar/rules'
@@ -10,7 +10,20 @@ import { listPhotos, signedUrls } from './photoStore'
 
 export const SCREENSAVER_DEFAULTS = { idle_minutes: 5, interval_seconds: 60 }
 
-type Slide = { id: string; url: string; portrait: boolean }
+type Slide = { id: string; path: string; url: string; portrait: boolean }
+
+// Signierte Links gelten 1 Stunde (photoStore). Nach 50 Minuten holen wir neue, bevor Fotos nicht mehr laden.
+const RESIGN_MS = 50 * 60 * 1000
+
+/** Foto komplett laden; true = hat geklappt */
+function preload(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = url
+  })
+}
 
 function shuffle<T>(list: T[]): T[] {
   const a = [...list]
@@ -30,7 +43,10 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
   const visit = settings?.visit_mode ?? false
   const { interval_seconds } = useModuleConfig('bildschirmschoner', SCREENSAVER_DEFAULTS)
   const [slides, setSlides] = useState<Slide[] | null>(null)
-  const [index, setIndex] = useState(0)
+  // index = gezeigtes Foto; null, solange noch keins fertig geladen ist (dann nur Uhr auf Schwarz)
+  const [index, setIndex] = useState<number | null>(null)
+  const [prev, setPrev] = useState<number | null>(null)
+  const signedAt = useRef(0)
   const enabled = useEnabledModules()
 
   // Fotos laden: nur aktive, im Besuchsmodus nur freigegebene, zufällige Reihenfolge
@@ -41,10 +57,11 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
         const chosen = shuffle(all.filter((p) => p.active && (!visit || p.show_in_visit)))
         const urls = await signedUrls(chosen.map((p) => p.path))
         if (cancelled) return
+        signedAt.current = Date.now()
         setSlides(
           chosen
             .filter((p) => urls.has(p.path))
-            .map((p) => ({ id: p.id, url: urls.get(p.path)!, portrait: (p.height ?? 0) > (p.width ?? 0) })),
+            .map((p) => ({ id: p.id, path: p.path, url: urls.get(p.path)!, portrait: (p.height ?? 0) > (p.width ?? 0) })),
         )
       })
       .catch(() => !cancelled && setSlides([]))
@@ -53,14 +70,56 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
     }
   }, [visit])
 
-  // Weiterblättern und das nächste Foto vorladen
+  // Neue Links holen, wenn die alten bald ablaufen (Bildschirmschoner läuft oft stundenlang)
+  async function freshSlides(list: Slide[]): Promise<Slide[]> {
+    if (Date.now() - signedAt.current < RESIGN_MS) return list
+    const urls = await signedUrls(list.map((s) => s.path))
+    if (!urls.size) return list
+    signedAt.current = Date.now()
+    const next = list.map((s) => ({ ...s, url: urls.get(s.path) ?? s.url }))
+    setSlides(next)
+    return next
+  }
+
+  // Erst zeigen, wenn das Foto wirklich geladen ist; was nicht lädt, wird übersprungen (nie ein kaputtes Bild)
+  async function showNext(from: number | null, list: Slide[], isAlive: () => boolean) {
+    const fresh = await freshSlides(list)
+    for (let step = 1; step <= fresh.length; step++) {
+      const i = ((from ?? -1) + step) % fresh.length
+      if (await preload(fresh[i].url)) {
+        if (!isAlive()) return
+        setPrev(from)
+        setIndex(i)
+        return
+      }
+      if (!isAlive()) return
+    }
+  }
+
+  // Erstes Foto
   useEffect(() => {
-    if (!slides || slides.length < 2) return
-    const next = slides[(index + 1) % slides.length]
-    new Image().src = next.url
-    const t = setTimeout(() => setIndex((i) => (i + 1) % slides.length), interval_seconds * 1000)
-    return () => clearTimeout(t)
-  }, [slides, index, interval_seconds])
+    if (!slides?.length || index !== null) return
+    let alive = true
+    showNext(null, slides, () => alive)
+    return () => {
+      alive = false
+    }
+    // nur beim Laden der Liste starten
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slides === null])
+
+  // Weiterblättern nach interval_seconds
+  useEffect(() => {
+    if (!slides || slides.length < 2 || index === null) return
+    let alive = true
+    const t = setTimeout(() => showNext(index, slides, () => alive), interval_seconds * 1000)
+    return () => {
+      alive = false
+      clearTimeout(t)
+    }
+    // slides ändert sich auch beim Erneuern der Links, das soll den Takt nicht neu starten
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, interval_seconds, slides?.length])
 
   return (
     <div
@@ -73,12 +132,13 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
     >
       {slides?.map((s, i) => {
         // nur aktuelles und vorheriges Foto im DOM, für die Überblendung
-        const prev = (index - 1 + slides.length) % slides.length
         if (i !== index && i !== prev) return null
+        // falls ein Foto doch nicht anzeigt: ausblenden statt Symbol für kaputtes Bild
+        const hide = (e: React.SyntheticEvent<HTMLImageElement>) => (e.currentTarget.style.visibility = 'hidden')
         return (
           <div key={s.id} className={`hb-saver-slide ${i === index ? 'is-on' : ''}`}>
-            {s.portrait && <img className="hb-saver-blur" src={s.url} alt="" aria-hidden="true" />}
-            <img className={s.portrait ? 'hb-saver-contain' : 'hb-saver-cover'} src={s.url} alt="" />
+            {s.portrait && <img className="hb-saver-blur" src={s.url} alt="" aria-hidden="true" onError={hide} />}
+            <img className={s.portrait ? 'hb-saver-contain' : 'hb-saver-cover'} src={s.url} alt="" onError={hide} />
           </div>
         )
       })}
