@@ -48,6 +48,27 @@ const SPAN_NARROW: Record<TileSize, string> = {
 /** Wand-Ansicht (Querformat, ab 700 px Breite) */
 export function Board({ weather }: { weather: Weather | null }) {
   const { me } = useMembers()
+  // Bildschirmgröße der Wand merken (modules „wand-geraet“), damit das Layout zum echten Tablet passt
+  useEffect(() => {
+    if (!me.is_board) return
+    const save = () =>
+      supabase.from('modules').upsert({
+        id: 'wand-geraet',
+        enabled: true,
+        config: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio, screen: `${screen.width}x${screen.height}`, ua: navigator.userAgent, at: new Date().toISOString() },
+      }).then(() => {})
+    save()
+    let t: ReturnType<typeof setTimeout>
+    const onResize = () => {
+      clearTimeout(t)
+      t = setTimeout(save, 2000)
+    }
+    addEventListener('resize', onResize)
+    return () => {
+      clearTimeout(t)
+      removeEventListener('resize', onResize)
+    }
+  }, [me.is_board])
   const enabled = useEnabledModules()
   const layout = useLayout('wall')
   // „modul.kachel“ (z. B. uhr-wetter.kurve) gehört zum Modul davor
