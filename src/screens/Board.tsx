@@ -73,7 +73,16 @@ export function Board({ weather }: { weather: Weather | null }) {
       supabase.from('modules').upsert({
         id: 'wand-geraet',
         enabled: true,
-        config: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio, screen: `${screen.width}x${screen.height}`, ua: navigator.userAgent, at: new Date().toISOString() },
+        config: {
+          width: innerWidth,
+          height: innerHeight,
+          dpr: devicePixelRatio,
+          screen: `${screen.width}x${screen.height}`,
+          ua: navigator.userAgent,
+          // läuft die Seite in Fully Kiosk mit eingeschalteter JavaScript-Schnittstelle?
+          fully: typeof (window as unknown as { fully?: { bind?: unknown } }).fully?.bind === 'function',
+          at: new Date().toISOString(),
+        },
       }).then(() => {})
     save()
     let t: ReturnType<typeof setTimeout>
@@ -139,6 +148,7 @@ export function Board({ weather }: { weather: Weather | null }) {
     if (!me.is_board) return
     bindFullyMotion()
     const onMotion = () => {
+      noteMotion()
       if (idle && !manualSaver) {
         resetIdle()
         setView('heute')
@@ -311,6 +321,17 @@ export function Board({ weather }: { weather: Weather | null }) {
       {shield && <div className="fixed inset-0 z-[100]" aria-hidden="true" />}
     </div>
   )
+}
+
+// Zuletzt erkannte Bewegung merken (modules „wand-bewegung“), höchstens alle 20 s: zum Prüfen, ob Fully sie meldet
+let lastNoted = 0
+function noteMotion() {
+  if (Date.now() - lastNoted < 20_000) return
+  lastNoted = Date.now()
+  supabase
+    .from('modules')
+    .upsert({ id: 'wand-bewegung', enabled: true, config: { at: new Date().toISOString() } })
+    .then(() => {})
 }
 
 /** Kachel zu einem Layout-Schlüssel: Hauptkachel eines Moduls oder Zusatzkachel „modul.kachel“ */
