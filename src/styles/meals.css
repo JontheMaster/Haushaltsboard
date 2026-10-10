@@ -1332,3 +1332,14 @@ button.hb-meal-card:focus-visible {
 @container (max-width: 110px) {
   .hb-plan-meal-img { display: none; }
 }
+
+/* Rezept im breiten Fenster an der Wand: Bild und Knöpfe | Zutaten | Zubereitung (scrollt so meist gar nicht) */
+.hb-recipe-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.25fr);
+  align-items: start;
+  gap: var(--space-5);
+}
+.hb-recipe-columns .hb-recipe-hero {
+  aspect-ratio: 4 / 3;
+}

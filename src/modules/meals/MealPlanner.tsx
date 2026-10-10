@@ -175,9 +175,10 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
       <DragOverlay dropAnimation={null}>{dragging ? <RecipeTile recipe={dragging} categories={categories} lifted /> : null}</DragOverlay>
 
       {open && (
-        <Sheet title={open.title} onClose={() => setOpen(null)}>
+        <Sheet title={open.title} onClose={() => setOpen(null)} wide>
           <RecipeDetail
             recipe={open}
+            columns
             actions={(servings) => (
               <div className="flex gap-2">
                 <Button
