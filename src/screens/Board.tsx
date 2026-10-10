@@ -142,17 +142,19 @@ export function Board({ weather }: { weather: Weather | null }) {
     setShield(true)
   }
 
-  // Jemand läuft vorbei (Kamera über Fully Kiosk): von selbst gestarteter Bildschirmschoner geht zu.
-  // Von Hand gestarteter bleibt (man will ja Fotos sehen), Nachtmodus bleibt dunkel (Entscheidung 10.10.2026).
+  // Jemand steht davor (Kamera über Fully Kiosk): Bildschirmschoner geht zu, auch der von Hand gestartete, und der
+  // Nachtmodus wacht auf wie beim Antippen, solange Bewegung kommt plus 2 Minuten (Entscheidung Jonathan 10.10.2026)
   useEffect(() => {
     if (!me.is_board) return
     bindFullyMotion()
     const onMotion = () => {
       noteMotion()
-      if (idle && !manualSaver) {
+      if (idle || manualSaver) {
+        setManualSaver(false)
         resetIdle()
         setView('heute')
       }
+      if (night) setWakeUntil(Date.now() + 2 * 60_000)
     }
     addEventListener(MOTION_EVENT, onMotion)
     return () => removeEventListener(MOTION_EVENT, onMotion)
