@@ -210,7 +210,8 @@ async function run(a: Action, me: Member, members: Member[], extra: Extra): Prom
       if (extra.lat === undefined || extra.lon === undefined)
         return { ok: false, message: 'Standort fehlt. Im Kurzbefehl „Aktuellen Standort abrufen“ und lat/lon mitschicken.' }
       const r = await startDrive(me.id, [extra.lat, extra.lon])
-      if (!r.ok) return r.reason === 'at-home' ? { ok: true, message: 'Willkommen zuhause' } : { ok: false, message: r.message }
+      // schon zuhause (unter 400 m): kein Heimweg, zählt nicht als erledigt (sonst sperrt das Doppel-Tippen den nächsten Versuch)
+      if (!r.ok) return r.reason === 'at-home' ? { ok: false, message: 'Du bist schon zuhause, kein Heimweg gestartet.' } : { ok: false, message: r.message }
       const at = berlinHHMM(r.eta)
       const jam = r.delayMin >= 3 ? `, ${r.delayMin} Min Stau` : ''
       // Push nur an die andere Person (Entscheidung Jonathan 11.10.2026)
