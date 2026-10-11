@@ -204,9 +204,20 @@ export type Database = {
         Relationships: []
       }
       fin_goals: {
-        Row: { id: string; owner: string; name: string; target_amount: number; source: 'depot' | 'konto' | 'beides'; deadline: string | null; household: boolean; created_at: string }
-        Insert: { owner: string; name: string; target_amount: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean }
-        Update: { name?: string; target_amount?: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean }
+        Row: {
+          id: string
+          owner: string
+          name: string
+          target_amount: number
+          source: 'depot' | 'konto' | 'beides'
+          deadline: string | null
+          household: boolean
+          manual_amount: number
+          sort: number
+          created_at: string
+        }
+        Insert: { owner: string; name: string; target_amount: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean; manual_amount?: number }
+        Update: { name?: string; target_amount?: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean; manual_amount?: number }
         Relationships: [Rel<'fin_goals_owner_fkey', 'owner', 'members'>]
       }
       fin_imports: {

@@ -357,3 +357,58 @@ li.hb-depot-row:first-child {
     stroke-dashoffset: 0;
   }
 }
+
+/* Sparziele: Ring füllt sich beim Erscheinen, ab 100 % grün */
+.hb-goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: var(--space-3);
+}
+.hb-goal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.hb-goal:disabled {
+  cursor: default;
+}
+.hb-goal-track {
+  fill: none;
+  stroke: var(--surface-sunken);
+  stroke-width: 9;
+}
+.hb-goal-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-dashoffset: var(--off);
+  animation: hb-goal-fill var(--dur-calm) var(--ease-out) both;
+}
+.hb-goal-ring.is-done .hb-goal-fill {
+  stroke: var(--success);
+}
+.hb-goal-pct {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+@keyframes hb-goal-fill {
+  from {
+    stroke-dashoffset: var(--c);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-goal-fill {
+    animation: none;
+  }
+}

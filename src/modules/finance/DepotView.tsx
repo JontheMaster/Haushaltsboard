@@ -25,6 +25,7 @@ import {
 import { euro } from './finStore'
 import { DepotPlans } from './DepotPlans'
 import { DividendsCard, HistoryCard, SavingsRateCard } from './DepotCharts'
+import { GoalsCard } from './Goals'
 
 /** Kurzer Name: „iShares Core MSCI World UCITS ETF USD (Acc)“ → „Core MSCI World“ */
 function shortName(name: string): string {
@@ -146,6 +147,7 @@ export function DepotView({ showToast }: { showToast: (m: string) => void }) {
         </section>
       )}
 
+      {holdings && <GoalsCard showToast={showToast} />}
       {holdings && holdings.length > 0 && <SavingsRateCard refreshKey={dataKey} />}
       {holdings && holdings.length > 0 && <DividendsCard holdingIds={holdings.map((h) => h.id)} refreshKey={dataKey} />}
       {holdings && holdings.length > 0 && <DepotPlans holdings={holdings} ownerId={me.id} showToast={showToast} />}
