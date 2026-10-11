@@ -244,9 +244,11 @@ export type Database = {
           servings: number
           created_by: string | null
           created_at: string
+          dismissed_at: string | null
         }
         Insert: {
           id?: string
+          dismissed_at?: string | null
           recipe_id?: string | null
           title: string
           day: string

@@ -826,6 +826,9 @@
 }
 button.hb-meal-card {
   cursor: pointer;
+  /* lange drücken = ausblenden: kein Text markieren, kein iOS-Menü */
+  -webkit-touch-callout: none;
+  user-select: none;
   transition: transform var(--dur-fast) var(--ease-out);
 }
 button.hb-meal-card:active {

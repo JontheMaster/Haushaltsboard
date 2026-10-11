@@ -1,9 +1,11 @@
 import { ChefHat, UtensilsCrossed } from 'lucide-react'
+import { useRef } from 'react'
 import { Icon } from '../../components/Icon'
 import { berlinAtISO, useNow, useToday } from '../../lib/time'
 import { startCooking, useCook } from './cookStore'
 import { useMealsByDay } from './MealLine'
 import { hm, type Meal } from './mealStore'
+import { supabase } from '../../lib/supabase'
 import { RecipeImage } from './RecipeLibrary'
 import { useRecipes } from './recipeStore'
 
@@ -13,6 +15,8 @@ const BEFORE_MIN = 30
 const AFTER_MIN = 30
 // Essen ohne Uhrzeit erst ab dieser Uhrzeit zeigen (Entscheidung Jonathan 7.10.2026)
 const NO_TIME_FROM = '11:00'
+// Lange drücken blendet die Karte aus (mit Nachfrage)
+const LONG_PRESS_MS = 600
 
 /** Essen von heute, das gerade dran ist: ab 30 Min vor Kochbeginn bis Kochzeit + 30 Min (ohne Uhrzeit: ab 11 Uhr bis Tagesende) */
 function useNextMeal(): Meal | null {
@@ -20,6 +24,7 @@ function useNextMeal(): Meal | null {
   const now = useNow(60_000).getTime()
   const meals = useMealsByDay()(today)
   const open = meals.filter((m) => {
+    if (m.dismissed_at) return false
     const t = hm(m.start_time)
     if (!t) return Date.parse(berlinAtISO(today, NO_TIME_FROM)) <= now
     const start = Date.parse(berlinAtISO(today, t))
@@ -38,12 +43,52 @@ function when(meal: Meal, now: number, today: string): string {
   return `Heute ${t}`
 }
 
+/** Karte wegnehmen (gekocht oder nicht mehr nötig): das Essen bleibt im Plan und im Wochenrückblick */
+async function dismiss(meal: Meal) {
+  if (!confirm(`${meal.title} ausblenden? Das Essen bleibt im Plan.`)) return
+  await supabase.from('meals').update({ dismissed_at: new Date().toISOString() }).eq('id', meal.id)
+}
+
+/** Langes Drücken (Finger bleibt still), danach wird das folgende Antippen geschluckt */
+function useLongPress(onLong: () => void) {
+  const fired = useRef(false)
+  const stop = useRef<(() => void) | null>(null)
+  const onPointerDown = (e: React.PointerEvent) => {
+    fired.current = false
+    stop.current?.()
+    const x = e.clientX
+    const y = e.clientY
+    const timer = setTimeout(() => {
+      fired.current = true
+      cleanup()
+      onLong()
+    }, LONG_PRESS_MS)
+    const move = (ev: PointerEvent) => {
+      if (Math.hypot(ev.clientX - x, ev.clientY - y) > 8) cleanup()
+    }
+    const cleanup = () => {
+      clearTimeout(timer)
+      window.removeEventListener('pointermove', move, true)
+      window.removeEventListener('pointerup', cleanup, true)
+      window.removeEventListener('pointercancel', cleanup, true)
+      stop.current = null
+    }
+    window.addEventListener('pointermove', move, true)
+    window.addEventListener('pointerup', cleanup, true)
+    window.addEventListener('pointercancel', cleanup, true)
+    stop.current = cleanup
+  }
+  return { fired, onPointerDown }
+}
+
 /**
  * Was heute gekocht wird: an der Wand in der Kopfzeile, am Handy oben auf der Startseite.
- * Antippen startet gleich den Kochmodus.
+ * Antippen startet gleich den Kochmodus, lange drücken blendet die Karte aus (mit Nachfrage, wie beim Timer).
+ * Ohne Rezept: Antippen blendet aus.
  */
 export function MealHeader(_: { variant: 'wall' | 'phone' }) {
   const meal = useNextMeal()
+  const press = useLongPress(() => meal && dismiss(meal))
   const { recipes } = useRecipes()
   const today = useToday()
   const now = useNow(60_000).getTime()
@@ -79,19 +124,21 @@ export function MealHeader(_: { variant: 'wall' | 'phone' }) {
     </>
   )
 
-  return recipe ? (
+  return (
     <button
       type="button"
       className="hb-meal-card hb-slot-item"
       data-kind="meal"
-      aria-label={`${meal.title}, Kochen starten`}
-      onClick={() => startCooking(recipe, meal.servings)}
+      aria-label={recipe ? `${meal.title}, antippen startet Kochen, lange drücken blendet aus` : `${meal.title}, antippen blendet aus`}
+      onPointerDown={recipe ? press.onPointerDown : undefined}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={() => {
+        if (press.fired.current) return
+        if (recipe) startCooking(recipe, meal.servings)
+        else dismiss(meal)
+      }}
     >
       {body}
     </button>
-  ) : (
-    <div className="hb-meal-card hb-slot-item" data-kind="meal">
-      {body}
-    </div>
   )
 }
