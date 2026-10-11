@@ -28,6 +28,7 @@ import { Button } from '../components/Button'
 import { AllModules } from './AllModules'
 import { PhoneLayoutEditor } from './PhoneLayoutEditor'
 import { useEnabledModules, useHiddenHeaders, useLayout } from '../modules/useModules'
+import { useTapFromUrl } from '../modules/nfc/nfcStore'
 
 type Tab = 'start' | 'woche' | 'todos' | 'einkauf' | 'essen'
 
@@ -65,6 +66,8 @@ export function Phone({ weather }: { weather: Weather | null }) {
   )
   const [toast, setToast] = useState<{ id: number; message: string; action?: { label: string; run: () => void } } | null>(null)
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
+  // Sticker mit Link (?tap=<slug>): NFC-Tag mit der eigenen Anmeldung auslösen
+  useTapFromUrl(showToast)
   const hideToast = useCallback(() => setToast(null), [])
 
   // Ausgeschaltete Module verlieren ihren Reiter

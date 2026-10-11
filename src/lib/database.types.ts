@@ -90,6 +90,12 @@ export type Database = {
         Update: { member_id?: string; token?: string; created_at?: string }
         Relationships: [Rel<'widget_tokens_member_id_fkey', 'member_id', 'members'>]
       }
+      member_tokens: {
+        Row: { created_at: string; id: string; label: string; last_used_at: string | null; member: string; revoked: boolean; token_hash: string }
+        Insert: { label: string; member: string; token_hash: string; revoked?: boolean }
+        Update: { label?: string; revoked?: boolean }
+        Relationships: [Rel<'member_tokens_member_fkey', 'member', 'members'>]
+      }
       members: {
         Row: { color: string; id: string; is_board: boolean; name: string }
         Insert: { color: string; id: string; is_board?: boolean; name: string }
@@ -101,6 +107,42 @@ export type Database = {
         Insert: { config?: Json; enabled?: boolean; id: string }
         Update: { config?: Json; enabled?: boolean; id?: string }
         Relationships: []
+      }
+      nfc_actions: {
+        Row: {
+          category: string
+          created_at: string
+          enabled: boolean
+          icon: string
+          id: string
+          label: string
+          owner: string | null
+          params: Json
+          points: number
+          private: boolean
+          slug: string
+          type: string
+        }
+        Insert: {
+          category?: string
+          enabled?: boolean
+          icon?: string
+          label: string
+          owner?: string | null
+          params?: Json
+          points?: number
+          private?: boolean
+          slug: string
+          type: string
+        }
+        Update: Partial<Database['public']['Tables']['nfc_actions']['Insert']>
+        Relationships: [Rel<'nfc_actions_owner_fkey', 'owner', 'members'>]
+      }
+      nfc_events: {
+        Row: { action: string; action_id: string | null; at: string; id: string; member: string | null; message: string; ok: boolean; private: boolean }
+        Insert: { action: string; action_id?: string | null; member?: string | null; message?: string; ok: boolean; private?: boolean }
+        Update: Partial<Database['public']['Tables']['nfc_events']['Insert']>
+        Relationships: [Rel<'nfc_events_member_fkey', 'member', 'members'>]
       }
       photos: {
         Row: {

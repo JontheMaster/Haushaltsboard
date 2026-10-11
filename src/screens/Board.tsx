@@ -28,6 +28,7 @@ import type { TileSize } from '../modules/types'
 import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useModules'
 import { WeekView } from '../modules/week/WeekView'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
+import { useTapFromUrl } from '../modules/nfc/nfcStore'
 
 type View = 'heute' | 'woche' | 'abfahrten' | 'essen'
 // So breit rechnet die Seite am Wand-Tablet (siehe unten): auf dem neuen 16:10-Tablet sind die Elemente damit
@@ -176,6 +177,8 @@ export function Board({ weather }: { weather: Weather | null }) {
 
   const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
+  // Sticker mit Link (?tap=<slug>): NFC-Tag mit der eigenen Anmeldung auslösen
+  useTapFromUrl(showToast)
   const hideToast = useCallback(() => setToast(null), [])
 
   useEffect(() => {
