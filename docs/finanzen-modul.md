@@ -7,12 +7,13 @@ Das Board zeigt, wann, wofür und wie viel Geld ausgegeben wird, ohne Bankzugang
 
 Bewusst **kein** FinTS und kein Open-Banking-Zugang: keine Bank-Logins in Supabase, keine Freigaben, die ablaufen.
 
-Vier Stufen, nacheinander, jeweils erst nach Jonathans Go:
+Fünf Stufen, jeweils erst nach Jonathans Go:
 
 1. Grundlage: Tabellen, Kategorien, CSV-Import, Zuordnen
 2. Apple Pay live und Abgleich mit der CSV
 3. Auswertung und Budgets
 4. Gemeinsame Ausgaben und Abos
+5. Depot: Bestände, Kurse, Sparpläne, Sparziele (unabhängig von Stufe 2–4, braucht nur Stufe 1)
 
 Voraussetzungen: Login, Modul-System, Einstellungen. Persönliche Tokens (`member_tokens`) aus dem NFC-Modul wiederverwenden; gibt es sie noch nicht, hier anlegen, genau wie in `docs/nfc-modul.md` beschrieben.
 
@@ -127,8 +128,81 @@ Wand-Ansicht „Finanzen“ (Entwurf 11.10.2026), zwei Reihen à drei Karten:
 
 ---
 
+## Stufe 5: Depot
+
+Das Board zeigt einen fast live aktualisierten Stand des Depots, **ohne Zugriff auf das Depot selbst**. Kurse sind öffentlich, nur Positionen und Stückzahlen sind privat: Das Board kennt die Bestände und holt die Kurse von einem Marktdaten-Dienst. Kein Handel, keine Order, keine Anlageempfehlungen und keine Bewertung einzelner Positionen; das Board zeigt nur an und rechnet.
+
+### Datenbank
+
+- `fin_holdings`: `id`, `owner`, `isin`, `name`, `symbol` (Börsenkürzel für die Kurs-API, z. B. `EUNL.DE` für Xetra), `quantity` (numeric, Bruchstücke erlaubt), `avg_buy_price`, `currency`, `household` (gemeinsames Depot), `active`, `created_at`. `quantity` und `avg_buy_price` sind der aktuelle Stand; sie werden per Trigger aus `fin_holding_tx` nachgerechnet, nie getrennt gepflegt.
+- `fin_holding_tx`: `id`, `holding`, `date`, `type` (`buy` | `sell` | `savings_plan` | `dividend` | `correction`), `quantity`, `price`, `amount`, `source` (`manual` | `csv` | `plan`), `hash` (gegen doppelte CSV-Zeilen), `created_at`.
+- `fin_savings_plans`: `id`, `holding`, `amount`, `day_of_month` (1–28), `active`.
+- `fin_quotes`: `symbol`, `price`, `currency`, `at` (Zeitpunkt des Kurses laut Anbieter), `fetched_at`. Cache, eine Zeile pro Symbol.
+- `fin_quotes_daily`: `symbol`, `day`, `close`. Tagesschlusskurse für Verlauf und Sparplan-Buchung.
+- `fin_goals`: `id`, `owner`, `name`, `target_amount`, `source` (`depot` | `konto` | `beides`), `deadline` (optional), `household`, `created_at`.
+- RLS wie im restlichen Finanz-Modul: private Bestände, Buchungen, Sparpläne und Ziele nur für den Besitzer, `household = true` für beide, das Wand-Tablet nie Zeilen. `fin_quotes` und `fin_quotes_daily` sind öffentliche Kurse, aber nur für Symbole lesbar, die man selbst sehen darf (sonst verriete die Liste, welche Papiere die andere Person hat).
+
+### Erfassen
+
+- Handy, Reiter Finanzen → „Depot“ → „Position hinzufügen“: ISIN eintippen → das Board sucht Name und Xetra-Kürzel (OpenFIGI, kostenlos, ohne Schlüssel: ISIN → deutsches Börsenkürzel, dann bei der Kurs-API prüfen) → Stückzahl, Kaufkurs (oder Kaufsumme), Datum, gemeinsam ja/nein. Legt eine `buy`-Buchung an.
+- Verkauf, Dividende und Korrektur als eigene Buchung an der Position.
+- **CSV-Import der Depotübersicht aus dem ING-Banking:** Vor dem Bau Jonathan um eine anonymisierte Beispiel-CSV bitten und den Parser an der echten Datei bauen (wie in Stufe 1). Gleicher Ansatz: Kopfzeile suchen, Windows-1252, deutsche Zahlen. Abgleich per ISIN: Die Stückzahl aus der CSV ist die Wahrheit, Abweichungen werden als `correction` gebucht und angezeigt („+0,0412 Stück aus der Depotübersicht“). Depot- und Kundennummern werden nie gespeichert.
+- **Kombi mit dem Giro-Export aus Stufe 1:** Zeilen „Wertpapierkauf … ISIN …“ (Sparplan-Ausführungen, stehen schon heute im Export) werden erkannt und der passenden Position als eingezahlter Betrag zugeordnet. Die Stückzahl kommt dann aus Schlusskurs bzw. Depotübersicht.
+
+### Sparpläne
+
+- Pro Position: Betrag und Ausführungstag (1–28). Fällt der Tag auf ein Wochenende oder einen Börsenfeiertag, gilt der nächste Handelstag.
+- Cron am Abend (nach Xetra-Schluss): Für jeden fälligen aktiven Sparplan wird eine `savings_plan`-Buchung angelegt, Stückzahl = Betrag / Schlusskurs des Tages (aus `fin_quotes_daily`). Fehlt der Kurs, versucht er es am nächsten Abend wieder; nie doppelt (eine Ausführung pro Sparplan und Monat).
+- Der nächste CSV-Abgleich (Depotübersicht oder Giro-Export) korrigiert Abweichungen per `correction`.
+
+### Kurse
+
+- Edge Function `depot-quotes`: holt Kurse für alle aktiven Symbole und schreibt `fin_quotes`; nach Börsenschluss zusätzlich den Tagesschlusskurs in `fin_quotes_daily`.
+- Cron alle 15 Minuten an Werktagen; die Function selbst prüft die Xetra-Zeit in Europe/Berlin (9:00–17:30, ein paar Minuten Puffer) und läuft außerhalb davon nur einmal am Abend (22:00). Feiertage: Ändert sich der Kurs nicht, wird nichts neu geschrieben.
+- Anbieter: siehe Auswahl unten. Ein Schlüssel, falls nötig, liegt nur als Supabase-Secret `QUOTES_API_KEY` (trägt Jonathan selbst ein), nie im Repo.
+- Fällt die API aus: Der letzte Kurs bleibt stehen, mit Zeitstempel („Stand 14:32“, ab einem Tag „Stand Fr 17:30“). Nie leere Kacheln, nie 0 €.
+- Fremdwährung (z. B. eine USD-Aktie): Umrechnung mit dem EZB-Referenzkurs des Tages (frei verfügbar), angezeigt immer in Euro.
+
+### Auswertung
+
+| Ansicht | Inhalt | Darstellung |
+| --- | --- | --- |
+| Kachel „Depot“ | Depotwert, Veränderung (heute, in der ruhigen Ansicht Woche/Monat) in % und €, Verlaufslinie 30 Tage | große Zahl, Linie; Gewinn `success`, Verlust `urgent` |
+| Positionen | Name, Anteil am Depot, eingezahlt vs. aktueller Wert, Gewinn/Verlust seit Kauf in € und % | Liste mit Anteilsbalken |
+| Verlauf | 1 M / 6 M / 1 J / alles: Depotwert und eingezahltes Geld | zwei Linien, Fläche dazwischen = Gewinn bzw. Verlust |
+| Dividenden | pro Jahr und Position | Balken und Liste |
+| Sparziele | `fin_goals`: Ziel-Ring als Kachel, z. B. „Urlaub 2027: 64 %“, mit Deadline („noch 14 Monate“) und nötiger Rate pro Monat | Fortschrittsring |
+| Sparquote | pro Monat: Einzahlungen ins Depot (Käufe und Sparpläne) geteilt durch Einnahmen aus Stufe 1 | Balken über 12 Monate |
+
+- Ort am Handy: im Reiter „Finanzen“ ein Umschalter „Konto | Depot“.
+- Ort an der Wand: in der Ansicht „Finanzen“ (Stufe 3) eine Karte „Depot“ und die Ziel-Ringe. Ist Stufe 3 noch nicht gebaut, bekommt die Ansicht zunächst nur diese Karten.
+- Aggregation als SQL-Views oder RPCs mit `security_invoker`, Zeitzone `Europe/Berlin`. Ausnahme Wand: Das Tablet-Konto darf keine Zeilen sehen, deshalb eine eigene RPC (`security definer`), die **nur Prozentwerte und Ziel-Fortschritt der gemeinsamen Depots** zurückgibt, nie Beträge, Positionen oder Stückzahlen. Diagramme im Stil des Design Systems, animiert nach den Bewegungs-Tokens.
+
+### Privatsphäre und Darstellung
+
+- Einstellung „An der Wand nur Prozent“ (Standard an): Das Wand-Tablet zeigt nur Veränderung in % und Ziel-Fortschritt, keine Eurobeträge. Eurobeträge nur am Handy. Umschalten nur am Handy.
+- Einstellung „Ruhige Ansicht“ (Standard an): Die Wandkachel zeigt die Veränderung der Woche oder des Monats statt der Tagesschwankung.
+- Der Besuchsmodus blendet das Depot komplett aus (Wand und Handy-Kachel).
+- Am Wand-Tablet nur gemeinsame Depots (`household`), private nie.
+- Keine Bewertungen („gut“, „schlecht“, „kaufen“), keine Prognosen. Farben nur für Gewinn (`success`) und Verlust (`urgent`), immer mit Vorzeichen und Zahl.
+
+### Kurs-Anbieter (Auswahl, Jonathan entscheidet)
+
+Geprüft am 11.10.2026. Bedarf: etwa 5 Positionen × 35 Abrufe pro Börsentag (alle 15 Min) ≈ 175 Abrufe am Tag, plus Suche beim Anlegen.
+
+| Anbieter | Kostenlos | Xetra / ISIN | Verzögerung | Haken |
+| --- | --- | --- | --- | --- |
+| Yahoo Finance (inoffizielle Chart-Schnittstelle) | ohne Schlüssel, keine festen Limits | Xetra über `.DE` (getestet: `EUNL.DE` liefert den Kurs in EUR); die ISIN-Suche findet oft London statt Xetra, das Symbol kommt daher über OpenFIGI | ca. 15 Min | nicht offiziell, kann sich jederzeit ändern; die Nutzungsbedingungen verbieten Weitergabe (rein private Anzeige, trotzdem Grauzone) |
+| EODHD | 20 Abrufe am Tag | Xetra (`.XETRA`), Suche nach Name und Symbol | 15–20 Min | 20 Abrufe reichen nur für einen Schlusskurs am Abend, nicht für den 15-Minuten-Takt; ab ca. 20 € im Monat ausreichend |
+| Twelve Data | 800 Abrufe am Tag, 8 pro Minute | ISIN-Filter nur als Zusatz; Xetra im kostenlosen Plan nicht bestätigt (europäische Daten laut Preisseite in bezahlten Plänen) | je nach Plan | vor dem Bau mit einem Testschlüssel prüfen |
+
+Empfehlung: Yahoo für den 15-Minuten-Takt (kein Schlüssel nötig) und als Rückfall für den Tagesschlusskurs EODHD kostenlos mit Secret `QUOTES_API_KEY`. Fällt Yahoo aus, steht wenigstens der Abendkurs da.
+
+---
+
 ## Was nicht gebaut wird
 
 - Kein Zugriff auf das Bankkonto über FinTS oder Open Banking, keine Bank-Logins in Secrets.
 - Keine Überweisungen oder Zahlungen aus dem Board.
 - Keine Anlage- oder Finanzberatung, nur Auswertung der eigenen Daten.
+- Kein Zugriff aufs Depot, kein Handel, keine Order, keine Kauf- oder Verkaufsempfehlungen (Stufe 5).
