@@ -1,6 +1,7 @@
 // NFC-Aktionen: ein Sticker löst per iPhone-Kurzbefehl eine Aktion aus.
 //   POST { "action": "<slug>" }  mit  Authorization: Bearer nfc_<Token>  (persönlicher Kurzbefehl-Token)
 //   oder mit der normalen Anmeldung der App (Fallback ?tap=<slug>).
+//   POST { "action": "finish-timers" } + x-cron-key → abgelaufene Timer abschließen (Cron jede Minute): Push an beide, optional Todo
 // Antwort: { ok, message } – message ist kurz und deutsch, der Kurzbefehl zeigt sie als Mitteilung.
 // Nur bekannte Slugs, kein freier Text aus dem Kurzbefehl wird ausgeführt. Jeder Aufruf mit gültiger Person
 // landet in nfc_events (auch Fehler und doppeltes Tippen, dann ok = false).
@@ -17,7 +18,8 @@ type Action = {
   id: string
   slug: string
   label: string
-  type: 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify'
+  type: 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer'
+  icon: string
   params: Record<string, unknown>
   enabled: boolean
   private: boolean
@@ -136,7 +138,55 @@ async function run(a: Action, me: Member, members: Member[]): Promise<Result> {
       const names = to.map((m) => m.name).join(' und ')
       return sent ? { ok: true, message: `Mitteilung an ${names} geschickt` } : { ok: false, message: `${names} hat kein Handy für Mitteilungen angemeldet.` }
     }
+
+    case 'timer': {
+      const title = str(p.title) || a.label
+      const minutes = Math.max(1, Math.min(24 * 60, Math.round(Number(p.minutes) || 0)))
+      if (!Number(p.minutes)) return { ok: false, message: 'Bei der Aktion fehlt die Dauer.' }
+      const now = new Date()
+      const ends = new Date(now.getTime() + minutes * 60_000)
+      // läuft schon ein Timer mit demselben Namen (z. B. Waschmaschine), ersetzt der neue ihn
+      await db.from('timers').update({ cancelled_at: now.toISOString() }).eq('label', title).is('finished_at', null).is('cancelled_at', null)
+      const { error } = await db.from('timers').insert({
+        label: title,
+        icon: a.icon,
+        started_at: now.toISOString(),
+        ends_at: ends.toISOString(),
+        started_by: me.id,
+        action_id: a.id,
+        done_text: str(p.done_text),
+        todo_title: str(p.todo_title) || null,
+      })
+      return error ? { ok: false, message: 'Timer starten hat nicht geklappt.' } : { ok: true, message: `${title} läuft, fertig um ${berlinHHMM(ends)}` }
+    }
   }
+}
+
+/** Abgelaufene Timer: Mitteilung an beide Handys, optional ein Todo ohne Person für heute (Cron jede Minute) */
+async function finishTimers(): Promise<{ finished: number }> {
+  const now = new Date().toISOString()
+  // in einem Schritt als erledigt markieren: so kann kein zweiter Lauf denselben Timer noch mal abschließen
+  const { data: due } = await db
+    .from('timers')
+    .update({ finished_at: now })
+    .lte('ends_at', now)
+    .is('finished_at', null)
+    .is('cancelled_at', null)
+    .select('id, label, done_text, todo_title, ends_at')
+  for (const t of due ?? []) {
+    // sehr alte Timer (Cron lange ausgefallen) nur still abschließen
+    if (Date.now() - Date.parse(t.ends_at) > 6 * 3600_000) continue
+    if (t.todo_title) {
+      await db.from('todos').insert({ title: t.todo_title, assignee: null, due_date: berlinDay(new Date()) })
+    }
+    await pushTo(await phonesOf(null), {
+      title: t.done_text || `${t.label} ist fertig`,
+      body: t.todo_title ? `Neues Todo: ${t.todo_title}` : `Fertig um ${berlinHHMM(new Date(t.ends_at))}`,
+      tag: `timer-${t.id}`,
+      url: APP_URL,
+    })
+  }
+  return { finished: due?.length ?? 0 }
 }
 
 // ───────── Handler ─────────
@@ -145,6 +195,13 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
   if (req.method !== 'POST') return json(req, { ok: false, message: 'Nur POST.' }, 405)
   try {
+    const cronKey = req.headers.get('x-cron-key')
+    if (cronKey) {
+      const { data } = await db.from('push_config').select('cron_key').eq('id', 1).single()
+      if (!data || cronKey !== data.cron_key) return new Response('Nicht erlaubt', { status: 403 })
+      return Response.json(await finishTimers())
+    }
+
     const member = await caller(req)
     if (!member) return json(req, { ok: false, message: 'Token ungültig oder widerrufen.' }, 401)
 
@@ -158,7 +215,7 @@ Deno.serve(async (req) => {
     if (!/^[a-z0-9][a-z0-9-]{1,39}$/.test(slug)) return json(req, { ok: false, message: 'Feld „action“ fehlt oder ist ungültig.' }, 400)
 
     const [{ data: action }, { data: members }] = await Promise.all([
-      db.from('nfc_actions').select('id, slug, label, type, params, enabled, private, owner').eq('slug', slug).maybeSingle(),
+      db.from('nfc_actions').select('id, slug, label, icon, type, params, enabled, private, owner').eq('slug', slug).maybeSingle(),
       db.from('members').select('id, name, is_board'),
     ])
     const me = (members ?? []).find((m) => m.id === member)

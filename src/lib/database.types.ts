@@ -303,6 +303,24 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['transit_prefs']['Insert']>
         Relationships: [Rel<'transit_prefs_member_id_fkey', 'member_id', 'members'>]
       }
+      timers: {
+        Row: {
+          action_id: string | null
+          cancelled_at: string | null
+          done_text: string
+          ends_at: string
+          finished_at: string | null
+          icon: string
+          id: string
+          label: string
+          started_at: string
+          started_by: string | null
+          todo_title: string | null
+        }
+        Insert: { ends_at: string; label: string; icon?: string; started_at?: string; started_by?: string | null; action_id?: string | null; done_text?: string; todo_title?: string | null }
+        Update: { cancelled_at?: string | null; finished_at?: string | null }
+        Relationships: [Rel<'timers_started_by_fkey', 'started_by', 'members'>]
+      }
       todos: {
         Row: {
           assignee: string | null

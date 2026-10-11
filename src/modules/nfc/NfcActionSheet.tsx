@@ -34,6 +34,9 @@ export function NfcActionSheet({ action, rules, onClose, onCopy, onDeleted }: Pr
   const [isPrivate, setPrivate] = useState(action.private ?? false)
   const [points, setPoints] = useState(action.points ?? 1)
   const [params, setParams] = useState<Record<string, unknown>>(action.params ?? {})
+  const [hoursText, setHoursText] = useState(
+    action.params?.minutes ? String(Math.round((Number(action.params.minutes) / 60) * 100) / 100).replace('.', ',') : '',
+  )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null)
@@ -57,6 +60,12 @@ export function NfcActionSheet({ action, rules, onClose, onCopy, onDeleted }: Pr
         return p('item').trim() ? { item: p('item').trim(), spec: p('spec').trim() } : 'Gib den Artikel an.'
       case 'notify':
         return p('text').trim() ? { text: p('text').trim(), to: params.to === 'both' ? 'both' : 'other' } : 'Gib den Text der Mitteilung an.'
+      case 'timer': {
+        const minutes = Math.round(Number(params.minutes) || 0)
+        if (!p('title').trim()) return 'Gib dem Timer einen Namen, er steht oben auf der Karte.'
+        if (minutes < 1 || minutes > 24 * 60) return 'Die Dauer muss zwischen 1 Minute und 24 Stunden liegen.'
+        return { title: p('title').trim(), minutes, done_text: p('done_text').trim(), todo_title: p('todo_title').trim() }
+      }
       default:
         return {}
     }
@@ -231,6 +240,39 @@ export function NfcActionSheet({ action, rules, onClose, onCopy, onDeleted }: Pr
               isSelected={(v) => v === (params.to ?? 'other')}
               onSelect={(v) => set('to', v)}
             />
+          </>
+        )}
+
+        {type === 'timer' && (
+          <>
+            <label className="flex flex-col gap-2">
+              <span className="text-label text-ink">Name auf der Karte</span>
+              <input value={p('title')} onChange={(e) => set('title', e.target.value)} placeholder="z. B. Waschmaschine" className={INPUT} />
+              <span className="text-label text-ink-muted">Startet ein Timer mit demselben Namen neu, ersetzt er den laufenden.</span>
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-label text-ink">Dauer in Stunden</span>
+              {/* als Text: die iPhone-Tastatur schreibt ein Komma (3,5) */}
+              <input
+                type="text"
+                inputMode="decimal"
+                value={hoursText}
+                onChange={(e) => {
+                  setHoursText(e.target.value)
+                  set('minutes', Math.round(Number(e.target.value.replace(',', '.')) * 60) || 0)
+                }}
+                placeholder="z. B. 3,5"
+                className={INPUT}
+              />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-label text-ink">Mitteilung am Ende (optional)</span>
+              <input value={p('done_text')} onChange={(e) => set('done_text', e.target.value)} placeholder="z. B. Wäsche ist fertig" className={INPUT} />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-label text-ink">Todo am Ende, ohne Person (optional)</span>
+              <input value={p('todo_title')} onChange={(e) => set('todo_title', e.target.value)} placeholder="z. B. Wäsche holen" className={INPUT} />
+            </label>
           </>
         )}
 

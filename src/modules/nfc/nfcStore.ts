@@ -1,4 +1,5 @@
 import {
+  Timer,
   Bath,
   Bed,
   Bell,
@@ -29,7 +30,7 @@ import { supabase } from '../../lib/supabase'
 export const NFC_URL = 'https://cdfjglisfkhbkrklkxek.supabase.co/functions/v1/nfc'
 export const APP_URL = 'https://jonthemaster.github.io/Haushaltsboard/'
 
-export type NfcType = 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify'
+export type NfcType = 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer'
 export type NfcCategory = 'haushalt' | 'persoenlich' | 'vorrat' | 'wartung' | 'spass'
 
 export type NfcAction = {
@@ -57,6 +58,11 @@ export const TYPES: { value: NfcType; label: string; hint: string }[] = [
   { value: 'bring_add', label: 'Auf die Einkaufsliste', hint: 'Setzt einen Artikel auf die Bring!-Liste.' },
   { value: 'visit_toggle', label: 'Besuchsmodus umschalten', hint: 'Schaltet den Besuchsmodus an oder aus.' },
   { value: 'notify', label: 'Mitteilung schicken', hint: 'Schickt eine Mitteilung aufs Handy der anderen Person (oder an beide).' },
+  {
+    value: 'timer',
+    label: 'Timer starten',
+    hint: 'Zeigt oben an Wand und Handy, wie lange es noch dauert. Am Ende Mitteilung an beide, auf Wunsch ein Todo ohne Person.',
+  },
 ]
 export const TYPE_LABEL = Object.fromEntries(TYPES.map((t) => [t.value, t.label])) as Record<NfcType, string>
 
@@ -90,6 +96,7 @@ export const ICONS: Record<string, LucideIcon> = {
   Car,
   Bell,
   PartyPopper,
+  Timer,
 }
 export const iconOf = (name: string): LucideIcon => ICONS[name] ?? Nfc
 
@@ -124,6 +131,11 @@ export function describe(a: Pick<NfcAction, 'type' | 'params'>, ruleTitle?: (id:
       return `Einkaufsliste: ${s('item') || '–'}${s('spec') ? ` (${s('spec')})` : ''}`
     case 'notify':
       return `Mitteilung${p.to === 'both' ? ' an beide' : ''}: ${s('text') || '–'}`
+    case 'timer': {
+      const min = Number(p.minutes) || 0
+      const dur = min >= 60 ? `${String(Math.round((min / 60) * 100) / 100).replace('.', ',')} Std` : `${min} Min`
+      return `Timer: ${s('title') || '–'}, ${dur}${s('todo_title') ? `, danach Todo „${s('todo_title')}“` : ''}`
+    }
     default:
       return TYPE_LABEL[a.type]
   }

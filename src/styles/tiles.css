@@ -704,3 +704,93 @@
   background: var(--accent-soft);
   color: var(--accent);
 }
+
+/* ── Timer-Karte oben (NFC-Baustein „Timer starten“, z. B. Waschmaschine) ── */
+.hb-timer-card {
+  border-style: solid;
+  border-color: var(--line);
+}
+.hb-timer-card.is-done {
+  border-color: var(--success);
+}
+.hb-timer-card.is-done .hb-meal-card-when {
+  color: var(--success);
+}
+.hb-tcard-ring {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.hb-timer-card.is-done .hb-tcard-ring {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.hb-tcard-ring-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.hb-tcard-ring-track {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 4;
+}
+.hb-tcard-ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  /* läuft voll, je weiter der Timer ist */
+  stroke-dashoffset: calc(1 - var(--share));
+  transition: stroke-dashoffset var(--dur-calm) var(--ease-out);
+}
+.hb-timer-card.is-done .hb-tcard-ring-fill {
+  stroke: var(--success);
+}
+.hb-timer-left {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+.hb-timer-left b {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 32px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hb-timer-left span {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-muted);
+}
+/* neben Weg oder Musik: schmale Zeile */
+.hb-header-slot.has-others .hb-tcard-ring {
+  width: 32px;
+  height: 32px;
+}
+.hb-header-slot.has-others .hb-tcard-ring .hb-icon {
+  width: 16px;
+  height: 16px;
+}
+.hb-header-slot.has-others .hb-timer-left {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 3px;
+}
+.hb-header-slot.has-others .hb-timer-left b {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 18px;
+}
