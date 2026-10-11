@@ -1,4 +1,4 @@
-import { Copy, RefreshCw } from 'lucide-react'
+import { Copy, Download, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
@@ -108,6 +108,21 @@ export function WidgetSettings({ onBack }: { onBack: () => void }) {
           Code kopieren
         </Button>
         {token && <pre className="hb-widget-code">{code}</pre>}
+      </section>
+
+      <section className="hb-tile hb-tile-static gap-3 p-4">
+        <h3 className="font-display text-[18px] font-semibold text-ink">Android (KWGT)</h3>
+        <ol className="hb-widget-steps">
+          <li>App „KWGT Kustom Widget Maker“ aus dem Play Store installieren (zum Laden fertiger Vorlagen braucht es KWGT Pro).</li>
+          <li>Unten „Daten-Link kopieren (Android)“ tippen.</li>
+          <li>„Vorlage laden“ tippen und die Datei mit KWGT öffnen (oder in KWGT: Menü → Importieren → Datei aus „Downloads“).</li>
+          <li>Startbildschirm lange drücken → Widgets → KWGT 4×3 platzieren → antippen → Vorlage „Haushaltsboard“ wählen.</li>
+          <li>Im Editor Reiter „Globals“ → „link“ → den kopierten Daten-Link einfügen → oben speichern.</li>
+        </ol>
+        <a className="hb-btn self-start" href={`${import.meta.env.BASE_URL}widget/haushaltsboard.kwgt`} download="haushaltsboard.kwgt">
+          <Icon icon={Download} size={18} />
+          Vorlage laden
+        </a>
       </section>
 
       <section className="hb-tile hb-tile-static gap-3 p-4">
