@@ -9,6 +9,7 @@ import { MEAL_DEFAULTS } from './MealSettings'
 import { useModuleConfig } from '../useModules'
 import { ServingsStepper } from './RecipeDetail'
 import { ring, unlockAudio } from './alarm'
+import { ServeMoment } from './ServeMoment'
 
 /** Bildschirm bleibt an, solange gekocht wird */
 function useWakeLock() {
@@ -55,6 +56,8 @@ function CookScreen() {
   const [checked, setChecked] = useState<Set<number>>(new Set())
   const { pantry } = useModuleConfig('essensplan', MEAL_DEFAULTS)
   const [leaving, setLeaving] = useState(false)
+  // „Fertig, guten Appetit“: kurzer Moment mit Servierglocke, dann zu
+  const [serving, setServing] = useState(false)
   useWakeLock()
 
   // Timer prüfen; abgelaufene piepen alle paar Sekunden, bis man sie wegtippt
@@ -87,6 +90,10 @@ function CookScreen() {
   const close = () => {
     if (running && !leaving) return setLeaving(true)
     stopCooking()
+  }
+  const finish = () => {
+    if (running && !leaving) return setLeaving(true)
+    setServing(true)
   }
   const toggle = (n: number) =>
     setChecked((s) => {
@@ -184,7 +191,7 @@ function CookScreen() {
           Zurück
         </button>
         {last ? (
-          <button type="button" className="hb-btn hb-btn-lg hb-btn-primary flex-[2] whitespace-nowrap" aria-label="Fertig, guten Appetit" onClick={close}>
+          <button type="button" className="hb-btn hb-btn-lg hb-btn-primary flex-[2] whitespace-nowrap" aria-label="Fertig, guten Appetit" onClick={finish}>
             <Icon icon={Check} size={24} />
             {wide ? 'Fertig, guten Appetit' : 'Fertig'}
           </button>
@@ -221,6 +228,7 @@ function CookScreen() {
       </header>
 
       {timers.length > 0 && <TimerBar timers={timers} />}
+      {serving && <ServeMoment title={recipe.title} onDone={stopCooking} />}
 
       {leaving && (
         <div className="hb-cook-confirm" role="alert">

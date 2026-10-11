@@ -1343,3 +1343,190 @@ button.hb-meal-card:focus-visible {
 .hb-recipe-columns .hb-recipe-hero {
   aspect-ratio: 4 / 3;
 }
+
+/* ───────── „Guten Appetit“: Servierglocke hebt sich (Kochmodus fertig) ───────── */
+
+.hb-serve {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  background: var(--surface);
+  cursor: pointer;
+  animation: hb-fade-in var(--dur-base) var(--ease-out) both;
+}
+.hb-serve-art {
+  width: min(80vw, 560px);
+  height: auto;
+  overflow: visible;
+}
+.hb-serve-shadow {
+  fill: var(--ink);
+  opacity: 0.08;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hb-serve-shadow 700ms var(--ease-out) both;
+}
+.hb-serve-plate {
+  animation: hb-serve-in 700ms var(--ease-spring) both;
+}
+.hb-serve-plate-rim {
+  fill: var(--surface-raised);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.hb-serve-plate-in {
+  fill: var(--surface-sunken);
+}
+.hb-serve-food {
+  fill: var(--apricot-400);
+}
+.hb-serve-herb {
+  fill: var(--success-fill);
+}
+.hb-serve-dot {
+  fill: var(--ember-400);
+}
+/* Glocke: kommt mit dem Teller, wackelt kurz, hebt ab und kippt weg */
+.hb-serve-cloche {
+  transform-box: fill-box;
+  transform-origin: 80% 100%;
+  animation:
+    hb-serve-in 700ms var(--ease-spring) both,
+    hb-serve-wiggle 380ms ease-in-out 650ms both,
+    hb-serve-lift 900ms var(--ease-spring) 1000ms forwards;
+}
+.hb-serve-dome {
+  fill: var(--honey-200);
+  stroke: var(--honey-600);
+  stroke-width: 2.5;
+}
+.hb-serve-shine {
+  fill: none;
+  stroke: var(--surface-raised);
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+.hb-serve-band {
+  fill: var(--honey-600);
+}
+.hb-serve-knob {
+  fill: var(--accent);
+}
+.hb-serve-steam path {
+  fill: none;
+  stroke: var(--ink-muted);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation: hb-serve-steam 1.6s var(--ease-out) 1250ms both;
+}
+.hb-serve-steam path:nth-child(2) {
+  animation-delay: 1400ms;
+}
+.hb-serve-steam path:nth-child(3) {
+  animation-delay: 1550ms;
+}
+.hb-serve-spark {
+  fill: var(--accent);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hb-serve-spark 700ms var(--ease-spring) both;
+}
+.hb-serve-spark:nth-of-type(2n) {
+  fill: var(--honey-400);
+}
+.hb-serve-title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 7vw, 64px);
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  animation: hb-serve-text var(--dur-slow) var(--ease-out) 1300ms both;
+}
+.hb-serve-dish {
+  max-width: 90vw;
+  text-align: center;
+  font-size: 20px;
+  line-height: 28px;
+  color: var(--ink-muted);
+  animation: hb-serve-text var(--dur-slow) var(--ease-out) 1500ms both;
+}
+@keyframes hb-serve-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.92);
+  }
+}
+@keyframes hb-serve-shadow {
+  from {
+    opacity: 0;
+    transform: scaleX(0.6);
+  }
+}
+@keyframes hb-serve-wiggle {
+  30% {
+    transform: rotate(-2.5deg);
+  }
+  70% {
+    transform: rotate(2deg);
+  }
+}
+@keyframes hb-serve-lift {
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(70px, -120px) rotate(24deg);
+  }
+}
+@keyframes hb-serve-steam {
+  20% {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 0;
+    stroke-dashoffset: 0;
+    transform: translateY(-14px);
+  }
+}
+@keyframes hb-serve-spark {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3) rotate(90deg);
+  }
+}
+@keyframes hb-serve-text {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-serve *,
+  .hb-serve {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+  .hb-serve-cloche {
+    opacity: 0;
+  }
+}
