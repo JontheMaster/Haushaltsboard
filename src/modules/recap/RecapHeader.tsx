@@ -1,30 +1,61 @@
-import { ChevronRight, Trophy } from 'lucide-react'
-import { Icon } from '../../components/Icon'
-import { openRecap, useRecap, useRecapOpen, useRecapTime } from './recapStore'
+import { ChevronRight, Trophy } from "lucide-react";
+import { Icon } from "../../components/Icon";
+import { useToday } from "../../lib/time";
+import { useLongPress } from "../../lib/useLongPress";
+import { setModuleConfig, useModuleConfig } from "../useModules";
+import { openRecap, useRecap, useRecapOpen, useRecapTime } from "./recapStore";
 
 /**
  * Sonntags ab Nachmittag: Karte in der Wand-Kopfzeile bzw. oben auf der Handy-Startseite
- * (wie „Läuft gerade“ und Essen). Antippen öffnet den Wochenrückblick.
+ * (wie „Läuft gerade“ und Essen). Antippen öffnet den Wochenrückblick, lange drücken blendet die Karte
+ * für diesen Sonntag aus (überall, `modules.config.dismissed` = Tag; Rückblick bleibt in Alle Funktionen).
  */
 export function RecapHeader() {
-  const show = useRecapTime()
-  const isOpen = useRecapOpen()
-  if (!show || isOpen) return null
-  return <RecapCard />
+  const show = useRecapTime();
+  const isOpen = useRecapOpen();
+  const today = useToday();
+  const { dismissed } = useModuleConfig<{ dismissed?: string }>(
+    "wochenrueckblick",
+    {},
+  );
+  if (!show || isOpen || dismissed === today) return null;
+  return <RecapCard today={today} />;
 }
 
-function RecapCard() {
-  const recap = useRecap()
-  const done = recap && recap !== 'error' ? recap.todos.done + recap.chores.done : null
-  const meals = recap && recap !== 'error' ? recap.meals.length : 0
+function RecapCard({ today }: { today: string }) {
+  const press = useLongPress(() => {
+    if (
+      confirm(
+        "Wochenrückblick für heute ausblenden? Du findest ihn weiter in Alle Funktionen.",
+      )
+    )
+      setModuleConfig("wochenrueckblick", { dismissed: today });
+  });
+  const recap = useRecap();
+  const done =
+    recap && recap !== "error" ? recap.todos.done + recap.chores.done : null;
+  const meals = recap && recap !== "error" ? recap.meals.length : 0;
   const summary =
     done === null
-      ? 'Eure Woche'
-      : [done > 0 ? `${done} erledigt` : null, meals > 0 ? `${meals} Essen` : null].filter(Boolean).join(' · ') || 'Eine ruhige Woche'
+      ? "Eure Woche"
+      : [
+          done > 0 ? `${done} erledigt` : null,
+          meals > 0 ? `${meals} Essen` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "Eine ruhige Woche";
 
   return (
     // sieht aus wie die Essen-Karte und teilt sich mit ihr die Regeln im Kopfzeilen-Platz
-    <button type="button" className="hb-meal-card hb-recap-card hb-slot-item" data-kind="meal" aria-label="Wochenrückblick ansehen" onClick={openRecap}>
+    <button
+      type="button"
+      className="hb-meal-card hb-recap-card hb-slot-item"
+      data-kind="meal"
+      aria-label="Wochenrückblick ansehen, lange drücken blendet aus"
+      onPointerDown={press.onPointerDown}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={() => !press.fired.current && openRecap()}
+    >
       <span className="hb-recipe-img hb-meal-card-img">
         <Icon icon={Trophy} size={24} />
       </span>
@@ -40,5 +71,5 @@ function RecapCard() {
         <Icon icon={ChevronRight} size={18} />
       </span>
     </button>
-  )
+  );
 }
