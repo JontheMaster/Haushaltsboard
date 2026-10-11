@@ -32,6 +32,33 @@ const berlinDay = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, 
 const berlinHHMM = (d: Date) => new Intl.DateTimeFormat('de-DE', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d)
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 
+/** Kennung wie in der App: „Trocknerwäsche“ → „trocknerwaesche“ (der Kurzbefehl darf auch den Namen schicken) */
+const slugify = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+
+/** Feld „action“ aus dem Anfragetext: JSON, Formular (Kurzbefehl „Formular“) oder nur der Text */
+async function readAction(req: Request): Promise<string> {
+  const raw = (await req.text()).trim()
+  if (!raw) return ''
+  try {
+    const data = JSON.parse(raw)
+    if (data && typeof data === 'object') return str((data as Record<string, unknown>).action ?? (data as Record<string, unknown>).Action)
+    if (typeof data === 'string') return data.trim()
+  } catch {
+    // kein JSON
+  }
+  const form = new URLSearchParams(raw)
+  return str(form.get('action') ?? form.get('Action') ?? (raw.includes('=') ? '' : raw))
+}
+
 async function sha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
@@ -205,30 +232,27 @@ Deno.serve(async (req) => {
     const member = await caller(req)
     if (!member) return json(req, { ok: false, message: 'Token ungültig oder widerrufen.' }, 401)
 
-    let body: { action?: unknown }
-    try {
-      body = await req.json()
-    } catch {
-      return json(req, { ok: false, message: 'Anfrage muss JSON sein, z. B. {"action":"muell-raus"}.' }, 400)
+    const sent = await readAction(req)
+    const slug = slugify(sent)
+    const log = async (r: Result, a: Action | null) => {
+      await db.from('nfc_events').insert({ action: slug || '(leer)', action_id: a?.id ?? null, member, ok: r.ok, message: r.message, private: a?.private ?? false })
+      return r
     }
-    const slug = str(body.action).toLowerCase()
-    if (!/^[a-z0-9][a-z0-9-]{1,39}$/.test(slug)) return json(req, { ok: false, message: 'Feld „action“ fehlt oder ist ungültig.' }, 400)
+    // auch Fehler im Kurzbefehl landen in „Zuletzt getippt“, damit man sieht, was ankam
+    if (!slug) return json(req, await log({ ok: false, message: 'Im Kurzbefehl fehlt das Feld „action“ (Anfragetext JSON, Schlüssel action).' }, null), 400)
 
-    const [{ data: action }, { data: members }] = await Promise.all([
-      db.from('nfc_actions').select('id, slug, label, icon, type, params, enabled, private, owner').eq('slug', slug).maybeSingle(),
+    const [{ data: actions }, { data: members }] = await Promise.all([
+      db.from('nfc_actions').select('id, slug, label, icon, type, params, enabled, private, owner'),
       db.from('members').select('id, name, is_board'),
     ])
     const me = (members ?? []).find((m) => m.id === member)
     if (!me) return json(req, { ok: false, message: 'Kein Mitglied.' }, 403)
 
-    const log = async (r: Result, a: Action | null) => {
-      await db.from('nfc_events').insert({ action: slug, action_id: a?.id ?? null, member, ok: r.ok, message: r.message, private: a?.private ?? false })
-      return r
-    }
-
-    const a = action as Action | null
+    // Kennung, sonst der Name des Tags („Trocknerwäsche“)
+    const list = (actions ?? []) as Action[]
+    const a = list.find((x) => x.slug === slug) ?? list.find((x) => slugify(x.label) === slug) ?? null
     // private Aktion einer anderen Person: wie unbekannt behandeln (nichts verraten)
-    if (!a || (a.private && a.owner !== member)) return json(req, await log({ ok: false, message: `Unbekannte Aktion „${slug}“.` }, null), 404)
+    if (!a || (a.private && a.owner !== member)) return json(req, await log({ ok: false, message: `Unbekannter Tag „${sent.slice(0, 60)}“. Prüf im Kurzbefehl den Wert bei action.` }, null), 404)
     if (!a.enabled) return json(req, await log({ ok: false, message: `${a.label} ist gerade ausgeschaltet.` }, a))
 
     // doppeltes Tippen: letzter erfolgreicher Aufruf derselben Person für diese Aktion
