@@ -1,7 +1,7 @@
 import { DndContext, MouseSensor, pointerWithin, TouchSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragMoveEvent } from '@dnd-kit/core'
 import { DragOverlay } from '../../components/DragOverlay'
 import { CalendarPlus, ChefHat, Clock } from 'lucide-react'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { Sheet } from '../../components/Sheet'
@@ -112,6 +112,8 @@ export function MealPlanner({ showToast }: { showToast: (m: string) => void }) {
       sensors={sensors}
       // Ablage dort, wo der Finger ist (die große Karte würde sonst die Nachbarspalte treffen)
       collisionDetection={pointerWithin}
+      // kein automatisches Scrollen beim Ziehen: die Woche passt ganz hinein, das Mitscrollen ließ es ruckeln
+      autoScroll={false}
       onDragStart={(e) => setDragging(recipes?.find((r) => r.id === e.active.id) ?? null)}
       onDragMove={onDragMove}
       onDragEnd={onDragEnd}
@@ -337,8 +339,11 @@ function DraggableRecipe({ recipe, categories, onTap }: { recipe: Recipe; catego
   )
 }
 
-/** Große Rezeptkarte an der Wand: Bild oben, darunter Name, Dauer, Kategorien */
-function RecipeTile({ recipe, categories, lifted }: { recipe: Recipe; categories: Category[]; lifted?: boolean }) {
+/**
+ * Große Rezeptkarte an der Wand: Bild oben, darunter Name, Dauer, Kategorien.
+ * `memo`: beim Ziehen zeichnet dnd-kit alle ziehbaren Karten bei jeder Fingerbewegung neu, der Inhalt bleibt so stehen.
+ */
+const RecipeTile = memo(function RecipeTile({ recipe, categories, lifted }: { recipe: Recipe; categories: Category[]; lifted?: boolean }) {
   return (
     <div className={`hb-recipe-tile ${lifted ? 'is-lifted' : ''}`}>
       <RecipeImage recipe={recipe} className="hb-recipe-tile-img" />
@@ -354,4 +359,4 @@ function RecipeTile({ recipe, categories, lifted }: { recipe: Recipe; categories
       </div>
     </div>
   )
-}
+})
