@@ -4,8 +4,8 @@ import { Icon } from '../../components/Icon'
 import { CountUp } from '../../components/CountUp'
 import { PersonChip } from '../../components/PersonChip'
 import { useMembers } from '../../lib/members'
-import { dayLabel, mondayOf, useToday } from '../../lib/time'
-import { closeRecap, useRecap, useRecapOpen, type Recap } from './recapStore'
+import { dayLabel, mondayOf, useToday, weekdayShort } from '../../lib/time'
+import { closeRecap, markRecapSeen, useRecap, useRecapOpen, type Recap } from './recapStore'
 import { RecapStory } from './RecapStory'
 
 const DAY_NAMES: Record<string, string> = { Mo: 'Montag', Di: 'Dienstag', Mi: 'Mittwoch', Do: 'Donnerstag', Fr: 'Freitag', Sa: 'Samstag', So: 'Sonntag' }
@@ -22,6 +22,12 @@ function RecapScreen() {
   const thisWeek = mondayOf(today)
   const [week, setWeek] = useState(thisWeek)
   const recap = useRecap(week)
+  const { me } = useMembers()
+
+  // angesehen: die Karte oben verschwindet auf diesem Konto (nur sonntags, wenn sie überhaupt erscheint)
+  useEffect(() => {
+    if (weekdayShort(today) === 'So') markRecapSeen(me.id, today)
+  }, [me.id, today])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRecap()

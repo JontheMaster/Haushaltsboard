@@ -30,6 +30,18 @@ export function openRecap() {
   listeners.forEach((l) => l())
 }
 
+/**
+ * Rückblick angesehen: die Karte oben verschwindet für dieses Konto (Handy = Person, Wand = Tablet-Konto),
+ * gemerkt pro Mitglied und Sonntag in `modules.config.seen` von `wochenrueckblick`.
+ */
+export async function markRecapSeen(memberId: string, day: string) {
+  const { data } = await supabase.from('modules').select('config').eq('id', 'wochenrueckblick').maybeSingle()
+  const config = (data?.config as Record<string, unknown> | null) ?? {}
+  const seen = (config.seen as Record<string, string> | undefined) ?? {}
+  if (seen[memberId] === day) return
+  await supabase.from('modules').upsert({ id: 'wochenrueckblick', config: { ...config, seen: { ...seen, [memberId]: day } } as never })
+}
+
 export function closeRecap() {
   open = false
   listeners.forEach((l) => l())
