@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { Toggle } from '../../components/Toggle'
 import { useMembers } from '../../lib/members'
 import { setFinEnabled, setJointAccounts, useFinProfile } from './finStore'
+import { setModuleConfig, useModuleConfig } from '../useModules'
 
 /**
  * Alle Funktionen → Finanzen: jede Person schaltet Finanzen für sich selbst ein (Leviona nur, wenn sie zustimmt).
@@ -12,6 +13,7 @@ import { setFinEnabled, setJointAccounts, useFinProfile } from './finStore'
 export function FinanceSettings({ onBack }: { onBack: () => void }) {
   const { me } = useMembers()
   const { profile } = useFinProfile(me.id)
+  const wall = useModuleConfig<{ wall_percent_only?: boolean; wall_calm?: boolean }>('finanzen', {})
   const accounts = (profile?.joint_accounts ?? []).map((a) => ({ name: a.replace(/^-/, ''), joint: !a.startsWith('-') }))
 
   // Das Wand-Tablet sieht nie einzelne Buchungen und hat keine eigenen
@@ -52,6 +54,23 @@ export function FinanceSettings({ onBack }: { onBack: () => void }) {
             />
           ))}
           <p className="text-label text-ink-muted">Gilt für künftige Importe. Einzelne Buchungen stellst du beim Antippen um.</p>
+        </section>
+      )}
+
+      {profile?.enabled && (
+        <section className="hb-tile hb-tile-static gap-3">
+          <h3 className="font-semibold text-ink">An der Wand</h3>
+          <Toggle
+            checked={wall.wall_percent_only !== false}
+            onChange={(on) => setModuleConfig('finanzen', { wall_percent_only: on })}
+            label="Nur Prozent: keine Eurobeträge an der Wand"
+          />
+          <Toggle
+            checked={wall.wall_calm !== false}
+            onChange={(on) => setModuleConfig('finanzen', { wall_calm: on })}
+            label="Ruhige Ansicht: Woche und 30 Tage statt Tagesschwankung"
+          />
+          <p className="text-label text-ink-muted">Gilt für beide. An der Wand stehen nur gemeinsame Depots und Ziele, im Besuchsmodus gar nichts.</p>
         </section>
       )}
 

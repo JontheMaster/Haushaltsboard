@@ -537,6 +537,8 @@ export type Database = {
       // Depot-Auswertung (security invoker)
       fin_depot_history: { Args: { p_from?: string }; Returns: { day: string; value: number; invested: number }[] }
       fin_savings_rate: { Args: { p_months?: number }; Returns: { month: string; saved: number; income: number }[] }
+      // Wand: nur Prozent und Ziel-Fortschritt gemeinsamer Depots (security definer)
+      fin_wall_summary: { Args: Record<string, never>; Returns: Json }
     }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }

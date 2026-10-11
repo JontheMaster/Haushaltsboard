@@ -28,10 +28,11 @@ import type { TileSize } from '../modules/types'
 import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useModules'
 import { WeekView } from '../modules/week/WeekView'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
+import { useWallFinance, WallFinance } from '../modules/finance/WallFinance'
 import { useTapFromUrl } from '../modules/nfc/nfcStore'
 import { TimerDoneAlert } from '../modules/nfc/TimerDoneAlert'
 
-type View = 'heute' | 'woche' | 'abfahrten' | 'essen'
+type View = 'heute' | 'woche' | 'abfahrten' | 'essen' | 'finanzen'
 // So breit rechnet die Seite am Wand-Tablet (siehe unten): auf dem neuen 16:10-Tablet sind die Elemente damit
 // so groß wie früher am iPad (1180 × 820), mit mehr Platz (Entscheidung Jonathan 10.10.2026)
 const WALL_WIDTH = 1366
@@ -121,10 +122,13 @@ export function Board({ weather }: { weather: Weather | null }) {
   const showNow = MODULES.map((m) => (m.useShow ? m.useShow() : false))
   const stacked = MODULES.filter((m, i) => m.stackOn && showNow[i] && enabled?.has(m.id))
   const narrow = useMedia('(max-width: 1023px)')
-  const [view, setView] = useState<View>('heute')
+  const [chosenView, setView] = useState<View>('heute')
 
   // Nachtmodus (nur am Wand-Tablet) hat Vorrang; Antippen weckt für 2 Minuten
   const { settings } = useSettings()
+  // Finanzen an der Wand: nur gemeinsame Depots in Prozent; im Besuchsmodus ganz weg
+  const finWall = useWallFinance(enabled?.has('finanzen') === true && !settings?.visit_mode)
+  const view: View = chosenView === 'finanzen' && !finWall ? 'heute' : chosenView
   const now = useNow(30_000)
   // Beim Kochen bleiben Nachtmodus und Bildschirmschoner aus
   const cooking = useCook().session !== null
@@ -240,6 +244,16 @@ export function Board({ weather }: { weather: Weather | null }) {
                   Abfahrten
                 </button>
               )}
+              {finWall && (
+                <button
+                  type="button"
+                  className={`hb-choice ${view === 'finanzen' ? 'is-on' : ''}`}
+                  aria-pressed={view === 'finanzen'}
+                  onClick={() => setView('finanzen')}
+                >
+                  Finanzen
+                </button>
+              )}
             </div>
             <VisitToggle />
             <WifiButton variant="wall" />
@@ -275,6 +289,10 @@ export function Board({ weather }: { weather: Weather | null }) {
       ) : view === 'essen' ? (
         <main className="flex min-h-0 flex-1 flex-col">
           <MealPlanner showToast={showToast} />
+        </main>
+      ) : view === 'finanzen' && finWall ? (
+        <main className="min-h-0 flex-1 overflow-y-auto hb-scroll-quiet">
+          <WallFinance summary={finWall} />
         </main>
       ) : view === 'abfahrten' ? (
         <main className="min-h-0 flex-1 overflow-y-auto hb-scroll-quiet">

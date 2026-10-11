@@ -412,3 +412,70 @@ li.hb-depot-row:first-child {
     animation: none;
   }
 }
+
+/* ───────── Wand-Ansicht „Finanzen“ (nur gemeinsame Depots, nur Prozent) ───────── */
+.hb-wallfin {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+.hb-wallfin-main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.hb-wallfin-big {
+  font-family: var(--font-display);
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.hb-wallfin-big.is-up {
+  color: var(--success);
+}
+.hb-wallfin-big.is-down {
+  color: var(--urgent);
+}
+.hb-wallfin-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hb-wallfin-facts {
+  display: flex;
+  gap: var(--space-6);
+  margin: 0;
+}
+.hb-wallfin-facts dt {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.hb-wallfin-facts dd {
+  margin: 0;
+  font-size: 22px;
+}
+.hb-wallfin-rings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: var(--space-4);
+}
+.hb-wallfin-goal-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hb-wallfin-note {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+  color: var(--ink-muted);
+}
