@@ -523,6 +523,9 @@ export type Database = {
       // Depot: Stand der Bank als Anker setzen, Wertpapierkäufe aus dem Giro-Export zuordnen
       fin_depot_snapshot: { Args: { p_holding: string; p_quantity: number; p_invested: number; p_day: string }; Returns: undefined }
       fin_link_giro_buys: { Args: { p_owner: string }; Returns: number }
+      // Depot-Auswertung (security invoker)
+      fin_depot_history: { Args: { p_from?: string }; Returns: { day: string; value: number; invested: number }[] }
+      fin_savings_rate: { Args: { p_months?: number }; Returns: { month: string; saved: number; income: number }[] }
     }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }

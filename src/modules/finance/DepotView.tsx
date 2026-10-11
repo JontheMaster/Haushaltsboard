@@ -24,6 +24,7 @@ import {
 } from './depotStore'
 import { euro } from './finStore'
 import { DepotPlans } from './DepotPlans'
+import { DividendsCard, HistoryCard, SavingsRateCard } from './DepotCharts'
 
 /** Kurzer Name: „iShares Core MSCI World UCITS ETF USD (Acc)“ → „Core MSCI World“ */
 function shortName(name: string): string {
@@ -69,6 +70,8 @@ export function DepotView({ showToast }: { showToast: (m: string) => void }) {
   }
 
   const s = holdings ? summarize(holdings, quotes, prev) : null
+  // Diagramme neu laden, wenn sich Bestände ändern (Import, Sparplan)
+  const dataKey = (holdings ?? []).map((h) => `${h.id}:${h.quantity}:${h.invested}`).join('|')
   const tone = (n: number) => (n > 0.005 ? 'is-up' : n < -0.005 ? 'is-down' : '')
 
   return (
@@ -103,6 +106,8 @@ export function DepotView({ showToast }: { showToast: (m: string) => void }) {
           </section>
         )
       )}
+
+      {holdings && holdings.length > 0 && <HistoryCard refreshKey={dataKey} />}
 
       {holdings && holdings.length > 0 && s && (
         <section className="hb-tile hb-tile-static gap-1">
@@ -141,6 +146,8 @@ export function DepotView({ showToast }: { showToast: (m: string) => void }) {
         </section>
       )}
 
+      {holdings && holdings.length > 0 && <SavingsRateCard refreshKey={dataKey} />}
+      {holdings && holdings.length > 0 && <DividendsCard holdingIds={holdings.map((h) => h.id)} refreshKey={dataKey} />}
       {holdings && holdings.length > 0 && <DepotPlans holdings={holdings} ownerId={me.id} showToast={showToast} />}
 
       <input ref={input} type="file" accept=".csv,text/csv,text/plain" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
