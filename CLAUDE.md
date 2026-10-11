@@ -7,6 +7,7 @@ Gemeinsames Haushalts-Dashboard von Jonathan und Leviona: ein Android-Tablet an 
 - **Claude programmiert alles.** Jonathan kümmert sich um Design und Features und programmiert nicht selbst. Erkläre technische Entscheidungen kurz und verständlich, frag nicht nach Code-Details, die du selbst entscheiden kannst.
 - Sprache mit Jonathan: Deutsch, knapp. UI-Texte: Deutsch, du-Form, Verb zuerst auf Knöpfen.
 - Neue Phasen erst starten, wenn Jonathan das Go gibt. Innerhalb einer Phase selbstständig arbeiten.
+- Das Board nicht von selbst erweitern (Entscheidung Jonathan 11.10.2026): keine neuen Funktionen oder fertigen Inhalte (z. B. NFC-Tags) ohne seinen Auftrag. Ideen landen in der Übersicht im Claude Doc, Reiter „Funktionen und Ideen“ (oben: Ideen-Fahrplan, NFC-Ideen, Zurückgestellt und erledigt).
 
 ## Referenzen
 
