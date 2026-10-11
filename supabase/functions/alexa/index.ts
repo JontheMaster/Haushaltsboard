@@ -4,6 +4,7 @@
 import { addDays, berlinDay, eventsOnDay, loadEvents, mondayOf } from '../_shared/calendar.ts'
 import { addItems, parseItems } from '../_shared/bring.ts'
 import { adminClient } from '../_shared/http.ts'
+import { berlinHHMM, startTimer, type TimerAction } from '../_shared/timers.ts'
 
 const db = adminClient()
 const TZ = 'Europe/Berlin'
@@ -12,13 +13,18 @@ const MAX_AGE_MS = 150 * 1000
 /** So viele Todos liest Alexa höchstens vor, danach „und 3 weitere“ */
 const READ_MAX = 6
 
+type Slot = {
+  value?: string
+  resolutions?: { resolutionsPerAuthority?: { status?: { code?: string }; values?: { value: { name: string } }[] }[] }
+}
+
 type AlexaRequest = {
   session?: { application?: { applicationId?: string } }
   context?: { System?: { application?: { applicationId?: string } } }
   request: {
     type: string
     timestamp: string
-    intent?: { name: string; slots?: Record<string, { value?: string }> }
+    intent?: { name: string; slots?: Record<string, Slot> }
   }
 }
 
@@ -243,6 +249,49 @@ async function whatsUp(): Promise<Response> {
   return speak(parts.join(' '))
 }
 
+// ───────── Timer (z. B. Waschmaschine) ─────────
+
+const slugify = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+/** Wert eines Slots: aufgelöster Name aus dem Sprachmodell (Synonyme), sonst das Gesagte */
+function slotText(slot: Slot | undefined): string {
+  const hit = slot?.resolutions?.resolutionsPerAuthority?.find((r) => r.status?.code === 'ER_SUCCESS_MATCH')
+  return (hit?.values?.[0]?.value.name ?? slot?.value ?? '').trim()
+}
+
+/**
+ * „Starte die Trocknerwäsche“: startet den Timer einer NFC-Aktion vom Typ „timer“ (dieselben wie am Sticker).
+ * Ohne Angabe und mit mehreren Timern fragt Alexa nach; gefunden wird über den Namen des Tags oder der Karte.
+ */
+async function startTimerBySpeech(slots: Record<string, Slot> | undefined): Promise<Response> {
+  const { data } = await db.from('nfc_actions').select('id, label, icon, params').eq('type', 'timer').eq('enabled', true).eq('private', false)
+  const timers = (data ?? []) as TimerAction[]
+  if (!timers.length) return speak('Es gibt noch keinen Timer. Leg in der App unter NFC-Tags einen an, zum Beispiel für die Waschmaschine.')
+  const said = slugify(slotText(slots?.art))
+  const nameOf = (t: TimerAction) => [slugify(t.label), slugify(String(t.params?.title ?? ''))]
+  // genau getroffen (Name des Tags), sonst ähnlich; passen mehrere (z. B. „Waschmaschine“ bei zwei Wäsche-Timern), nachfragen
+  const exact = timers.filter((t) => said && slugify(t.label) === said)
+  const close = said ? timers.filter((t) => nameOf(t).some((n) => n && (n === said || n.includes(said) || said.includes(n)))) : timers
+  const pick = exact.length === 1 ? exact : close
+  const hit = pick.length === 1 ? pick[0] : undefined
+  if (!hit) {
+    const names = timers.map((t) => t.label)
+    const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} oder ${names.at(-1)}` : names[0]
+    return speak(`Welcher Timer? ${list}?`, { end: false, reprompt: `Sag zum Beispiel: ${names[0]}.` })
+  }
+  const t = await startTimer(hit, null)
+  if (!t.ends) return speak('Den Timer konnte ich nicht starten. Prüf in der App die Dauer.')
+  return speak(`Okay, ${hit.label} läuft. Fertig um ${berlinHHMM(t.ends)} Uhr, dann meldet sich das Board.`)
+}
+
 // ───────── Handler ─────────
 
 Deno.serve(async (req) => {
@@ -281,6 +330,8 @@ Deno.serve(async (req) => {
         return await addTodo(r.intent.slots)
       case 'WasStehtAn':
         return await whatsUp()
+      case 'TimerStarten':
+        return await startTimerBySpeech(r.intent.slots)
       case 'EinkaufHinzufuegen':
         return await addShopping(r.intent.slots?.artikel?.value)
       case 'AMAZON.HelpIntent':

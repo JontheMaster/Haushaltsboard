@@ -8,6 +8,7 @@
 import { addItems } from '../_shared/bring.ts'
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
 import { APP_URL, phonesOf, pushTo } from '../_shared/push.ts'
+import { startTimer } from '../_shared/timers.ts'
 
 const db = adminClient()
 const TZ = 'Europe/Berlin'
@@ -167,24 +168,10 @@ async function run(a: Action, me: Member, members: Member[]): Promise<Result> {
     }
 
     case 'timer': {
-      const title = str(p.title) || a.label
-      const minutes = Math.max(1, Math.min(24 * 60, Math.round(Number(p.minutes) || 0)))
-      if (!Number(p.minutes)) return { ok: false, message: 'Bei der Aktion fehlt die Dauer.' }
-      const now = new Date()
-      const ends = new Date(now.getTime() + minutes * 60_000)
-      // läuft schon ein Timer mit demselben Namen (z. B. Waschmaschine), ersetzt der neue ihn
-      await db.from('timers').update({ cancelled_at: now.toISOString() }).eq('label', title).is('finished_at', null).is('cancelled_at', null)
-      const { error } = await db.from('timers').insert({
-        label: title,
-        icon: a.icon,
-        started_at: now.toISOString(),
-        ends_at: ends.toISOString(),
-        started_by: me.id,
-        action_id: a.id,
-        done_text: str(p.done_text),
-        todo_title: str(p.todo_title) || null,
-      })
-      return error ? { ok: false, message: 'Timer starten hat nicht geklappt.' } : { ok: true, message: `${title} läuft, fertig um ${berlinHHMM(ends)}` }
+      // gemeinsam mit dem Alexa-Skill (_shared/timers.ts)
+      const t = await startTimer(a, me.id)
+      if (!t.ends) return { ok: false, message: t.noDuration ? 'Bei der Aktion fehlt die Dauer.' : 'Timer starten hat nicht geklappt.' }
+      return { ok: true, message: `${t.title} läuft, fertig um ${berlinHHMM(t.ends)}` }
     }
   }
 }

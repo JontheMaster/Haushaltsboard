@@ -151,6 +151,40 @@
           ]
         },
         {
+          "name": "TimerStarten",
+          "slots": [
+            {
+              "name": "art",
+              "type": "TIMER_ART"
+            }
+          ],
+          "samples": [
+            "starte die Waschmaschine",
+            "die Waschmaschine läuft",
+            "Waschmaschine läuft",
+            "Waschmaschine gestartet",
+            "ich habe die Waschmaschine angemacht",
+            "wir haben die Waschmaschine angemacht",
+            "starte den Waschmaschinen Timer",
+            "starte den Timer für die Waschmaschine",
+            "starte {art}",
+            "starte die {art}",
+            "starte den Timer für {art}",
+            "starte den Timer für die {art}",
+            "Timer für {art}",
+            "{art} läuft",
+            "die {art} läuft",
+            "{art} gestartet",
+            "die {art} ist gestartet",
+            "ich habe {art} angemacht",
+            "ich habe die {art} angemacht",
+            "Waschmaschine mit {art}",
+            "die Waschmaschine läuft mit {art}",
+            "Waschmaschine läuft mit {art}",
+            "{art}"
+          ]
+        },
+        {
           "name": "AMAZON.HelpIntent",
           "samples": [
             "was kann ich sagen",
@@ -176,7 +210,35 @@
           "samples": []
         }
       ],
-      "types": []
+      "types": [
+        {
+          "name": "TIMER_ART",
+          "values": [
+            {
+              "name": {
+                "value": "Trocknerwäsche",
+                "synonyms": [
+                  "Trockner",
+                  "Trocknerwäsche",
+                  "Wäsche für den Trockner",
+                  "Trockner Wäsche"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Nasse Wäsche",
+                "synonyms": [
+                  "nasse Wäsche",
+                  "nass",
+                  "Wäsche zum Aufhängen",
+                  "normale Wäsche"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   }
 }

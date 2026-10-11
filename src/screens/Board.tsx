@@ -29,6 +29,7 @@ import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useMod
 import { WeekView } from '../modules/week/WeekView'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
 import { useTapFromUrl } from '../modules/nfc/nfcStore'
+import { TimerDoneAlert } from '../modules/nfc/TimerDoneAlert'
 
 type View = 'heute' | 'woche' | 'abfahrten' | 'essen'
 // So breit rechnet die Seite am Wand-Tablet (siehe unten): auf dem neuen 16:10-Tablet sind die Elemente damit
@@ -315,6 +316,8 @@ export function Board({ weather }: { weather: Weather | null }) {
       )}
       <CookMode />
       <Celebration />
+      {/* Timer (z. B. Waschmaschine) fertig: das Wand-Tablet meldet sich laut */}
+      {me.is_board && enabled?.has('nfc') && <TimerDoneAlert />}
       {briefing && (
         <MorningBriefing
           weather={weather}

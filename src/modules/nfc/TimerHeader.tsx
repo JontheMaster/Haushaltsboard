@@ -8,18 +8,27 @@ import { iconOf } from './nfcStore'
 /** So lange bleibt die Karte nach dem Ende stehen („Fertig“), dann verschwindet sie */
 const SHOW_DONE_MIN = 15
 
-type Timer = { id: string; label: string; icon: string; started_at: string; ends_at: string; cancelled_at: string | null }
+export type Timer = {
+  id: string
+  label: string
+  icon: string
+  started_at: string
+  ends_at: string
+  cancelled_at: string | null
+  done_text: string
+  todo_title: string | null
+}
 
 const hhmm = (iso: string) => new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
 
 /** Laufende (und gerade fertig gewordene) Timer, live */
-function useTimers(): Timer[] {
+export function useTimers(): Timer[] {
   const [timers, setTimers] = useState<Timer[]>([])
   const load = useCallback(async () => {
     const since = new Date(Date.now() - SHOW_DONE_MIN * 60_000).toISOString()
     const { data } = await supabase
       .from('timers')
-      .select('id, label, icon, started_at, ends_at, cancelled_at')
+      .select('id, label, icon, started_at, ends_at, cancelled_at, done_text, todo_title')
       .is('cancelled_at', null)
       .gt('ends_at', since)
       .order('ends_at')
