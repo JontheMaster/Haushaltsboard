@@ -3,12 +3,14 @@
 //   inkl. nächstem Weg aus dem Kalender (rechnet transit jede Minute vor, Tabelle transit_plans)
 // Kein Login: das Widget kann sich nicht anmelden. Der Link ist pro Person und lässt sich in der App erneuern.
 import { addDays, berlinDay, eventsOnDay, loadEvents, type CalendarEvent } from '../_shared/calendar.ts'
+import { getItems } from '../_shared/bring.ts'
 import { adminClient, corsHeaders } from '../_shared/http.ts'
 
 const db = adminClient()
 const WEATHER =
   'https://api.open-meteo.com/v1/forecast?latitude=49.45&longitude=11.08' +
-  '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FBerlin&forecast_days=2'
+  '&current=temperature_2m,weather_code,is_day&hourly=temperature_2m,weather_code,precipitation_probability,is_day' +
+  '&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FBerlin&forecast_days=2'
 
 const hhmm = (iso: string) =>
   new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso))
@@ -24,7 +26,20 @@ async function weather() {
   try {
     const r = await fetch(WEATHER, { signal: AbortSignal.timeout(6000) })
     const d = await r.json()
+    // die nächsten Stunden in 2-Stunden-Schritten (füllt das Widget, wenn wenig ansteht)
+    const nowHour = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' })
+      .format(new Date())
+      .replace(', ', 'T')
+    const start = (d.hourly.time as string[]).findIndex((t) => t.slice(0, 13) >= nowHour)
+    const hours = start < 0 ? [] : [2, 4, 6, 8, 10].map((o) => start + o).filter((i) => i < d.hourly.time.length).map((i) => ({
+      hour: Number(String(d.hourly.time[i]).slice(11, 13)),
+      temp: Math.round(d.hourly.temperature_2m[i]),
+      code: d.hourly.weather_code[i],
+      isDay: d.hourly.is_day[i] === 1,
+      rain: d.hourly.precipitation_probability[i] ?? 0,
+    }))
     return {
+      hours,
       temp: Math.round(d.current.temperature_2m),
       code: d.current.weather_code,
       isDay: d.current.is_day === 1,
@@ -109,13 +124,16 @@ Deno.serve(async (req) => {
 
     const today = berlinDay(new Date())
     // alles weglassen, was die Person nicht betrifft: eigene oder offene Aufgaben, die heute oder früher fällig sind
-    const [wx, cal, { data: todos }, { data: chores }, { data: meals }, { data: planRow }] = await Promise.all([
+    const [wx, cal, { data: todos }, { data: chores }, { data: meals }, { data: planRow }, { data: timers }, shopping] = await Promise.all([
       weather(),
       loadEvents({ all: true }).catch(() => null),
       db.from('todos').select('title, assignee, due_date, moved_since').is('done_at', null).lte('due_date', today).or(`assignee.eq.${me.id},assignee.is.null`).order('due_date'),
       db.from('chore_tasks').select('assignee, due_date, chore_rules(title, active)').is('done_at', null).lte('due_date', today).or(`assignee.eq.${me.id},assignee.is.null`).order('due_date'),
       db.from('meals').select('title, start_time, day').eq('day', today).order('start_time', { nullsFirst: false }),
       db.from('transit_plans').select('plan, updated_at').eq('member_id', me.id).maybeSingle(),
+      // laufende Timer (z. B. Waschmaschine) und die Einkaufsliste: füllen das Widget, wenn wenig ansteht
+      db.from('timers').select('label, started_at, ends_at').is('finished_at', null).is('cancelled_at', null).gt('ends_at', new Date().toISOString()).order('ends_at'),
+      Promise.race([getItems(), new Promise<null>((r) => setTimeout(() => r(null), 4000))]).catch(() => null),
     ])
 
     const choreItems = (chores ?? [])
@@ -140,6 +158,8 @@ Deno.serve(async (req) => {
       todos: { count: items.length, items: items.slice(0, 6) },
       meal: meal ? { title: meal.title, time: meal.start_time ? meal.start_time.slice(0, 5) : null } : null,
       trip: tripOf(planRow as { plan: PlanRow | null; updated_at: string } | null),
+      timers: (timers ?? []).map((t) => ({ label: t.label, startIso: t.started_at, endIso: t.ends_at, end: hhmm(t.ends_at) })),
+      shopping: shopping ? { count: shopping.items.length, items: shopping.items.slice(0, 4).map((i) => i.name) } : null,
     })
   } catch (e) {
     console.error(e)

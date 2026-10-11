@@ -2004,3 +2004,18 @@ button.hb-module-open:active {
 .hb-header-slot.is-dense .hb-trip-wall {
   padding-block: 6px;
 }
+
+/* Datum/Uhrzeit: iPhone-Safari gibt den Feldern eine feste Mindestbreite und rückt den Wert in die Mitte;
+   so ragten sie über die Kachel hinaus (Jubiläen, 11.10.2026). Jetzt so breit wie der Platz, Wert links. */
+input[type='date'],
+input[type='time'] {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type='date']::-webkit-date-and-time-value,
+input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+}

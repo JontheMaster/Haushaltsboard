@@ -118,7 +118,7 @@ export function JubileeSettings({ onBack }: { onBack: () => void }) {
       )}
 
       <section className="hb-tile hb-tile-static gap-3 p-4">
-        <label className="flex flex-col gap-2">
+        <label className="flex min-w-0 flex-col gap-2">
           <span className="text-label text-ink">Zusammen seit</span>
           <input
             className={input}

@@ -303,6 +303,13 @@ function agendaRow(parent, timeLabel, title, timeColor = C.me) {
 
 function agenda(parent, data, focus, maxRows) {
   let rows = 0
+  // laufende Timer zuerst (mit Countdown), sie sind das Dringendste
+  for (const t of data.timers || []) {
+    if (rows >= maxRows) break
+    timerRow(parent, t)
+    rows++
+    parent.addSpacer(4)
+  }
   const add = (fn) => {
     if (rows >= maxRows) return
     fn()
@@ -350,6 +357,62 @@ function agenda(parent, data, focus, maxRows) {
       text(r, 'Keine Todos für heute', F.body, C.muted)
     })
   }
+  // Rest auffüllen, damit das Widget nicht leer wirkt: Einkauf, morgen früh
+  const shop = data.shopping
+  if (shop && shop.count) {
+    add(() => {
+      const r = hstack(parent, 6)
+      symbol(r, 'cart', 11, C.accent)
+      text(r, `${shop.count} im Einkauf · ${shop.items.slice(0, 3).join(', ')}`, F.body, C.ink)
+    })
+  }
+  const first = ((data.events && data.events.tomorrow) || [])[0]
+  if (!evening && first) {
+    add(() => {
+      const r = hstack(parent, 6)
+      symbol(r, 'moon.stars', 11, C.muted)
+      text(r, `Morgen ${first.allDay ? '' : first.time + ' '}${first.title}`, F.body, C.muted)
+    })
+  }
+  return rows
+}
+
+/** Laufender Timer (z. B. Waschmaschine): Name und Restzeit, die von selbst runterzählt */
+function timerRow(parent, t) {
+  const r = hstack(parent, 6)
+  r.centerAlignContent()
+  symbol(r, /w(a|ä)sch|trockner/i.test(t.label) ? 'washer' : 'timer', 12, C.accent)
+  text(r, t.label, F.body, C.ink)
+  r.addSpacer()
+  const d = r.addDate(new Date(t.endIso))
+  d.applyTimerStyle()
+  d.font = F.time
+  d.textColor = C.accent
+  d.lineLimit = 1
+  d.rightAlignText()
+  return r
+}
+
+/** Wetter der nächsten Stunden als kleine Leiste (Uhrzeit, Symbol, Grad, Regen ab 30 %) */
+function hourStrip(parent, hours, n) {
+  const strip = parent.addStack()
+  strip.layoutHorizontally()
+  strip.backgroundColor = C.card
+  strip.cornerRadius = 12
+  strip.setPadding(6, 8, 6, 8)
+  hours.slice(0, n).forEach((h, i) => {
+    if (i) strip.addSpacer()
+    const col = strip.addStack()
+    col.layoutVertically()
+    col.centerAlignContent()
+    text(col, `${h.hour} Uhr`, F.tiny, C.muted)
+    col.addSpacer(2)
+    const r = hstack(col, 3)
+    symbol(r, weatherSymbol(h.code, h.isDay), 12, h.rain >= 50 ? C.me : C.accent)
+    text(r, `${h.temp}°`, F.time, C.ink)
+    if (h.rain >= 30) text(col, `${h.rain} %`, F.tiny, C.me)
+  })
+  return strip
 }
 
 function footer(parent, data, stale) {
@@ -387,6 +450,17 @@ async function build() {
   if (small) {
     focusCard(w, data, focus)
     w.addSpacer()
+    // unten noch eine Zeile: laufender Timer, sonst die Todos von heute
+    const timer = (data.timers || [])[0]
+    if (timer && focus.kind !== 'trip') {
+      timerRow(w, timer)
+      w.addSpacer(3)
+    } else if (data.todos && data.todos.count && (focus.kind === 'day' || focus.kind === 'tomorrow')) {
+      const r = hstack(w, 5)
+      symbol(r, 'checklist', 11, C.accent)
+      text(r, data.todos.count === 1 ? '1 Todo heute' : `${data.todos.count} Todos heute`, F.small, C.ink)
+      w.addSpacer(3)
+    }
     footer(w, data, res.stale)
     return w
   }
@@ -403,8 +477,14 @@ async function build() {
     w.addSpacer(12)
     eyebrow(w, focus.kind === 'tomorrow' ? 'calendar' : 'list.bullet', focus.kind === 'tomorrow' ? 'Morgen' : 'Heute noch', C.muted)
     w.addSpacer(6)
-    agenda(w, data, focus, 8)
+    const used = agenda(w, data, focus, 8)
     w.addSpacer()
+    // wenig los: Wetter der nächsten Stunden unten
+    const hours = (data.weather && data.weather.hours) || []
+    if (used <= 6 && hours.length && focus.kind !== 'tomorrow') {
+      hourStrip(w, hours, 5)
+      w.addSpacer(6)
+    }
     footer(w, data, res.stale)
     return w
   }
@@ -424,8 +504,14 @@ async function build() {
 
   const right = vstack(row, 0)
   right.addSpacer(2)
-  agenda(right, data, focus, 4)
+  const used = agenda(right, data, focus, 4)
   right.addSpacer()
+  // wenig los: unten rechts das Wetter der nächsten Stunden statt leerer Fläche
+  const hours = (data.weather && data.weather.hours) || []
+  if (used <= 2 && hours.length && focus.kind !== 'tomorrow') {
+    hourStrip(right, hours, 3)
+    right.addSpacer(4)
+  }
   footer(right, data, res.stale)
   return w
 }
