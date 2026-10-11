@@ -963,3 +963,177 @@
 .hb-saver-music {
   z-index: 2;
 }
+
+/* ── Heimweg mit dem Auto (NFC): Straße mit fahrendem Auto bis zum Haus ── */
+.hb-drive-card {
+  --tone: var(--accent);
+  --tone-soft: var(--accent-soft);
+  --tone-ink: var(--accent);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: var(--space-3) var(--space-4);
+  border-style: solid;
+  border-color: var(--tone);
+}
+.hb-drive-card.hb-person-a {
+  --tone: var(--person-a);
+  --tone-soft: var(--person-a-soft);
+  --tone-ink: var(--person-a-ink);
+}
+.hb-drive-card.hb-person-b {
+  --tone: var(--person-b);
+  --tone-soft: var(--person-b-soft);
+  --tone-ink: var(--person-b-ink);
+}
+.hb-drive-card.is-arrived {
+  --tone: var(--success);
+  --tone-soft: var(--success-soft);
+  --tone-ink: var(--success);
+}
+.hb-drive-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.hb-drive-who {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tone-ink);
+}
+.hb-drive-left {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.hb-drive-left b {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 28px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hb-drive-left span {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-muted);
+}
+.hb-drive-road {
+  position: relative;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+}
+/* geschaffter Weg füllt sich hinter dem Auto */
+.hb-drive-done {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--share) * (100% - 44px) + 22px);
+  border-radius: var(--radius-full);
+  background: var(--tone-soft);
+  transition: width 1s linear;
+}
+/* Mittelstreifen zieht vorbei: die Straße fährt mit */
+.hb-drive-lane {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  right: 40px;
+  height: 2px;
+  margin-top: -1px;
+  background: repeating-linear-gradient(90deg, var(--line) 0 10px, transparent 10px 22px);
+  animation: hb-drive-lane 0.9s linear infinite;
+}
+.hb-drive-pos {
+  position: absolute;
+  bottom: 5px;
+  left: calc(var(--share) * (100% - 84px) + 4px);
+  width: 46px;
+  transition: left 1s linear;
+}
+.hb-drive-car {
+  display: block;
+  width: 46px;
+  height: 23px;
+  overflow: visible;
+  animation: hb-drive-bump 0.6s ease-in-out infinite;
+}
+.hb-drive-car-body {
+  fill: var(--tone);
+}
+.hb-drive-car-glass {
+  fill: var(--surface-raised);
+  opacity: 0.85;
+}
+.hb-drive-wheel circle {
+  fill: var(--ink);
+}
+.hb-drive-wheel path {
+  stroke: var(--surface-raised);
+  stroke-width: 1.5;
+}
+.hb-drive-wheel {
+  animation: hb-drive-spin 0.5s linear infinite;
+}
+.hb-drive-home {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: -14px;
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  color: var(--tone);
+  box-shadow: var(--shadow-tile);
+}
+.hb-drive-jam {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--urgent);
+}
+/* angekommen: Auto steht, Haus leuchtet kurz auf */
+.hb-drive-card.is-arrived .hb-drive-lane,
+.hb-drive-card.is-arrived .hb-drive-car,
+.hb-drive-card.is-arrived .hb-drive-wheel {
+  animation: none;
+}
+.hb-drive-card.is-arrived .hb-drive-home {
+  animation: hb-drive-home 1.2s var(--ease-spring) 2;
+}
+@keyframes hb-drive-lane {
+  to {
+    background-position: -22px 0;
+  }
+}
+@keyframes hb-drive-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hb-drive-bump {
+  50% {
+    transform: translateY(-1px);
+  }
+}
+@keyframes hb-drive-home {
+  50% {
+    transform: scale(1.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-drive-lane,
+  .hb-drive-car,
+  .hb-drive-wheel {
+    animation: none;
+  }
+}

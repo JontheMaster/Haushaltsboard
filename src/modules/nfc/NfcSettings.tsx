@@ -1,4 +1,4 @@
-import { CircleAlert, CircleCheck, Copy, KeyRound, Plus } from 'lucide-react'
+import { CircleAlert, CircleCheck, Copy, House, KeyRound, Plus } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
@@ -7,6 +7,8 @@ import { Toggle } from '../../components/Toggle'
 import { useMembers } from '../../lib/members'
 import { supabase } from '../../lib/supabase'
 import { NfcActionSheet } from './NfcActionSheet'
+import { searchAddress } from '../transit/api'
+import { setModuleConfig, useModuleConfig } from '../useModules'
 import { CATEGORIES, createToken, describe, iconOf, revokeToken, useMyTokens, useNfcActions, useNfcEvents, type NfcAction } from './nfcStore'
 import { useChoreRules } from './useChoreRules'
 
@@ -139,6 +141,8 @@ export function NfcSettings({ onBack }: { onBack: () => void }) {
         </Button>
       </Section>
 
+      <HomeSection onMessage={setMessage} />
+
       <Section title="Zuletzt getippt">
         {events?.length === 0 && <p className="text-label text-ink-muted">Noch nichts getippt.</p>}
         <ul className="flex flex-col gap-2">
@@ -188,4 +192,44 @@ export function Section({ title, hint, children }: { title: string; hint?: strin
     </section>
   )
 }
+
+/** Ziel für den Baustein „Heimweg (Auto)“: Adresse suchen, Koordinaten in modules.config.home */
+function HomeSection({ onMessage }: { onMessage: (m: { ok: boolean; text: string }) => void }) {
+  const { home } = useModuleConfig('nfc', NFC_DEFAULTS)
+  const [query, setQuery] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function save() {
+    if (query.trim().length < 4) return
+    setBusy(true)
+    const [hit] = await searchAddress(query.trim())
+    setBusy(false)
+    if (!hit) return onMessage({ ok: false, text: 'Adresse nicht gefunden. Schreib Straße, Hausnummer und Ort.' })
+    const ok = await setModuleConfig('nfc', { home: { address: hit.label, lat: hit.lat, lon: hit.lon } })
+    onMessage(ok ? { ok: true, text: `Zuhause: ${hit.label}` } : { ok: false, text: 'Speichern hat nicht geklappt.' })
+    if (ok) setQuery('')
+  }
+
+  return (
+    <Section title="Zuhause" hint="Ziel für den Baustein „Heimweg (Auto)“">
+      <span className="flex items-center gap-2 text-body text-ink">
+        <Icon icon={House} size={20} className="text-accent" />
+        {home?.address ?? 'Noch nicht eingetragen'}
+      </span>
+      <div className="flex gap-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Andere Adresse, z. B. Musterstraße 1, Nürnberg"
+          className="h-7 min-w-0 flex-1 rounded-md border border-line bg-surface-sunken px-4 text-body text-ink placeholder:text-ink-muted focus-visible:focus-ring"
+        />
+        <Button disabled={busy || query.trim().length < 4} onClick={save}>
+          Speichern
+        </Button>
+      </div>
+    </Section>
+  )
+}
+
+const NFC_DEFAULTS: { home: { address: string; lat: number; lon: number } | null } = { home: null }
 

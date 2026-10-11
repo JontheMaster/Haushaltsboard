@@ -315,6 +315,12 @@ export function NfcActionSheet({ action, rules, onClose, onCopy, onDeleted }: Pr
           <ol className="hb-widget-steps">
             <li>Kurzbefehle → Automation → Plus → NFC → Scannen → Sticker ans iPhone halten → Namen vergeben.</li>
             <li>„Sofort ausführen“ wählen, „Bei Ausführung benachrichtigen“ aus → Weiter → Neuer leerer Kurzbefehl.</li>
+            {action.type === 'drive_home' && (
+              <li>
+                Zuerst Aktion „Aktuellen Standort abrufen“. Beim Anfragetext unten kommen zwei Felder dazu: <b>lat</b> = Standort → Breitengrad und{' '}
+                <b>lon</b> = Standort → Längengrad (im Feld auf die Variable „Aktueller Standort“ tippen und die Eigenschaft wählen).
+              </li>
+            )}
             <li>
               Aktion „Inhalte von URL abrufen“: URL unten einfügen, auf den Pfeil tippen, Methode POST. Header hinzufügen: Schlüssel <b>Authorization</b>, Wert{' '}
               <b>Bearer</b> + Leerzeichen + dein Token. Anfragetext JSON, Feld vom Typ Text: Schlüssel <b>action</b>, Wert die Kennung unten.

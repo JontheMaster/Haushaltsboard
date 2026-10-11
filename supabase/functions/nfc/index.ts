@@ -8,6 +8,7 @@
 import { addItems } from '../_shared/bring.ts'
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
 import { APP_URL, phonesOf, pushTo } from '../_shared/push.ts'
+import { startDrive, updateDrives } from '../_shared/drives.ts'
 import { startTimer } from '../_shared/timers.ts'
 
 const db = adminClient()
@@ -19,7 +20,7 @@ type Action = {
   id: string
   slug: string
   label: string
-  type: 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode'
+  type: 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode' | 'drive_home'
   icon: string
   params: Record<string, unknown>
   enabled: boolean
@@ -28,6 +29,8 @@ type Action = {
 }
 type Member = { id: string; name: string; is_board: boolean }
 type Result = { ok: boolean; message: string }
+/** Zusatzangaben aus dem Kurzbefehl (nur für bestimmte Bausteine), z. B. Standort beim Heimweg */
+type Extra = { lat?: number; lon?: number }
 
 const berlinDay = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d)
 const berlinHHMM = (d: Date) => new Intl.DateTimeFormat('de-DE', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d)
@@ -54,19 +57,31 @@ const slugify = (text: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40)
 
-/** Feld „action“ aus dem Anfragetext: JSON, Formular (Kurzbefehl „Formular“) oder nur der Text */
-async function readAction(req: Request): Promise<string> {
+/** Zahl aus dem Kurzbefehl („49,4048“ oder 49.4048) */
+function num(v: unknown): number | undefined {
+  const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v.trim().replace(',', '.')) : NaN
+  return Number.isFinite(n) ? n : undefined
+}
+
+/** Anfragetext: JSON, Formular (Kurzbefehl „Formular“) oder nur der Text. Liefert „action“ und ggf. den Standort */
+async function readBody(req: Request): Promise<{ action: string; extra: Extra }> {
   const raw = (await req.text()).trim()
-  if (!raw) return ''
+  if (!raw) return { action: '', extra: {} }
   try {
     const data = JSON.parse(raw)
-    if (data && typeof data === 'object') return str((data as Record<string, unknown>).action ?? (data as Record<string, unknown>).Action)
-    if (typeof data === 'string') return data.trim()
+    if (data && typeof data === 'object') {
+      const d = data as Record<string, unknown>
+      return { action: str(d.action ?? d.Action), extra: { lat: num(d.lat ?? d.Breitengrad), lon: num(d.lon ?? d.Längengrad ?? d.Laengengrad) } }
+    }
+    if (typeof data === 'string') return { action: data.trim(), extra: {} }
   } catch {
     // kein JSON
   }
   const form = new URLSearchParams(raw)
-  return str(form.get('action') ?? form.get('Action') ?? (raw.includes('=') ? '' : raw))
+  return {
+    action: str(form.get('action') ?? form.get('Action') ?? (raw.includes('=') ? '' : raw)),
+    extra: { lat: num(form.get('lat')), lon: num(form.get('lon')) },
+  }
 }
 
 async function sha256(text: string): Promise<string> {
@@ -89,7 +104,7 @@ async function caller(req: Request): Promise<string | null> {
 
 // ───────── Aktionen ─────────
 
-async function run(a: Action, me: Member, members: Member[]): Promise<Result> {
+async function run(a: Action, me: Member, members: Member[], extra: Extra): Promise<Result> {
   const p = a.params ?? {}
   const people = members.filter((m) => !m.is_board)
   const other = people.find((m) => m.id !== me.id) ?? null
@@ -190,6 +205,26 @@ async function run(a: Action, me: Member, members: Member[]): Promise<Result> {
       return error ? { ok: false, message: 'Nachtmodus einschalten hat nicht geklappt.' } : { ok: true, message: `Nachtmodus an bis ${to}. Gute Nacht` }
     }
 
+    case 'drive_home': {
+      // Heimweg mit dem Auto: Standort kommt aus dem Kurzbefehl (Felder lat/lon), Fahrzeit mit Verkehr von TomTom
+      if (extra.lat === undefined || extra.lon === undefined)
+        return { ok: false, message: 'Standort fehlt. Im Kurzbefehl „Aktuellen Standort abrufen“ und lat/lon mitschicken.' }
+      const r = await startDrive(me.id, [extra.lat, extra.lon])
+      if (!r.ok) return r.reason === 'at-home' ? { ok: true, message: 'Willkommen zuhause' } : { ok: false, message: r.message }
+      const at = berlinHHMM(r.eta)
+      const jam = r.delayMin >= 3 ? `, ${r.delayMin} Min Stau` : ''
+      // Push nur an die andere Person (Entscheidung Jonathan 11.10.2026)
+      if (other) {
+        await pushTo(await phonesOf([other.id]), {
+          title: `${me.name} ist auf dem Heimweg`,
+          body: `Zuhause ca. ${at} (${r.minutes} Min${jam})`,
+          tag: `drive-${me.id}`,
+          url: APP_URL,
+        })
+      }
+      return { ok: true, message: `Heimweg: zuhause ca. ${at} (${r.minutes} Min${jam})${other ? `. ${other.name} weiß Bescheid` : ''}` }
+    }
+
     case 'timer': {
       // gemeinsam mit dem Alexa-Skill (_shared/timers.ts)
       const t = await startTimer(a, me.id)
@@ -236,13 +271,15 @@ Deno.serve(async (req) => {
     if (cronKey) {
       const { data } = await db.from('push_config').select('cron_key').eq('id', 1).single()
       if (!data || cronKey !== data.cron_key) return new Response('Nicht erlaubt', { status: 403 })
+      const job = await req.json().catch(() => ({}))
+      if (job?.action === 'update-drives') return Response.json(await updateDrives())
       return Response.json(await finishTimers())
     }
 
     const member = await caller(req)
     if (!member) return json(req, { ok: false, message: 'Token ungültig oder widerrufen.' }, 401)
 
-    const sent = await readAction(req)
+    const { action: sent, extra } = await readBody(req)
     const slug = slugify(sent)
     const log = async (r: Result, a: Action | null) => {
       await db.from('nfc_events').insert({ action: slug || '(leer)', action_id: a?.id ?? null, member, ok: r.ok, message: r.message, private: a?.private ?? false })
@@ -281,7 +318,7 @@ Deno.serve(async (req) => {
       return json(req, { ok: true, duplicate: true, message: `Schon erledigt (vor ${Math.max(1, Math.round(ago / 1000))} s)` })
     }
 
-    const result = await run(a, me, members ?? [])
+    const result = await run(a, me, members ?? [], extra)
     return json(req, await log(result, a))
   } catch (e) {
     console.error(e)

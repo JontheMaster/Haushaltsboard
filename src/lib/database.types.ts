@@ -80,6 +80,24 @@ export type Database = {
           Rel<'chore_tasks_rule_id_fkey', 'rule_id', 'chore_rules'>,
         ]
       }
+      drives: {
+        Row: {
+          arrived_at: string | null
+          cancelled_at: string | null
+          checked_at: string
+          delay_s: number
+          eta: string
+          id: string
+          length_m: number
+          member: string
+          progress: number
+          route: Json
+          started_at: string
+        }
+        Insert: { member: string; eta: string; length_m: number; route?: Json; progress?: number; delay_s?: number }
+        Update: { cancelled_at?: string | null; arrived_at?: string | null }
+        Relationships: [Rel<'drives_member_fkey', 'member', 'members'>]
+      }
       layouts: {
         Row: { device: string | null; id: string; member: string | null; tiles: Json; hidden_headers: string[] }
         Insert: { device?: string | null; id?: string; member?: string | null; tiles?: Json; hidden_headers?: string[] }

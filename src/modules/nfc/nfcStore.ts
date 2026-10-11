@@ -31,7 +31,7 @@ import { supabase } from '../../lib/supabase'
 export const NFC_URL = 'https://cdfjglisfkhbkrklkxek.supabase.co/functions/v1/nfc'
 export const APP_URL = 'https://jonthemaster.github.io/Haushaltsboard/'
 
-export type NfcType = 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode'
+export type NfcType = 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode' | 'drive_home'
 export type NfcCategory = 'haushalt' | 'persoenlich' | 'vorrat' | 'wartung' | 'spass'
 
 export type NfcAction = {
@@ -59,6 +59,11 @@ export const TYPES: { value: NfcType; label: string; hint: string }[] = [
   { value: 'bring_add', label: 'Auf die Einkaufsliste', hint: 'Setzt einen Artikel auf die Bring!-Liste.' },
   { value: 'visit_toggle', label: 'Besuchsmodus umschalten', hint: 'Schaltet den Besuchsmodus an oder aus.' },
   { value: 'notify', label: 'Mitteilung schicken', hint: 'Schickt eine Mitteilung aufs Handy der anderen Person (oder an beide).' },
+  {
+    value: 'drive_home',
+    label: 'Heimweg (Auto)',
+    hint: 'Schickt deinen Standort mit: Fahrzeit nach Hause mit Verkehr, Mitteilung an die andere Person, Auto-Karte an der Wand.',
+  },
   { value: 'night_mode', label: 'Nachtmodus an', hint: 'Schaltet die Wand gleich in den Nachtmodus (bis zum Ende der Nacht). Nochmal tippen schaltet ihn wieder aus.' },
   {
     value: 'timer',
