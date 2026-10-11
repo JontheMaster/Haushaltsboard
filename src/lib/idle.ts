@@ -49,6 +49,8 @@ export function useIdle(ms: number, enabled = true): [boolean, () => void] {
 export function useIsNight(settings: Tables<'settings'> | null): boolean {
   const now = useNow(30_000)
   if (!settings) return false
+  // per NFC-Tag früher eingeschaltet („früher ins Bett“): gilt bis zum nächsten Ende der Nacht
+  if (settings.night_forced_until && Date.parse(settings.night_forced_until) > now.getTime()) return true
   const { hh, mm } = berlinTime(now)
   const cur = `${hh}:${mm}`
   const from = settings.night_from.slice(0, 5)

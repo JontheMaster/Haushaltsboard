@@ -76,6 +76,7 @@ export function TodosTile({ size, delay }: TileProps) {
         onToggle={(done) => setDone(t.id, done)}
         onOpen={phone && openTodo ? () => openTodo(t.id) : undefined}
         chore={!!t.chore}
+        choreIconName={t.chore?.icon}
         remind={t.remind_at ? berlinHHMM(t.remind_at) : undefined}
         urgent={t.urgent}
       />
@@ -147,23 +148,23 @@ export function TodosTile({ size, delay }: TileProps) {
 
               {(noDay.length > 0 || active) && (
                 <>
-                <hr className="hb-divider" />
-                <Zone id={NO_DAY} dragging={!!active}>
-                  <h3 className="mb-2 text-label text-ink-muted">Offen, noch ohne Tag</h3>
-                  {noDay.length ? (
-                    <div className={stacked ? '' : 'columns-2 gap-5'}>
-                      {noDay.map((t) => (
-                        <div key={t.id} className="flex break-inside-avoid items-center gap-2">
-                          <div className="min-w-0 flex-1">{row(t, true)}</div>
-                          {/* an der Wand zu eng (Entscheidung Jonathan 8.10.2026), nur am Handy */}
-                          {phone && t.this_week && !t.done_at && <Badge tone="accent">Diese Woche</Badge>}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-label text-ink-muted">Hierher ziehen</p>
-                  )}
-                </Zone>
+                  <hr className="hb-divider" />
+                  <Zone id={NO_DAY} dragging={!!active}>
+                    <h3 className="mb-2 text-label text-ink-muted">Offen, noch ohne Tag</h3>
+                    {noDay.length ? (
+                      <div className={stacked ? '' : 'columns-2 gap-5'}>
+                        {noDay.map((t) => (
+                          <div key={t.id} className="flex break-inside-avoid items-center gap-2">
+                            <div className="min-w-0 flex-1">{row(t, true)}</div>
+                            {/* an der Wand zu eng (Entscheidung Jonathan 8.10.2026), nur am Handy */}
+                            {phone && t.this_week && !t.done_at && <Badge tone="accent">Diese Woche</Badge>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-label text-ink-muted">Hierher ziehen</p>
+                    )}
+                  </Zone>
                 </>
               )}
             </>
@@ -183,7 +184,17 @@ export function TodosTile({ size, delay }: TileProps) {
 }
 
 /** Bereich, auf dem man ein Todo ablegen kann (Person, Offen, ohne Tag) */
-function Zone({ id, dragging, className = '', children }: { id: string; dragging: boolean; className?: string; children: ReactNode }) {
+function Zone({
+  id,
+  dragging,
+  className = '',
+  children,
+}: {
+  id: string
+  dragging: boolean
+  className?: string
+  children: ReactNode
+}) {
   const { setNodeRef, isOver } = useDroppable({ id })
   return (
     <section

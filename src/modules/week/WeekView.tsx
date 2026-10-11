@@ -14,7 +14,8 @@ import { DragOverlay } from '../../components/DragOverlay'
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EventPill } from '../../components/EventPill'
 import { Icon } from '../../components/Icon'
-import { CircleAlert, Eye, EyeOff, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { CircleAlert, Eye, EyeOff, SlidersHorizontal } from 'lucide-react'
+import { choreIcon } from '../chores/choreIcons'
 import { ScrollList } from '../../components/ScrollList'
 import { WithIcon } from '../../components/WithIcon'
 import { useDevice, useMedia } from '../../lib/device'
@@ -589,7 +590,7 @@ function CardBody({ todo, person, lifted }: { todo: Todo; person: PersonKey; lif
     <div className={`hb-card hb-person-${person} ${todo.done_at ? 'is-done' : ''} ${lifted ? 'is-lifted' : ''}`}>
       <span className="hb-card-title">
         {todo.chore ? (
-          <WithIcon icon={<Icon icon={Sparkles} size={15} label="Putzplan" className="hb-chore-icon" />} text={todo.title} />
+          <WithIcon icon={<Icon icon={choreIcon(todo.chore.icon).icon} size={15} label={`Putzplan: ${choreIcon(todo.chore.icon).label}`} className="hb-chore-icon" />} text={todo.title} />
         ) : todo.urgent && !todo.done_at ? (
           <WithIcon icon={<Icon icon={CircleAlert} size={15} label="Dringend" className="hb-urgent-icon" />} text={todo.title} />
         ) : (

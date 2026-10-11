@@ -19,6 +19,8 @@ export type Todo = Tables<'todos'> & {
     weekStart: string
     /** Originalzeile, für „Rückgängig“ nach dem Löschen */
     raw: ChoreTask
+    /** Symbol der Regel (chore_rules.icon), z. B. Spross für Pflanzen */
+    icon?: string
   }
 }
 
@@ -32,7 +34,7 @@ const SETTLE_MS = 650
 // Letzte Liste im Speicher: beim Wechsel zwischen Start und Todos steht sie sofort da
 let memory: { day: string; todos: Todo[] } | null = null
 
-function fromChore(t: ChoreTask & { chore_rules: { title: string } | null }, today: string): Todo {
+function fromChore(t: ChoreTask & { chore_rules: { title: string; icon?: string } | null }, today: string): Todo {
   const { chore_rules, ...raw } = t
   const overdue = !t.done_at && !!t.due_date && t.due_date < today
   return {
@@ -50,7 +52,7 @@ function fromChore(t: ChoreTask & { chore_rules: { title: string } | null }, tod
     created_at: t.occurs_on,
     remind_at: null,
     reminded_at: null,
-    chore: { ruleId: t.rule_id, weekStart: t.week_start, raw },
+    chore: { ruleId: t.rule_id, weekStart: t.week_start, raw, icon: chore_rules?.icon ?? 'Sparkles' },
   }
 }
 
@@ -116,7 +118,7 @@ export function useTodos(today: string) {
     const doneFilter = `done_at.is.null,done_at.gte.${berlinMidnightISO(today)}`
     const [todoRes, choreRes] = await Promise.all([
       supabase.from('todos').select('*').or(doneFilter).order('created_at'),
-      supabase.from('chore_tasks').select('*, chore_rules(title)').or(doneFilter).order('occurs_on'),
+      supabase.from('chore_tasks').select('*, chore_rules(title, icon)').or(doneFilter).order('occurs_on'),
     ])
     if (todoRes.error || choreRes.error) return setError(true)
     setError(false)

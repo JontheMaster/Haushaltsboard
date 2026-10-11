@@ -7,6 +7,7 @@ import { useCalendar } from '../calendar/useCalendar'
 import { SaverMusic } from '../spotify/NowPlaying'
 import { useEnabledModules, useModuleConfig } from '../useModules'
 import { listPhotos, signedUrls } from './photoStore'
+import type { Weather } from '../clock-weather/weather'
 
 export const SCREENSAVER_DEFAULTS = { idle_minutes: 5, interval_seconds: 60 }
 
@@ -38,7 +39,7 @@ function shuffle<T>(list: T[]): T[] {
  * Fotos bildschirmfüllend, weiche Überblendung, darüber klein Uhr, Datum und nächster Termin.
  * Antippen beendet ihn – dieses Antippen erreicht das Board darunter nie (kein versehentliches Abhaken).
  */
-export function Screensaver({ onClose }: { onClose: () => void }) {
+export function Screensaver({ onClose, weather }: { onClose: () => void; weather?: Weather | null }) {
   const { settings } = useSettings()
   const visit = settings?.visit_mode ?? false
   const { interval_seconds } = useModuleConfig('bildschirmschoner', SCREENSAVER_DEFAULTS)
@@ -149,6 +150,7 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
         </p>
       )}
 
+      <SaverWeather code={weather?.now.code} />
       <SaverInfo />
       {enabled?.has('spotify') && <SaverMusic />}
     </div>
@@ -202,6 +204,43 @@ export function NightScreen({ onWake }: { onWake: () => void }) {
         {mm}
       </div>
       <div className="hb-night-date">{longDate(now)}</div>
+    </div>
+  )
+}
+
+// feste Positionen, damit beim Neuzeichnen nichts springt (wie im Morgen-Briefing)
+const DROPS = Array.from({ length: 60 }, (_, i) => ({ left: (i * 37 + 11) % 100, delay: ((i * 0.31) % 1.8).toFixed(2), dur: (0.8 + ((i * 13) % 7) / 10).toFixed(2) }))
+const FLAKES = Array.from({ length: 44 }, (_, i) => ({ left: (i * 43 + 7) % 100, delay: (-((i * 0.83) % 9)).toFixed(2), dur: 9 + ((i * 17) % 7), size: 5 + ((i * 7) % 7) }))
+
+/**
+ * Regen oder Schnee über den Fotos, solange es draußen gerade regnet oder schneit (Open-Meteo, Code jetzt).
+ * Nieselregen zählt nicht. Ebene ohne Berührung (pointer-events: none), Antippen schließt weiter den Bildschirmschoner.
+ * Vorschau im Browser: ?schoner=regen oder ?schoner=schnee
+ */
+function SaverWeather({ code }: { code?: number }) {
+  const preview = new URLSearchParams(location.search).get('schoner')
+  const kind =
+    preview === 'regen' || preview === 'schnee'
+      ? preview
+      : code === undefined
+        ? null
+        : (code >= 61 && code <= 67) || (code >= 80 && code <= 82) || code >= 95
+          ? 'regen'
+          : (code >= 71 && code <= 77) || code === 85 || code === 86
+            ? 'schnee'
+            : null
+  if (!kind) return null
+  return (
+    <div className={`hb-saver-weather is-${kind}`} aria-hidden="true">
+      {kind === 'regen'
+        ? DROPS.map((d, i) => <i key={i} className="hb-sky-drop" style={{ left: `${d.left}%`, animationDelay: `${d.delay}s`, animationDuration: `${d.dur}s` }} />)
+        : FLAKES.map((f, i) => (
+            <i
+              key={i}
+              className="hb-sky-flake"
+              style={{ left: `${f.left}%`, width: f.size, height: f.size, animationDelay: `${f.delay}s`, animationDuration: `${f.dur}s` }}
+            />
+          ))}
     </div>
   )
 }

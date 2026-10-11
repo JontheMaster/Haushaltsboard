@@ -1,4 +1,6 @@
 import { Sparkles } from 'lucide-react'
+import { choreIcon } from './choreIcons'
+import { Icon } from '../../components/Icon'
 import { PersonChip } from '../../components/PersonChip'
 import { Tile } from '../../components/Tile'
 import { useMembers } from '../../lib/members'
@@ -27,6 +29,7 @@ export function ChoresWeekTile({ delay }: TileProps) {
               <span className={`hb-mini-day ${t.due_date && t.due_date < today ? 'is-late' : ''}`}>
                 {!t.due_date ? 'Woche' : t.due_date < today ? 'seit ' + weekdayShort(t.due_date) : t.due_date === today ? 'Heute' : weekdayShort(t.due_date)}
               </span>
+              <Icon icon={choreIcon(t.chore?.icon).icon} size={16} label={choreIcon(t.chore?.icon).label} className="hb-chore-icon shrink-0" />
               <span className="min-w-0 flex-1 truncate font-semibold text-ink">{t.title}</span>
               <PersonChip person={personKey(t.assignee)} name={t.assignee ? (byId.get(t.assignee)?.name ?? '') : 'Offen'} />
             </li>

@@ -928,3 +928,38 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ── Regen / Schnee über dem Bildschirmschoner (Tropfen und Flocken aus der Briefing-Szene) ── */
+.hb-saver-weather {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  animation: hb-fade-in var(--dur-calm) var(--ease-out) both;
+}
+.hb-saver-weather .hb-sky-drop {
+  width: 2px;
+  height: 36px;
+  background: linear-gradient(to bottom, transparent, rgb(255 255 255 / 0.75));
+  opacity: 0.8;
+}
+.hb-saver-weather .hb-sky-flake {
+  background: #fff;
+  opacity: 0.85;
+  box-shadow: 0 0 6px rgb(255 255 255 / 0.6);
+}
+/* Regen: Fotos leicht abgedunkelt, wie bei trübem Wetter */
+.hb-saver-weather.is-regen {
+  background: linear-gradient(to bottom, rgb(20 30 40 / 0.22), transparent 60%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-saver-weather {
+    display: none;
+  }
+}
+/* Uhr und Musik bleiben über Regen und Schnee */
+.hb-saver-info,
+.hb-saver-music {
+  z-index: 2;
+}

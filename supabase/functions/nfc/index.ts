@@ -19,7 +19,7 @@ type Action = {
   id: string
   slug: string
   label: string
-  type: 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer'
+  type: 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode'
   icon: string
   params: Record<string, unknown>
   enabled: boolean
@@ -32,6 +32,15 @@ type Result = { ok: boolean; message: string }
 const berlinDay = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d)
 const berlinHHMM = (d: Date) => new Intl.DateTimeFormat('de-DE', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d)
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
+
+/** Zeitpunkt „Tag + HH:MM“ in Berlin (Sommer- und Winterzeit) */
+function berlinAt(day: string, hhmm: string): Date {
+  const guess = new Date(`${day}T${hhmm}:00Z`)
+  const name = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'longOffset' }).formatToParts(guess).find((p) => p.type === 'timeZoneName')?.value ?? ''
+  const m = name.match(/([+-])(\d{2}):(\d{2})/)
+  const offset = m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0
+  return new Date(guess.getTime() - offset * 60_000)
+}
 
 /** Kennung wie in der App: „Trocknerwäsche“ → „trocknerwaesche“ (der Kurzbefehl darf auch den Namen schicken) */
 const slugify = (text: string) =>
@@ -165,6 +174,20 @@ async function run(a: Action, me: Member, members: Member[]): Promise<Result> {
       const sent = await pushTo(await phonesOf(ids), { title: me.name, body: text, tag: `nfc-${a.slug}`, url: APP_URL })
       const names = to.map((m) => m.name).join(' und ')
       return sent ? { ok: true, message: `Mitteilung an ${names} geschickt` } : { ok: false, message: `${names} hat kein Handy für Mitteilungen angemeldet.` }
+    }
+
+    case 'night_mode': {
+      // früher ins Bett: Nachtmodus gleich an, bis zum nächsten Ende der Nacht; ist er so schon an, wieder aus
+      const { data: s } = await db.from('settings').select('night_to, night_forced_until').eq('id', 1).single()
+      if (s?.night_forced_until && Date.parse(s.night_forced_until) > Date.now()) {
+        await db.from('settings').update({ night_forced_until: null }).eq('id', 1)
+        return { ok: true, message: 'Nachtmodus aus' }
+      }
+      const to = String(s?.night_to ?? '06:30').slice(0, 5)
+      let until = berlinAt(berlinDay(new Date()), to)
+      if (until.getTime() <= Date.now()) until = berlinAt(berlinDay(new Date(Date.now() + 86400_000)), to)
+      const { error } = await db.from('settings').update({ night_forced_until: until.toISOString() }).eq('id', 1)
+      return error ? { ok: false, message: 'Nachtmodus einschalten hat nicht geklappt.' } : { ok: true, message: `Nachtmodus an bis ${to}. Gute Nacht` }
     }
 
     case 'timer': {

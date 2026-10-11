@@ -34,6 +34,7 @@ export type Database = {
           weekdays: number[] | null
           placement: string
           created_at: string
+          icon: string
         }
         Insert: {
           active?: boolean
@@ -46,6 +47,7 @@ export type Database = {
           title: string
           weekdays?: number[] | null
           placement?: string
+          icon?: string
         }
         Update: Partial<Database['public']['Tables']['chore_rules']['Row']>
         Relationships: [Rel<'chore_rules_assignee_fkey', 'assignee', 'members'>]
@@ -237,9 +239,9 @@ export type Database = {
         Relationships: [Rel<'meals_recipe_id_fkey', 'recipe_id', 'recipes'>, Rel<'meals_created_by_fkey', 'created_by', 'members'>]
       }
       settings: {
-        Row: { id: number; night_from: string; night_to: string; visit_mode: boolean }
+        Row: { id: number; night_from: string; night_to: string; visit_mode: boolean; night_forced_until: string | null }
         Insert: { id?: number; night_from?: string; night_to?: string; visit_mode?: boolean }
-        Update: { id?: number; night_from?: string; night_to?: string; visit_mode?: boolean }
+        Update: { id?: number; night_from?: string; night_to?: string; visit_mode?: boolean; night_forced_until?: string | null }
         Relationships: []
       }
       push_subscriptions: {

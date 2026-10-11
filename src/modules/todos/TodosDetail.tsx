@@ -45,7 +45,11 @@ export function TodosDetail() {
     groups.push({ id: `day:${day}`, title: dayTitle(day), items: todos.filter((t) => t.due_date === day).sort(byDone) })
   }
   const monday = mondayOf(today)
-  groups.push({ id: 'week', title: 'Diese Woche', items: todos.filter((t) => t.this_week && unplannedNow(t, monday)).sort(byDone) })
+  groups.push({
+    id: 'week',
+    title: 'Diese Woche',
+    items: todos.filter((t) => t.this_week && unplannedNow(t, monday)).sort(byDone),
+  })
   groups.push({ id: 'none', title: 'Ohne Tag', items: todos.filter((t) => !t.due_date && !t.this_week).sort(byDone) })
 
   function onDragEnd(e: DragEndEvent) {
@@ -107,6 +111,7 @@ export function TodosDetail() {
                           onToggle={(d) => setDone(t.id, d)}
                           onOpen={openTodo && (() => openTodo(t.id))}
                           chore={!!t.chore}
+                          choreIconName={t.chore?.icon}
                           remind={t.remind_at ? berlinHHMM(t.remind_at) : undefined}
                           urgent={t.urgent}
                         />

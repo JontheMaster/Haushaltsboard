@@ -1,4 +1,5 @@
-import { ArrowLeft, Pause, Plus, Save, Sparkles, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pause, Plus, Save, Trash2 } from 'lucide-react'
+import { CHORE_ICONS, choreIcon } from './choreIcons'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Badge } from '../../components/Badge'
 import { Button } from '../../components/Button'
@@ -102,7 +103,7 @@ export function PutzplanPage({ onBack, openRuleId }: { onBack: () => void; openR
         <h2 className="flex-1 font-display text-title text-ink">Putzplan</h2>
       </div>
       <p className="text-body text-ink-muted">
-        Alles, was regelmäßig ansteht. Die Aufgaben erscheinen bei den Todos mit dem Glitzer-Symbol. Bleibt eine liegen, ersetzt
+        Alles, was regelmäßig ansteht. Die Aufgaben erscheinen bei den Todos mit ihrem Symbol, zum Beispiel Glitzer fürs Putzen oder ein Spross fürs Gießen. Bleibt eine liegen, ersetzt
         sie die nächste Wiederholung.
       </p>
       <Button variant="primary" size="lg" icon={<Icon icon={Plus} size={22} />} onClick={() => setSheet({})}>
@@ -119,7 +120,7 @@ export function PutzplanPage({ onBack, openRuleId }: { onBack: () => void; openR
       <div className="flex flex-col gap-2">
         {rules?.map((r) => (
           <button key={r.id} type="button" className="hb-rule" onClick={() => setSheet({ rule: r })}>
-            <Icon icon={Sparkles} size={20} className="hb-chore-icon" />
+            <Icon icon={choreIcon(r.icon).icon} size={20} label={choreIcon(r.icon).label} className="hb-chore-icon" />
             <span className="flex min-w-0 flex-1 flex-col text-left">
               <span className="text-body font-semibold text-ink">{r.title}</span>
               <span className="text-label text-ink-muted">{describeRule(r, names)}</span>
@@ -160,6 +161,9 @@ function ChoreSheet({ rule, onClose, onSaved }: { rule?: ChoreRule; onClose: () 
           : 'a'
 
   const [title, setTitle] = useState(rule?.title ?? '')
+  // Symbol: Glitzer, außer der Name klingt nach Pflanzen (dann gleich der Spross)
+  const [icon, setIcon] = useState(rule?.icon ?? '')
+  const effIcon = icon || (/gie(ß|ss)|blume|pflanz/i.test(title) ? 'Sprout' : 'Sparkles')
   const [rhythm, setRhythm] = useState<Rhythm>((rule?.rhythm as Rhythm) ?? 'weekly')
   const [weekday, setWeekday] = useState(rule ? isoWeekday(rule.anchor_date) : 6)
   const [weekdays, setWeekdays] = useState<number[]>(rule?.weekdays ?? [1, 4])
@@ -195,6 +199,7 @@ function ChoreSheet({ rule, onClose, onSaved }: { rule?: ChoreRule; onClose: () 
     setBusy(true)
     const row = {
       title: title.trim(),
+      icon: effIcon,
       rhythm,
       weekdays: rhythm === 'weekdays' ? [...weekdays].sort() : null,
       anchor_date: anchor(),
@@ -235,6 +240,25 @@ function ChoreSheet({ rule, onClose, onSaved }: { rule?: ChoreRule; onClose: () 
             className="h-7 rounded-md border border-line bg-surface-sunken px-4 text-body text-ink placeholder:text-ink-muted focus-visible:focus-ring"
           />
         </label>
+
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-label text-ink">Symbol</legend>
+          <div className="flex flex-wrap gap-2">
+            {CHORE_ICONS.map((c) => (
+              <button
+                key={c.name}
+                type="button"
+                aria-pressed={effIcon === c.name}
+                aria-label={c.label}
+                title={c.label}
+                className={`hb-nfc-pick ${effIcon === c.name ? 'is-on' : ''}`}
+                onClick={() => setIcon(c.name)}
+              >
+                <Icon icon={c.icon} size={20} />
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
         <Choice<Rhythm> label="Wie oft" options={RHYTHMS} isSelected={(v) => v === rhythm} onSelect={setRhythm} />
 

@@ -331,7 +331,7 @@ export function Board({ weather }: { weather: Weather | null }) {
       )}
       <WeekRecap />
       {toast && <Toast key={toast.id} message={toast.message} onDone={hideToast} />}
-      {saverOn && <Screensaver onClose={closeSaver} />}
+      {saverOn && <Screensaver onClose={closeSaver} weather={weather} />}
       {nightActive && (
         <NightScreen
           onWake={() => {
