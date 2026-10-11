@@ -88,8 +88,10 @@ export type Database = {
           delay_s: number
           eta: string
           id: string
+          jams: Json
           length_m: number
           member: string
+          origin_label: string | null
           progress: number
           route: Json
           started_at: string

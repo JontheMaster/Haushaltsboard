@@ -2,6 +2,7 @@ import { Bell, CalendarDays, CalendarRange, Clock, CloudSun, Coins, Heart, Image
 import { WidgetSettings } from './widget/WidgetSettings'
 import { NfcSettings } from './nfc/NfcSettings'
 import { NfcHeader } from './nfc/NfcHeader'
+import { DriveTile, useDriveShow } from './nfc/DriveHeader'
 import { JubileeHeader, JubileeSettings } from './jubilee/Jubilee'
 import { RecapHeader } from './recap/RecapHeader'
 import { RecapSettings } from './recap/RecapSettings'
@@ -57,8 +58,9 @@ export const MODULES: ModuleDef[] = [
   { id: 'jubilaeum', title: 'Jubiläen', description: 'Besondere Tage, seit ihr zusammen seid', icon: Heart, phase: 5, sizes: [], Header: JubileeHeader, Settings: JubileeSettings },
   // Münzwurf: Knopf an der Wand in der Kopfzeile, am Handy unten auf Start (CoinButton)
   { id: 'muenzwurf', title: 'Münzwurf', description: 'J oder L: wer ist dran mit Müll, Abwasch …', icon: Coins, phase: 5, sizes: [] },
-  // NFC-Tags: Sticker lösen per iPhone-Kurzbefehl Aktionen aus (Edge Function `nfc`); Verwaltung nur am Handy, keine Kachel
-  { id: 'nfc', title: 'NFC-Tags', description: 'Sticker antippen: Todo anlegen, abhaken, einkaufen und mehr', icon: Nfc, phase: 5, sizes: [], Settings: NfcSettings, Header: NfcHeader },
+  // NFC-Tags: Sticker lösen per iPhone-Kurzbefehl Aktionen aus (Edge Function `nfc`); Verwaltung nur am Handy.
+  // Kachel nur zeitweise: Heimweg mit dem Auto liegt an der Wand vorn im Stapel auf dem Wetter (wischen = Wetter)
+  { id: 'nfc', title: 'NFC-Tags', description: 'Sticker antippen: Todo anlegen, abhaken, einkaufen und mehr', icon: Nfc, phase: 5, sizes: ['s'], Tile: DriveTile, Settings: NfcSettings, Header: NfcHeader, stackOn: 'uhr-wetter.kurve', useShow: useDriveShow },
   // Handy-Widget (Scriptable am iPhone, KWGT an Android): nur Einrichtung, kein Schalter; Daten über Edge Function `widget`
   { id: 'widget', title: 'Handy-Widget', description: 'Termine, Todos und Essen auf dem Home-Bildschirm', icon: Smartphone, phase: 5, sizes: [], Settings: WidgetSettings, toggle: false },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary , phoneTiles: [{ id: 'foto', title: 'Foto des Tages', description: 'Jeden Tag ein Bild aus eurer Fotobibliothek', icon: Image, Tile: PhotoOfDayTile }] },

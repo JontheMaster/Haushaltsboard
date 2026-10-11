@@ -12,7 +12,9 @@ const ARRIVE_GRACE_MS = 5 * 60_000
 
 export type Home = { lat: number; lon: number; address?: string }
 type Point = [number, number]
-type Route = { points: Point[]; lengthM: number; travelS: number; delayS: number }
+/** Stau-Abschnitt als Anteil der Strecke [von, bis] (0–1) */
+type Jam = [number, number]
+type Route = { points: Point[]; lengthM: number; travelS: number; delayS: number; jams: Jam[] }
 
 export function distanceM(a: Point, b: Point): number {
   const rad = Math.PI / 180
@@ -32,7 +34,7 @@ export async function homeOf(): Promise<Home | null> {
 async function route(from: Point, to: Point): Promise<Route> {
   const key = Deno.env.get('TOMTOM_KEY')?.trim()
   if (!key) throw new Error('Secret TOMTOM_KEY fehlt')
-  const url = `${TOMTOM}${from[0]},${from[1]}:${to[0]},${to[1]}/json?key=${key}&traffic=true&travelMode=car&routeRepresentation=polyline&computeTravelTimeFor=none`
+  const url = `${TOMTOM}${from[0]},${from[1]}:${to[0]},${to[1]}/json?key=${key}&traffic=true&travelMode=car&routeRepresentation=polyline&computeTravelTimeFor=none&sectionType=traffic`
   const resp = await fetch(url, { signal: AbortSignal.timeout(10_000) })
   if (!resp.ok) throw new Error(`TomTom ${resp.status}: ${(await resp.text()).slice(0, 120)}`)
   const data = await resp.json()
@@ -41,7 +43,31 @@ async function route(from: Point, to: Point): Promise<Route> {
   const pts: Point[] = (r.legs ?? []).flatMap((l: { points: { latitude: number; longitude: number }[] }) =>
     l.points.map((p) => [p.latitude, p.longitude] as Point),
   )
-  return { points: pts, lengthM: r.summary.lengthInMeters, travelS: r.summary.travelTimeInSeconds, delayS: r.summary.trafficDelayInSeconds ?? 0 }
+  // Stau-Abschnitte (TomTom „sections“ mit Punkt-Indizes) → Anteile der Strecke, für die rote Markierung
+  const cum = [0]
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + distanceM(pts[i - 1], pts[i]))
+  const total = cum[cum.length - 1] || 1
+  const jams: Jam[] = (r.sections ?? [])
+    .filter((x: { sectionType?: string; simpleCategory?: string }) => x.sectionType === 'TRAFFIC' && x.simpleCategory !== 'ROAD_CLOSURE')
+    .map((x: { startPointIndex: number; endPointIndex: number }) => [cum[x.startPointIndex] / total, cum[Math.min(x.endPointIndex, cum.length - 1)] / total] as Jam)
+    .filter(([a, b]: Jam) => b > a)
+  return { points: pts, lengthM: r.summary.lengthInMeters, travelS: r.summary.travelTimeInSeconds, delayS: r.summary.trafficDelayInSeconds ?? 0, jams }
+}
+
+/** Name des Startorts für die Kachel („Erlangen, Uni“), über Photon (OpenStreetMap) */
+async function placeName(p: Point): Promise<string | null> {
+  try {
+    const resp = await fetch(`https://photon.komoot.io/reverse?lat=${p[0]}&lon=${p[1]}&lang=de&limit=1`, { signal: AbortSignal.timeout(5000) })
+    const f = (await resp.json()).features?.[0]?.properties
+    if (!f) return null
+    const town = f.city ?? f.town ?? f.village ?? ''
+    // Orte mit Namen (Uni, Firma, Geschäft) beim Namen, sonst Stadtteil oder Straße (keine Denkmäler o. Ä.)
+    const named = f.name && ['amenity', 'shop', 'office', 'building', 'leisure', 'railway', 'aeroway'].includes(f.osm_key) && f.osm_value !== 'memorial'
+    const spot = named ? f.name : (f.district ?? f.locality ?? f.street ?? '')
+    return [town, spot].filter(Boolean).join(', ') || null
+  } catch {
+    return null
+  }
 }
 
 /** höchstens n Punkte (für die Anzeige und die Positionsschätzung reicht das) */
@@ -80,6 +106,7 @@ export async function startDrive(member: string, from: Point): Promise<StartResu
     return { ok: false, reason: 'at-home', message: 'Du bist schon zuhause.' }
   }
   let r: Route
+  const label = placeName(from)
   try {
     r = await route(from, to)
   } catch (e) {
@@ -97,6 +124,8 @@ export async function startDrive(member: string, from: Point): Promise<StartResu
     progress: 0,
     eta: eta.toISOString(),
     delay_s: r.delayS,
+    jams: r.jams,
+    origin_label: await label,
     checked_at: now.toISOString(),
   })
   return { ok: true, eta, minutes: Math.round(r.travelS / 60), delayMin: Math.round(r.delayS / 60) }
@@ -122,19 +151,21 @@ export async function updateDrives(): Promise<{ updated: number; arrived: number
       arrived++
       continue
     }
-    let next = { progress, eta: new Date(eta), delay_s: d.delay_s as number }
+    let next = { progress, eta: new Date(eta), delay_s: d.delay_s as number, jams: d.jams as Jam[] }
     if (home && Array.isArray(d.route) && d.route.length > 1) {
       try {
         const here = pointAt(d.route as Point[], progress)
         const r = await route(here, [home.lat, home.lon])
-        next = { progress, eta: new Date(now + r.travelS * 1000), delay_s: r.delayS }
+        // Staus der Reststrecke auf die ganze Strecke umrechnen
+        const jams = r.jams.map(([a, b]) => [progress + (1 - progress) * a, progress + (1 - progress) * b] as Jam)
+        next = { progress, eta: new Date(now + r.travelS * 1000), delay_s: r.delayS, jams }
       } catch (e) {
         console.error('Verkehr nicht abrufbar', e)
       }
     }
     await db
       .from('drives')
-      .update({ progress: next.progress, eta: next.eta.toISOString(), delay_s: next.delay_s, checked_at: new Date(now).toISOString() })
+      .update({ progress: next.progress, eta: next.eta.toISOString(), delay_s: next.delay_s, jams: next.jams, checked_at: new Date(now).toISOString() })
       .eq('id', d.id)
     updated++
   }

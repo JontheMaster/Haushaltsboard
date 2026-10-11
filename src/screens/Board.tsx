@@ -284,10 +284,11 @@ export function Board({ weather }: { weather: Weather | null }) {
         <main className={`grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-5 ${narrow ? 'grid-cols-2' : 'grid-cols-12'}`}>
           {tiles.map((t, i) => {
             const span = (narrow ? SPAN_NARROW : SPAN)[t.size]
-            // Stapel: Hauptkachel + weitere aus dem Layout + zeitweise Kacheln (Abfahrten), die darauf liegen
+            // Stapel: Hauptkachel + weitere aus dem Layout + zeitweise Kacheln (Abfahrten, Heimweg), die darauf liegen;
+            // eine zeitweise Kachel macht auch aus einer einzelnen Kachel (Wetter) einen Stapel, sie liegt dann vorn
             const keys = [t.module, ...(t.stack ?? []).filter(isOn)]
             const timed = stacked.filter((m) => m.stackOn && keys.includes(m.stackOn))
-            if (keys.length > 1) {
+            if (keys.length > 1 || timed.length > 0) {
               const cards: StackCard[] = [
                 ...keys.flatMap((k) => {
                   const card = cardOf(k)
@@ -304,10 +305,8 @@ export function Board({ weather }: { weather: Weather | null }) {
             }
             const card = cardOf(t.module)
             if (!card) return null
-            // ohne Stapel: zeitweise Kacheln (z. B. Abfahrten morgens) stehen über dieser in derselben Spalte
             return (
               <div key={t.module} className={`flex min-h-0 flex-col gap-5 *:min-h-0 *:flex-1 ${span}`}>
-                {timed.map((m) => m.Tile && <m.Tile key={m.id} size="s" delay={i * 40} />)}
                 <card.Tile size={t.size} delay={i * 40} />
               </div>
             )
