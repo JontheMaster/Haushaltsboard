@@ -274,6 +274,7 @@ export type Database = {
           remind_at: string | null
           this_week: boolean
           title: string
+          urgent: boolean
         }
         Insert: {
           assignee?: string | null
@@ -287,6 +288,7 @@ export type Database = {
           remind_at?: string | null
           this_week?: boolean
           title: string
+          urgent?: boolean
         }
         Update: Partial<Database['public']['Tables']['todos']['Row']>
         Relationships: [

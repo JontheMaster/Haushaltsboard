@@ -75,6 +75,14 @@
   color: var(--accent);
 }
 
+/* Dringendes Todo: rotes Symbol vor dem Text (ohne das Wort) */
+.hb-urgent-icon {
+  display: inline-block;
+  margin-right: var(--space-1);
+  vertical-align: -0.15em;
+  color: var(--urgent);
+}
+
 /* Icon vor gekürzten Termintiteln (Torte, Video, Hantel …) */
 .hb-event-icon {
   display: inline-block;

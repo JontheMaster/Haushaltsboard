@@ -6,7 +6,7 @@ import { CHORE_PREFIX, isChoreId, type Todo } from './useTodos'
 export type When = { kind: 'day'; date: string } | { kind: 'week' } | { kind: 'none' }
 
 /** `time`: Erinnerung „HH:MM“ (nur mit festem Tag) oder null; undefined = Erinnerung nicht anfassen */
-export type TodoInput = { title: string; when: When; assignee: string | null; time?: string | null }
+export type TodoInput = { title: string; when: When; assignee: string | null; time?: string | null; urgent?: boolean }
 
 function whenFields(when: When, time?: string | null) {
   return {
@@ -28,7 +28,7 @@ export function whenOf(t: Todo): When {
 export async function createTodo(input: TodoInput): Promise<boolean> {
   const { error } = await supabase
     .from('todos')
-    .insert({ title: input.title.trim(), assignee: input.assignee, ...whenFields(input.when, input.time) })
+    .insert({ title: input.title.trim(), assignee: input.assignee, urgent: !!input.urgent, ...whenFields(input.when, input.time) })
   return !error
 }
 
@@ -41,6 +41,7 @@ export async function updateTodo(id: string, input: TodoInput, before: Todo): Pr
     .update({
       title: input.title.trim(),
       assignee: input.assignee,
+      ...(input.urgent === undefined ? {} : { urgent: input.urgent }),
       ...fields,
       ...(replanned ? { moved_since: null } : {}),
     })

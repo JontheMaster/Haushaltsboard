@@ -110,7 +110,10 @@ export function MorningBriefing({ weather, onClose }: { weather: Weather | null;
   const dayEvents = eventsOnDay(events ?? [], today)
     .filter((e) => !e.hideInVisit && (e.allDay || e.end > nowIso))
     .slice(0, 4)
-  const urgent = (todos ?? []).filter((t) => !t.done_at && t.moved_since)
+  // Dringend: als dringend markierte Todos (heute, überfällig oder ohne Tag) und liegengebliebene Putzaufgaben (Entscheidung Jonathan 11.10.2026)
+  const urgent = (todos ?? []).filter(
+    (t) => !t.done_at && (t.chore ? !!t.moved_since : t.urgent && (!t.due_date || t.due_date <= today)),
+  )
   const trips = (plans?.plans ?? [])
     .filter((p) => p.trip && p.trip.leaveAt > nowIso && p.trip.leaveAt.slice(0, 10) === nowIso.slice(0, 10))
     .sort((a, b) => a.trip!.leaveAt.localeCompare(b.trip!.leaveAt))

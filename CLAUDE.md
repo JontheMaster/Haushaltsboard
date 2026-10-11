@@ -52,6 +52,7 @@ Anzeige-Regeln Kalender (serverseitig in `calendar`, Funktion `tidy`, immer mit 
 ## Regeln der Fachlogik
 
 - Todos: einmalig. Felder: Titel, Datum / „diese Woche“ / ungeplant, Person oder offen, erledigt am/von, `moved_since`.
+- Dringend (11.10.2026): `todos.urgent`, Schalter „Dringend“ im Todo-Formular. Überall rotes Symbol `CircleAlert` (`hb-urgent-icon`) vor dem Titel, ohne das Wort; dringende Todos stehen in jeder Liste oben (`doneRank`). Morgen-Briefing, Karte „Dringend“: dringende Todos (heute, überfällig, ohne Tag) plus liegengebliebene Putzaufgaben.
 - Unerledigtes Todo rutscht um Mitternacht **genau einen Tag** mit (Hinweis „seit …“); bleibt es wieder liegen → zurück in „Offen, noch ohne Tag“ (`due_date = null`).
 - Abgehakt bleibt bis Mitternacht durchgestrichen sichtbar; Antippen = erledigt mit 5 s Rückgängig.
 - Putzplan ist ein **eigenes Modul** (eigene Tabellen). Liegengebliebenes **bleibt, bis es erledigt ist** (wandert nach heute, „seit …“; Entscheidung Jonathan 6.10.2026). Pro Regel steht nur die älteste offene fällige Aufgabe da; Abhaken erledigt inzwischen fällige Wiederholungen mit (Trigger `chore_tasks_done`), Rückgängig öffnet sie wieder (`chore_tasks_undone`).

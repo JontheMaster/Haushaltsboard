@@ -77,6 +77,7 @@ export function TodosTile({ size, delay }: TileProps) {
         onOpen={phone && openTodo ? () => openTodo(t.id) : undefined}
         chore={!!t.chore}
         remind={t.remind_at ? berlinHHMM(t.remind_at) : undefined}
+        urgent={t.urgent}
       />
     )
     // Löschen per Wischen nur am Handy; an der Wand wird nur abgehakt

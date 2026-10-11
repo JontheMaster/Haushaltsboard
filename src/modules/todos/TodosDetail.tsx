@@ -108,6 +108,7 @@ export function TodosDetail() {
                           onOpen={openTodo && (() => openTodo(t.id))}
                           chore={!!t.chore}
                           remind={t.remind_at ? berlinHHMM(t.remind_at) : undefined}
+                          urgent={t.urgent}
                         />
                       </div>
                       {!t.done_at && (

@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Button } from '../../components/Button'
 import { Choice } from '../../components/Choice'
 import { Icon } from '../../components/Icon'
+import { Toggle } from '../../components/Toggle'
 import { Sheet } from '../../components/Sheet'
 import { useMembers } from '../../lib/members'
 import { addDays, berlinHHMM, useToday, weekdayShort } from '../../lib/time'
@@ -37,6 +38,7 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
   // Erinnerung (nur mit festem Tag): Uhrzeit „HH:MM“ oder leer
   const [time, setTime] = useState(todo?.remind_at ? berlinHHMM(todo.remind_at) : '')
   const remindersOn = useEnabledModules()?.has('erinnerungen') ?? false
+  const [urgent, setUrgent] = useState(todo?.urgent ?? false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -57,7 +59,7 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
     setBusy(true)
     const withTime = remindersOn && when.kind === 'day' && time ? time : null
     // Erinnerungen aus: vorhandene Uhrzeit nicht anfassen
-    const input = { title, when, assignee, time: remindersOn ? withTime : undefined }
+    const input = { title, when, assignee, urgent, time: remindersOn ? withTime : undefined }
     const ok = todo ? await updateTodo(todo.id, input, todo) : await createTodo(input)
     setBusy(false)
     if (!ok) return setError('Speichern hat nicht geklappt. Prüf die Verbindung und probier es noch mal.')
@@ -168,6 +170,8 @@ export function TodoSheet({ todo, onClose, onSaved }: Props) {
           isSelected={(v) => v === assignee}
           onSelect={setAssignee}
         />
+
+        <Toggle label="Dringend" checked={urgent} onChange={setUrgent} />
 
         {error && (
           <p role="alert" className="rounded-md bg-urgent-soft px-4 py-3 text-label text-urgent">

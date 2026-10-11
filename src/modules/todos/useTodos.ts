@@ -41,6 +41,7 @@ function fromChore(t: ChoreTask & { chore_rules: { title: string } | null }, tod
     due_date: t.due_date,
     // ohne Tag = „irgendwann in dieser Woche“ (nur Putzplan-Aufgaben mit „Woche“)
     this_week: !t.due_date,
+    urgent: false,
     assignee: t.assignee,
     // liegengeblieben: Hinweis „seit …“ wie bei Todos
     moved_since: overdue ? t.due_date : null,
@@ -212,7 +213,8 @@ export function useTodos(today: string) {
   )
 
   /** Sortierschlüssel: erledigt (und schon eingereiht) = 1, sonst 0 */
-  const doneRank = useCallback((t: Todo) => Number(!!t.done_at && !settling.has(t.id)), [settling])
+  // Reihenfolge: dringend oben, dann der Rest, Erledigtes (nach kurzer Pause) unten
+  const doneRank = useCallback((t: Todo) => (t.done_at && !settling.has(t.id) ? 2 : t.urgent ? 0 : 1), [settling])
 
   return { todos, error, undoable, setDone, doneRank, patchTodo }
 }

@@ -1,4 +1,4 @@
-import { Bell, Sparkles, Undo2 } from 'lucide-react'
+import { Bell, CircleAlert, Sparkles, Undo2 } from 'lucide-react'
 import type { PersonKey } from '../lib/members'
 import { Icon } from './Icon'
 import { WithIcon } from './WithIcon'
@@ -19,9 +19,11 @@ type Props = {
   chore?: boolean
   /** Erinnerung um diese Uhrzeit („17:30“) */
   remind?: string
+  /** dringend: rotes Symbol vor dem Text (ohne das Wort, Entscheidung Jonathan 11.10.2026) */
+  urgent?: boolean
 }
 
-export function TaskItem({ label, detail, done, person, meta, showUndo, compact, onToggle, onOpen, chore, remind }: Props) {
+export function TaskItem({ label, detail, done, person, meta, showUndo, compact, onToggle, onOpen, chore, remind, urgent }: Props) {
   const classes = ['hb-task', done && 'is-done', person && person !== 'open' && `hb-person-${person}`, compact && 'hb-compact']
     .filter(Boolean)
     .join(' ')
@@ -53,6 +55,8 @@ export function TaskItem({ label, detail, done, person, meta, showUndo, compact,
         <span className="hb-task-text">
           {chore ? (
             <WithIcon icon={<Icon icon={Sparkles} size={compact ? 16 : 18} label="Putzplan" className="hb-chore-icon" />} text={label} />
+          ) : urgent && !done ? (
+            <WithIcon icon={<Icon icon={CircleAlert} size={compact ? 16 : 18} label="Dringend" className="hb-urgent-icon" />} text={label} />
           ) : (
             label
           )}
