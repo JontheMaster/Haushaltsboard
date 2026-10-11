@@ -141,7 +141,6 @@ function StartView({ onReview, onGuide, showToast }: { onReview: () => void; onG
                         {!mine ? ` · ${byId.get(t.owner)?.name ?? ''}` : ''}
                       </span>
                     </span>
-                    {t.household && <span className="hb-fin-chip">Haushalt</span>}
                     {t.needs_review && <Icon icon={CircleAlert} size={16} label="Noch zuordnen" className="text-warning" />}
                     <span className={`hb-fin-amount ${t.amount > 0 ? 'is-in' : ''}`}>{euro(t.amount, true)}</span>
                   </button>
@@ -272,6 +271,9 @@ function Stat({ value, label, tone }: { value: number; label: string; tone?: 'su
  */
 function AssignEditor({ tx, cats, onDone }: { tx: FinTx; cats: FinCategory[]; onDone: (message?: string) => void }) {
   const { me } = useMembers()
+  const { profile } = useFinProfile(me.id)
+  // Gemeinschaftskonto: alles ist Haushalt, der Schalter wäre nur Rauschen (Entscheidung Jonathan 11.10.2026)
+  const jointAccount = !!tx.account && (profile?.joint_accounts ?? []).includes(tx.account)
   const [household, setHousehold] = useState(tx.household)
   const [touched, setTouched] = useState(false)
   const [picked, setPicked] = useState<string | null>(null)
@@ -326,14 +328,16 @@ function AssignEditor({ tx, cats, onDone }: { tx: FinTx; cats: FinCategory[]; on
         ))}
       </div>
 
-      <Toggle
-        checked={household}
-        onChange={(on) => {
-          setTouched(true)
-          setHousehold(on)
-        }}
-        label="Für den Haushalt"
-      />
+      {!jointAccount && (
+        <Toggle
+          checked={household}
+          onChange={(on) => {
+            setTouched(true)
+            setHousehold(on)
+          }}
+          label="Für den Haushalt"
+        />
+      )}
 
       {picked && (
         <div className="hb-fin-always">

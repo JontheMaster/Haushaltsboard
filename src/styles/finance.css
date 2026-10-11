@@ -56,15 +56,6 @@ li:first-child > .hb-fin-row {
 .hb-fin-row:disabled {
   cursor: default;
 }
-.hb-fin-chip {
-  flex: none;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 650;
-}
 .hb-fin-amount {
   flex: none;
   font-weight: 650;
