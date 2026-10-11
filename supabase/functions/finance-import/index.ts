@@ -138,6 +138,8 @@ Deno.serve(async (req) => {
         rows_new: fresh.length,
         rows_duplicate: duplicate,
       })
+      // Wertpapierkäufe (Sparpläne) mit echtem Datum ins Depot übernehmen (Stufe 5)
+      if (fresh.some((t) => /wertpapier/i.test(t.kind))) await db.rpc('fin_link_giro_buys', { p_owner: member })
       if (account && !remembered.includes(joint ? account : `-${account}`)) {
         const next = [...remembered.filter((a) => a !== account && a !== `-${account}`), joint ? account : `-${account}`]
         await db.from('fin_profiles').update({ joint_accounts: next }).eq('member', member)

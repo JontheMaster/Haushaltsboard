@@ -150,15 +150,15 @@ export async function previewDepotImport(file: File, owner: string): Promise<Dep
 }
 
 /**
- * Depotübersicht übernehmen: neue Positionen mit Bestand laut Bank (Kürzel per Suche), bestehende per Korrektur
- * auf den Stand der Bank bringen. Gleiche Datei am selben Tag zählt nur einmal (hash).
+ * Depotübersicht übernehmen: neue Positionen anlegen (Kürzel per Suche), dann für jede Position den Stand der Bank
+ * als Anker setzen (fin_depot_snapshot): alles bis zu diesem Tag wird darauf abgeglichen. Danach Wertpapierkäufe
+ * aus dem Giro-Export zuordnen (echtes Datum für den Verlauf). Gleiche Datei mehrmals = gleicher Anker.
  */
 export async function applyDepotImport(plan: DepotPlan, owner: string, household: boolean): Promise<{ ok: boolean; message: string }> {
   const day = plan.parse.day ?? berlinDay()
   let added = 0
   let corrected = 0
   for (const r of plan.rows) {
-    if (r.kind === 'same') continue
     let holdingId = r.holding?.id
     if (!holdingId) {
       const hit = await lookupIsin(r.pos.isin)
@@ -170,25 +170,14 @@ export async function applyDepotImport(plan: DepotPlan, owner: string, household
       if (error || !data) return { ok: false, message: `${r.pos.name} anlegen hat nicht geklappt.` }
       holdingId = data.id
     }
-    const { error } = await supabase.from('fin_holding_tx').upsert(
-      {
-        holding: holdingId,
-        date: day,
-        type: r.kind === 'new' ? 'buy' : 'correction',
-        quantity: r.dQty,
-        price: r.kind === 'new' ? r.pos.cost_price : null,
-        amount: r.dInvested,
-        source: 'csv',
-        hash: `depot:${day}:${r.pos.isin}`,
-        note: r.kind === 'new' ? 'Bestand laut Depotübersicht' : 'Abgleich mit der Depotübersicht',
-      },
-      { onConflict: 'holding,hash', ignoreDuplicates: true },
-    )
+    const { error } = await supabase.rpc('fin_depot_snapshot', { p_holding: holdingId, p_quantity: r.pos.quantity, p_invested: r.pos.cost_value ?? 0, p_day: day })
     if (error) return { ok: false, message: 'Speichern hat nicht geklappt.' }
     if (r.kind === 'new') added++
-    else corrected++
+    else if (r.kind === 'correction') corrected++
   }
+  // Kurse (inkl. Verlauf) holen, dann die Käufe aus dem Girokonto mit ihrem Datum zuordnen
   await refreshQuotes()
+  await supabase.rpc('fin_link_giro_buys', { p_owner: owner })
   if (!added && !corrected) return { ok: true, message: 'Depot ist schon auf dem Stand der Bank' }
   return { ok: true, message: [added ? `${added} ${added === 1 ? 'Position' : 'Positionen'} neu` : '', corrected ? `${corrected} abgeglichen` : ''].filter(Boolean).join(', ') }
 }

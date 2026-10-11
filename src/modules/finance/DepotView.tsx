@@ -23,6 +23,7 @@ import {
   type Lookup,
 } from './depotStore'
 import { euro } from './finStore'
+import { DepotPlans } from './DepotPlans'
 
 /** Kurzer Name: „iShares Core MSCI World UCITS ETF USD (Acc)“ → „Core MSCI World“ */
 function shortName(name: string): string {
@@ -139,6 +140,8 @@ export function DepotView({ showToast }: { showToast: (m: string) => void }) {
           </ul>
         </section>
       )}
+
+      {holdings && holdings.length > 0 && <DepotPlans holdings={holdings} ownerId={me.id} showToast={showToast} />}
 
       <input ref={input} type="file" accept=".csv,text/csv,text/plain" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
       <div className="grid grid-cols-2 gap-2">

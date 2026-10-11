@@ -167,6 +167,8 @@ export type Database = {
           source: 'manual' | 'csv' | 'plan'
           hash: string | null
           note: string | null
+          target_quantity: number | null
+          target_amount: number | null
           created_at: string
         }
         Insert: {
@@ -518,6 +520,9 @@ export type Database = {
     Functions: {
       // Wochenrückblick (Mo–So), ohne Datum die laufende Woche
       week_recap: { Args: { p_week_start?: string }; Returns: Json }
+      // Depot: Stand der Bank als Anker setzen, Wertpapierkäufe aus dem Giro-Export zuordnen
+      fin_depot_snapshot: { Args: { p_holding: string; p_quantity: number; p_invested: number; p_day: string }; Returns: undefined }
+      fin_link_giro_buys: { Args: { p_owner: string }; Returns: number }
     }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }
