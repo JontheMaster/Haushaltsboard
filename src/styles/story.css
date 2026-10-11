@@ -1,0 +1,484 @@
+/* ───────── Wochenrückblick als Story (11.10.2026, wie Spotify Wrapped) ───────── */
+
+.hb-story {
+  --tone: var(--accent);
+  --tone-soft: var(--accent-soft);
+  --tone-ink: var(--accent);
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background: radial-gradient(120% 80% at 50% 0%, var(--tone-soft), var(--surface) 70%);
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.hb-story.is-person-a {
+  --tone: var(--person-a);
+  --tone-soft: var(--person-a-soft);
+  --tone-ink: var(--person-a-ink);
+}
+.hb-story.is-person-b {
+  --tone: var(--person-b);
+  --tone-soft: var(--person-b-soft);
+  --tone-ink: var(--person-b-ink);
+}
+.hb-story.is-success {
+  --tone: var(--success);
+  --tone-soft: var(--success-soft);
+  --tone-ink: var(--success);
+}
+.hb-story.is-plain {
+  background: var(--surface);
+  user-select: auto;
+}
+.hb-story-top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: calc(var(--space-3) + env(safe-area-inset-top)) var(--space-4) 0;
+}
+/* Fortschritt wie bei Stories: ein Strich pro Karte, der aktuelle füllt sich */
+.hb-story-progress {
+  display: flex;
+  gap: 6px;
+}
+.hb-story-seg {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.hb-story-seg-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tone);
+}
+.hb-story-seg-fill.is-done {
+  width: 100%;
+}
+.hb-story-seg-fill.is-active {
+  animation: hb-story-fill linear forwards;
+}
+@keyframes hb-story-fill {
+  to {
+    width: 100%;
+  }
+}
+.hb-story-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.hb-story-bar .hb-icon-btn:disabled {
+  opacity: 0.3;
+}
+.hb-story-week {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink-muted);
+}
+.hb-story-slide {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--space-4) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  cursor: pointer;
+}
+.hb-story-slide.is-overview {
+  overflow-y: auto;
+  cursor: auto;
+  padding-top: var(--space-2);
+}
+.hb-story-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.hb-story-again {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-4);
+}
+.hb-story-center,
+.hb-story-stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 900px;
+  min-height: 0;
+  margin: 0 auto;
+}
+.hb-story-center {
+  align-items: center;
+  justify-content: safe center;
+  text-align: center;
+}
+/* „safe“: ist der Inhalt höher als der Platz (Handy), beginnt er oben statt oben abgeschnitten zu werden */
+.hb-story-stack {
+  justify-content: safe center;
+}
+.hb-story-kicker {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tone-ink);
+}
+.hb-story-title {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 4.2vw, 40px);
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hb-story-sub {
+  font-size: 17px;
+  color: var(--ink-muted);
+}
+.hb-story-sub b {
+  color: var(--ink);
+}
+.hb-story-huge {
+  font-family: var(--font-display);
+  font-size: clamp(120px, 24vw, 220px);
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: var(--tone);
+}
+.hb-story-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--tone);
+  font-variant-numeric: tabular-nums;
+}
+.hb-story-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  font-size: 16px;
+  font-weight: 650;
+}
+.hb-story-trend.is-up {
+  color: var(--success);
+}
+.hb-story-trend.is-down {
+  color: var(--ink-muted);
+}
+
+/* Elemente kommen nacheinander herein (--i = Reihenfolge) */
+.hb-story-in {
+  animation: hb-story-in 0.6s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 140ms);
+}
+.hb-story-pop {
+  animation: hb-story-pop 0.55s var(--ease-spring) both;
+  animation-delay: calc(var(--i, 0) * 160ms + 150ms);
+}
+@keyframes hb-story-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@keyframes hb-story-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.85);
+  }
+}
+
+/* Duell: zwei Säulen wachsen, die Krone springt auf den Sieger */
+.hb-story-duel {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(32px, 8vw, 96px);
+  height: min(46vh, 360px);
+  margin: var(--space-2) 0;
+}
+.hb-story-fighter {
+  --tone: var(--ink-muted);
+  --tone-soft: var(--surface-sunken);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  height: 100%;
+  width: clamp(84px, 14vw, 120px);
+  animation: hb-story-in 0.6s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 140ms);
+}
+.hb-story-fighter.hb-person-a {
+  --tone: var(--person-a);
+  --tone-soft: var(--person-a-soft);
+}
+.hb-story-fighter.hb-person-b {
+  --tone: var(--person-b);
+  --tone-soft: var(--person-b-soft);
+}
+.hb-story-crown {
+  height: 40px;
+  color: var(--warning);
+}
+.hb-story-fighter.is-winner .hb-story-crown .hb-icon {
+  animation: hb-story-crown 0.7s var(--ease-spring) 1.9s both;
+}
+@keyframes hb-story-crown {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) rotate(-25deg) scale(0.4);
+  }
+}
+.hb-story-pillar {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  width: 100%;
+  min-height: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-sm);
+  background: color-mix(in srgb, var(--tone-soft) 60%, transparent);
+  overflow: hidden;
+}
+.hb-story-pillar-fill {
+  width: 100%;
+  height: var(--h);
+  border-radius: inherit;
+  background: var(--tone);
+  transform-origin: bottom;
+  animation: hb-story-grow 1.4s var(--ease-out) 0.5s both;
+}
+@keyframes hb-story-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+.hb-story-score {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--ink);
+}
+.hb-story-avatar {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--tone);
+  color: var(--surface-raised);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+}
+.hb-story-name {
+  font-weight: 700;
+  color: var(--ink);
+}
+.hb-story-fighter.is-winner .hb-story-avatar {
+  box-shadow: 0 0 0 4px var(--surface), 0 0 0 7px var(--warning);
+}
+
+/* Auszeichnungen */
+.hb-story-awards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-3);
+}
+.hb-story-award {
+  --tone: var(--ink-muted);
+  --tone-soft: var(--surface-sunken);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+}
+.hb-story-award.hb-person-a {
+  --tone: var(--person-a);
+  --tone-soft: var(--person-a-soft);
+}
+.hb-story-award.hb-person-b {
+  --tone: var(--person-b);
+  --tone-soft: var(--person-b-soft);
+}
+.hb-story-award-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: var(--tone-soft);
+  color: var(--tone);
+}
+.hb-story-award-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hb-story-award-text {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+.hb-story-award-text b {
+  color: var(--tone);
+}
+
+/* Gekocht: Bilder der Gerichte als Collage */
+.hb-story-collage {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+.hb-story-dish {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+}
+.hb-story-dish:nth-child(odd) {
+  rotate: -1.5deg;
+}
+.hb-story-dish:nth-child(even) {
+  rotate: 1.5deg;
+}
+.hb-story-dish-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+}
+.hb-story-dish figcaption {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-3);
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.hb-story-dish figcaption span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tone-ink);
+}
+
+/* Woche in Zahlen */
+.hb-story-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+.hb-story-number {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  color: var(--tone);
+}
+.hb-story-number .hb-story-num {
+  font-size: 44px;
+  line-height: 1.1;
+}
+.hb-story-number-label {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+/* Ausblick */
+.hb-story-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.hb-story-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 52px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  font-size: 17px;
+  color: var(--ink);
+}
+.hb-story-row .hb-icon {
+  flex: none;
+  color: var(--ink-muted);
+}
+.hb-story-row.hb-person-a .hb-icon {
+  color: var(--person-a);
+}
+.hb-story-row.hb-person-b .hb-icon {
+  color: var(--person-b);
+}
+.hb-story-row.is-birthday .hb-icon {
+  color: var(--urgent);
+}
+.hb-story-row.is-meal .hb-icon {
+  color: var(--accent);
+}
+.hb-story-row-day {
+  flex: none;
+  width: 52px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-story-in,
+  .hb-story-pop,
+  .hb-story-fighter,
+  .hb-story-pillar-fill,
+  .hb-story-fighter.is-winner .hb-story-crown .hb-icon {
+    animation: none;
+  }
+}
+
+/* Handy: kompakter, damit eine Karte meist ohne Scrollen passt */
+@media (max-width: 700px) {
+  .hb-story-slide {
+    padding: var(--space-3) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+  }
+  .hb-story-number {
+    padding: var(--space-3);
+  }
+  .hb-story-number .hb-story-num {
+    font-size: 34px;
+  }
+  .hb-story-award {
+    padding: var(--space-3);
+  }
+  .hb-story-duel {
+    height: min(42vh, 300px);
+  }
+}

@@ -1,19 +1,14 @@
-import { CalendarCheck, ChevronLeft, ChevronRight, Image, ListChecks, Sparkles, Trophy, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
+import { CalendarCheck, Image, ListChecks, Sparkles, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from '../../components/Icon'
 import { CountUp } from '../../components/CountUp'
 import { PersonChip } from '../../components/PersonChip'
 import { useMembers } from '../../lib/members'
-import { addDays, dayLabel, mondayOf, useToday } from '../../lib/time'
+import { dayLabel, mondayOf, useToday } from '../../lib/time'
 import { closeRecap, useRecap, useRecapOpen, type Recap } from './recapStore'
+import { RecapStory } from './RecapStory'
 
 const DAY_NAMES: Record<string, string> = { Mo: 'Montag', Di: 'Dienstag', Mi: 'Mittwoch', Do: 'Donnerstag', Fr: 'Freitag', Sa: 'Samstag', So: 'Sonntag' }
-
-/** „29. Sep. – 5. Okt.“ */
-function range(from: string, to: string): string {
-  const fmt = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short', timeZone: 'UTC' })
-  return `${fmt.format(new Date(`${from}T12:00:00Z`))} – ${fmt.format(new Date(`${to}T12:00:00Z`))}`
-}
 
 /** Wochenrückblick als Vollbild (Wand und Handy); mit Pfeilen in frühere Wochen blättern */
 export function WeekRecap() {
@@ -41,33 +36,18 @@ function RecapScreen() {
 
   return (
     <div className="hb-recap" role="dialog" aria-modal="true" aria-label="Wochenrückblick">
-      <header className="hb-recap-head">
-        <span className="hb-tile-icon">
-          <Icon icon={Trophy} size={20} />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <h2 className="truncate font-display text-title text-ink">Eure Woche</h2>
-          <span className="text-label text-ink-muted">{range(week, addDays(week, 6))}</span>
+      {recap === null || recap === 'error' ? (
+        <div className="hb-recap-body justify-center text-center">
+          <p className="text-body text-ink-muted">
+            {recap === null ? 'Einen Moment …' : 'Der Rückblick lässt sich gerade nicht laden. Probier es gleich noch mal.'}
+          </p>
+          <button type="button" className="hb-icon-btn self-center" aria-label="Schließen" onClick={closeRecap}>
+            <Icon icon={X} size={22} />
+          </button>
         </div>
-        <button type="button" className="hb-icon-btn" aria-label="Woche davor" onClick={() => setWeek(addDays(week, -7))}>
-          <Icon icon={ChevronLeft} size={22} />
-        </button>
-        <button type="button" className="hb-icon-btn" aria-label="Woche danach" disabled={week >= thisWeek} onClick={() => setWeek(addDays(week, 7))}>
-          <Icon icon={ChevronRight} size={22} />
-        </button>
-        <button type="button" className="hb-icon-btn" aria-label="Schließen" onClick={closeRecap}>
-          <Icon icon={X} size={22} />
-        </button>
-      </header>
-      <div className="hb-recap-body">
-        {recap === null ? (
-          <p className="text-body text-ink-muted">Einen Moment …</p>
-        ) : recap === 'error' ? (
-          <p className="text-body text-ink-muted">Der Rückblick lässt sich gerade nicht laden. Probier es gleich noch mal.</p>
-        ) : (
-          <RecapContent recap={recap} />
-        )}
-      </div>
+      ) : (
+        <RecapStory recap={recap} week={week} thisWeek={thisWeek} today={today} onWeek={setWeek} />
+      )}
     </div>
   )
 }
@@ -84,7 +64,8 @@ function Card({ icon, title, children, className = '' }: { icon: LucideIcon; tit
   )
 }
 
-function RecapContent({ recap }: { recap: Recap }) {
+/** Übersicht mit allen Listen (letzte Karte der Story) */
+export function RecapContent({ recap }: { recap: Recap }) {
   const { people, byId, personKey } = useMembers()
   const done = recap.todos.done + recap.chores.done
   const diff = done - recap.prev_done

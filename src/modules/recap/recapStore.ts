@@ -59,6 +59,14 @@ export type Recap = {
   chores: { done: number; items: { title: string; n: number }[] }
   /** erledigt pro Mitglied (Todos + Putzplan), „open“ = ohne Namen */
   by: Record<string, number>
+  /** pro Mitglied getrennt nach Todos und Putzplan */
+  by_kind?: Record<string, { todos: number; chores: number }>
+  /** früheste / späteste Uhrzeit beim Abhaken (Nacht bis 4 Uhr zählt als spät) */
+  earliest?: { member: string; time: string } | null
+  latest?: { member: string; time: string } | null
+  /** fertige Timer (z. B. Wäsche-Runden) und Heimwege mit dem Auto */
+  timers?: { label: string; n: number }[]
+  drives?: { n: number; km: number }
   best_day: { day: string; n: number } | null
   meals: { title: string; day: string; recipe_id: string | null }[]
   open: number
