@@ -80,6 +80,68 @@ export type Database = {
           Rel<'chore_tasks_rule_id_fkey', 'rule_id', 'chore_rules'>,
         ]
       }
+      fin_profiles: {
+        Row: { member: string; enabled: boolean; joint_accounts: string[]; created_at: string }
+        Insert: { member: string; enabled?: boolean; joint_accounts?: string[] }
+        Update: { enabled?: boolean; joint_accounts?: string[] }
+        Relationships: [Rel<'fin_profiles_member_fkey', 'member', 'members'>]
+      }
+      fin_categories: {
+        Row: { id: string; name: string; icon: string; color: string; kind: 'expense' | 'income' | 'transfer'; household_default: boolean; monthly_budget: number | null; sort: number }
+        Insert: { id: string; name: string; icon: string; color: string; kind?: 'expense' | 'income' | 'transfer'; household_default?: boolean; monthly_budget?: number | null; sort?: number }
+        Update: { monthly_budget?: number | null; household_default?: boolean }
+        Relationships: []
+      }
+      fin_rules: {
+        Row: {
+          id: string
+          pattern: string
+          field: 'counterparty' | 'purpose' | 'kind'
+          category: string
+          household: boolean | null
+          owner: string | null
+          hits: number
+          created_from: 'seed' | 'manual'
+          created_at: string
+        }
+        Insert: { pattern: string; field?: 'counterparty' | 'purpose' | 'kind'; category: string; household?: boolean | null; owner: string; created_from?: 'manual' }
+        Update: { pattern?: string; category?: string; household?: boolean | null }
+        Relationships: [Rel<'fin_rules_category_fkey', 'category', 'fin_categories'>, Rel<'fin_rules_owner_fkey', 'owner', 'members'>]
+      }
+      fin_transactions: {
+        Row: {
+          id: string
+          owner: string
+          booked_on: string
+          booked_at: string | null
+          counterparty: string
+          purpose: string
+          kind: string
+          amount: number
+          currency: string
+          category: string
+          household: boolean
+          needs_review: boolean
+          source: 'csv' | 'applepay'
+          status: 'pending' | 'booked'
+          wallet: string | null
+          card: string | null
+          account: string | null
+          hash: string
+          linked_id: string | null
+          split: Json | null
+          created_at: string
+        }
+        Insert: { owner: string; booked_on: string; counterparty: string; amount: number; hash: string; category?: string }
+        Update: { category?: string; household?: boolean; needs_review?: boolean }
+        Relationships: [Rel<'fin_transactions_owner_fkey', 'owner', 'members'>, Rel<'fin_transactions_category_fkey', 'category', 'fin_categories'>]
+      }
+      fin_imports: {
+        Row: { id: string; owner: string; file_name: string | null; account: string | null; from: string | null; to: string | null; rows_total: number; rows_new: number; rows_duplicate: number; at: string }
+        Insert: { owner: string }
+        Update: Record<string, never>
+        Relationships: [Rel<'fin_imports_owner_fkey', 'owner', 'members'>]
+      }
       drives: {
         Row: {
           arrived_at: string | null

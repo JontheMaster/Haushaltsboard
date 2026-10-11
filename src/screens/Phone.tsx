@@ -1,4 +1,4 @@
-import { CalendarRange, House, LayoutGrid, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { Wallet, CalendarRange, House, LayoutGrid, ListChecks, Plus, Settings2, ShoppingCart, Sparkles, TrainFront, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 import { CookMode } from '../modules/meals/CookMode'
 import { Celebration } from '../components/Celebration'
 import { WeekRecap } from '../modules/recap/WeekRecap'
@@ -29,8 +29,12 @@ import { AllModules } from './AllModules'
 import { PhoneLayoutEditor } from './PhoneLayoutEditor'
 import { useEnabledModules, useHiddenHeaders, useLayout } from '../modules/useModules'
 import { useTapFromUrl } from '../modules/nfc/nfcStore'
+import { FinanceTab } from '../modules/finance/FinanceTab'
+import { useFinProfile } from '../modules/finance/finStore'
+import { useMembers } from '../lib/members'
+import { useSettings } from '../lib/settings'
 
-type Tab = 'start' | 'woche' | 'todos' | 'einkauf' | 'essen'
+type Tab = 'start' | 'woche' | 'todos' | 'einkauf' | 'essen' | 'finanzen'
 
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'start', label: 'Start', icon: House },
@@ -38,14 +42,15 @@ const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'todos', label: 'Todos', icon: ListChecks },
   { id: 'einkauf', label: 'Einkauf', icon: ShoppingCart },
   { id: 'essen', label: 'Essen', icon: UtensilsCrossed },
+  { id: 'finanzen', label: 'Finanzen', icon: Wallet },
 ]
 // Reiter, die zu einem abschaltbaren Modul gehören
-const TAB_MODULE: Partial<Record<Tab, string>> = { todos: 'todos', einkauf: 'einkauf', essen: 'essensplan' }
+const TAB_MODULE: Partial<Record<Tab, string>> = { todos: 'todos', einkauf: 'einkauf', essen: 'essensplan', finanzen: 'finanzen' }
 
 function savedTab(): Tab {
   try {
     const t = localStorage.getItem('hb-tab')
-    return t === 'woche' || t === 'todos' || t === 'einkauf' || t === 'essen' ? t : 'start'
+    return t === 'woche' || t === 'todos' || t === 'einkauf' || t === 'essen' || t === 'finanzen' ? t : 'start'
   } catch {
     return 'start'
   }
@@ -72,7 +77,12 @@ export function Phone({ weather }: { weather: Weather | null }) {
 
   // Ausgeschaltete Module verlieren ihren Reiter
   const enabled = useEnabledModules()
+  // Finanzen: nur wer es für sich eingeschaltet hat, nie im Besuchsmodus
+  const { me } = useMembers()
+  const { profile: finProfile } = useFinProfile(me.id)
+  const { settings } = useSettings()
   const tabs = TABS.filter((t) => {
+    if (t.id === 'finanzen') return enabled?.has('finanzen') === true && finProfile?.enabled === true && !settings?.visit_mode
     const mod = TAB_MODULE[t.id]
     // Essensplan ist neu: Reiter erst, wenn die Module geladen sind und es an ist
     return !mod || (mod === 'essensplan' ? enabled?.has(mod) === true : enabled?.has(mod) !== false)
@@ -155,11 +165,12 @@ export function Phone({ weather }: { weather: Weather | null }) {
           )}
           {tab === 'einkauf' && <ShoppingTile size="m" delay={0} />}
           {tab === 'essen' && <MealsTab showToast={showToast} />}
+          {tab === 'finanzen' && <FinanceTab showToast={showToast} />}
             </>
           )}
         </main>
 
-        {tab !== 'einkauf' && tab !== 'essen' && !page && enabled?.has('todos') !== false && (
+        {tab !== 'einkauf' && tab !== 'essen' && tab !== 'finanzen' && !page && enabled?.has('todos') !== false && (
           <button type="button" className="hb-fab" aria-label="Todo hinzufügen" onClick={() => setSheet({})}>
             <Icon icon={Plus} size={28} />
           </button>

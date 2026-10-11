@@ -1,5 +1,6 @@
-import { Bell, CalendarDays, CalendarRange, Clock, CloudSun, Coins, Heart, Image, ListChecks, Mic, Moon, Music, Nfc, Quote, ShoppingCart, Smartphone, Sparkles, Sunrise, TrainFront, Trophy, UtensilsCrossed, Wifi, Zap } from 'lucide-react'
+import { Wallet, Bell, CalendarDays, CalendarRange, Clock, CloudSun, Coins, Heart, Image, ListChecks, Mic, Moon, Music, Nfc, Quote, ShoppingCart, Smartphone, Sparkles, Sunrise, TrainFront, Trophy, UtensilsCrossed, Wifi, Zap } from 'lucide-react'
 import { WidgetSettings } from './widget/WidgetSettings'
+import { FinanceSettings } from './finance/FinanceSettings'
 import { NfcSettings } from './nfc/NfcSettings'
 import { NfcHeader } from './nfc/NfcHeader'
 import { DriveTile, useDriveShow } from './nfc/DriveHeader'
@@ -61,6 +62,9 @@ export const MODULES: ModuleDef[] = [
   // NFC-Tags: Sticker lösen per iPhone-Kurzbefehl Aktionen aus (Edge Function `nfc`); Verwaltung nur am Handy.
   // Kachel nur zeitweise: Heimweg mit dem Auto liegt an der Wand vorn im Stapel auf dem Wetter (wischen = Wetter)
   { id: 'nfc', title: 'NFC-Tags', description: 'Sticker antippen: Todo anlegen, abhaken, einkaufen und mehr', icon: Nfc, phase: 5, sizes: ['s'], Tile: DriveTile, Settings: NfcSettings, Header: NfcHeader, stackOn: 'uhr-wetter.kurve', useShow: useDriveShow },
+  // Finanzen (docs/finanzen-modul.md): jede Person schaltet es in den Einstellungen für sich ein, dann Reiter am Handy.
+  // Keine Kachel; an der Wand nie einzelne Buchungen, im Besuchsmodus ganz weg
+  { id: 'finanzen', title: 'Finanzen', description: 'Ausgaben aus dem ING-Export, eigene privat, Haushalt gemeinsam', icon: Wallet, phase: 5, sizes: [], Settings: FinanceSettings },
   // Handy-Widget (Scriptable am iPhone, KWGT an Android): nur Einrichtung, kein Schalter; Daten über Edge Function `widget`
   { id: 'widget', title: 'Handy-Widget', description: 'Termine, Todos und Essen auf dem Home-Bildschirm', icon: Smartphone, phase: 5, sizes: [], Settings: WidgetSettings, toggle: false },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary , phoneTiles: [{ id: 'foto', title: 'Foto des Tages', description: 'Jeden Tag ein Bild aus eurer Fotobibliothek', icon: Image, Tile: PhotoOfDayTile }] },
