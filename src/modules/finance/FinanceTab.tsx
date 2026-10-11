@@ -7,6 +7,7 @@ import { Sheet } from '../../components/Sheet'
 import { Toggle } from '../../components/Toggle'
 import { useMembers } from '../../lib/members'
 import { createToken, revokeToken, useMyTokens } from '../nfc/nfcStore'
+import { DepotView } from './DepotView'
 import {
   assignTx,
   euro,
@@ -45,9 +46,48 @@ export function CategoryDot({ cat, size = 32 }: { cat: FinCategory | undefined; 
 export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
   const { me } = useMembers()
   const [view, setView] = useState<'start' | 'review' | 'guide'>('start')
+  const [area, setArea] = useState<'konto' | 'depot'>(() => {
+    try {
+      return localStorage.getItem('hb-fin-area') === 'depot' ? 'depot' : 'konto'
+    } catch {
+      return 'konto'
+    }
+  })
   if (view === 'review') return <ReviewView onBack={() => setView('start')} showToast={showToast} />
   if (view === 'guide') return <GuideView onBack={() => setView('start')} showToast={showToast} />
-  return <StartView key={me.id} onReview={() => setView('review')} onGuide={() => setView('guide')} showToast={showToast} />
+  const choose = (a: 'konto' | 'depot') => {
+    setArea(a)
+    try {
+      localStorage.setItem('hb-fin-area', a)
+    } catch {
+      // nur Komfort
+    }
+  }
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <h2 className="flex flex-1 items-center gap-2 font-display text-title text-ink">
+          <span className="hb-tile-icon">
+            <Icon icon={Wallet} size={20} />
+          </span>
+          Finanzen
+        </h2>
+        <div className="hb-seg" role="group" aria-label="Bereich">
+          <button type="button" aria-pressed={area === 'konto'} className={area === 'konto' ? 'is-on' : ''} onClick={() => choose('konto')}>
+            Konto
+          </button>
+          <button type="button" aria-pressed={area === 'depot'} className={area === 'depot' ? 'is-on' : ''} onClick={() => choose('depot')}>
+            Depot
+          </button>
+        </div>
+      </div>
+      {area === 'depot' ? (
+        <DepotView showToast={showToast} />
+      ) : (
+        <StartView key={me.id} onReview={() => setView('review')} onGuide={() => setView('guide')} showToast={showToast} />
+      )}
+    </div>
+  )
 }
 
 function StartView({ onReview, onGuide, showToast }: { onReview: () => void; onGuide: () => void; showToast: (m: string) => void }) {
@@ -77,13 +117,6 @@ function StartView({ onReview, onGuide, showToast }: { onReview: () => void; onG
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="flex items-center gap-2 font-display text-title text-ink">
-        <span className="hb-tile-icon">
-          <Icon icon={Wallet} size={20} />
-        </span>
-        Finanzen
-      </h2>
-
       <section className="hb-tile hb-tile-static gap-3">
         <div className="flex flex-col gap-1">
           <h3 className="font-semibold text-ink">Umsätze importieren</h3>

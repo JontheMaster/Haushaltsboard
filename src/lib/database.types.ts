@@ -136,6 +136,77 @@ export type Database = {
         Update: { category?: string; household?: boolean; needs_review?: boolean }
         Relationships: [Rel<'fin_transactions_owner_fkey', 'owner', 'members'>, Rel<'fin_transactions_category_fkey', 'category', 'fin_categories'>]
       }
+      fin_holdings: {
+        Row: {
+          id: string
+          owner: string
+          isin: string
+          name: string
+          symbol: string | null
+          quantity: number
+          invested: number
+          avg_buy_price: number | null
+          currency: string
+          household: boolean
+          active: boolean
+          created_at: string
+        }
+        Insert: { owner: string; isin: string; name: string; symbol?: string | null; household?: boolean; currency?: string; active?: boolean }
+        Update: { name?: string; symbol?: string | null; household?: boolean; active?: boolean }
+        Relationships: [Rel<'fin_holdings_owner_fkey', 'owner', 'members'>]
+      }
+      fin_holding_tx: {
+        Row: {
+          id: string
+          holding: string
+          date: string
+          type: 'buy' | 'sell' | 'savings_plan' | 'dividend' | 'correction'
+          quantity: number
+          price: number | null
+          amount: number
+          source: 'manual' | 'csv' | 'plan'
+          hash: string | null
+          note: string | null
+          created_at: string
+        }
+        Insert: {
+          holding: string
+          date: string
+          type: 'buy' | 'sell' | 'savings_plan' | 'dividend' | 'correction'
+          quantity?: number
+          price?: number | null
+          amount?: number
+          source?: 'manual' | 'csv' | 'plan'
+          hash?: string | null
+          note?: string | null
+        }
+        Update: { date?: string; quantity?: number; price?: number | null; amount?: number; note?: string | null }
+        Relationships: [Rel<'fin_holding_tx_holding_fkey', 'holding', 'fin_holdings'>]
+      }
+      fin_savings_plans: {
+        Row: { id: string; holding: string; amount: number; day_of_month: number; active: boolean; last_month: string | null; created_at: string }
+        Insert: { holding: string; amount: number; day_of_month: number; active?: boolean }
+        Update: { amount?: number; day_of_month?: number; active?: boolean }
+        Relationships: [Rel<'fin_savings_plans_holding_fkey', 'holding', 'fin_holdings'>]
+      }
+      fin_quotes: {
+        Row: { symbol: string; price: number; currency: string; at: string; fetched_at: string; source: string }
+        Insert: { symbol: string; price: number; at: string }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      fin_quotes_daily: {
+        Row: { symbol: string; day: string; close: number }
+        Insert: { symbol: string; day: string; close: number }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      fin_goals: {
+        Row: { id: string; owner: string; name: string; target_amount: number; source: 'depot' | 'konto' | 'beides'; deadline: string | null; household: boolean; created_at: string }
+        Insert: { owner: string; name: string; target_amount: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean }
+        Update: { name?: string; target_amount?: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean }
+        Relationships: [Rel<'fin_goals_owner_fkey', 'owner', 'members'>]
+      }
       fin_imports: {
         Row: { id: string; owner: string; file_name: string | null; account: string | null; from: string | null; to: string | null; rows_total: number; rows_new: number; rows_duplicate: number; at: string }
         Insert: { owner: string }

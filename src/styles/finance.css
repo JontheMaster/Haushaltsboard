@@ -191,3 +191,67 @@ li:first-child > .hb-fin-row {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* ───────── Depot (Stufe 5) ───────── */
+
+/* Eingabefeld wie im Todo-Formular */
+.hb-input {
+  height: 48px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+.hb-input:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-depot-value {
+  font-family: var(--font-display);
+  font-size: 36px;
+  line-height: 1.1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+/* Gewinn grün, Verlust rot, immer mit Vorzeichen */
+.hb-depot-delta {
+  font-size: 14px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+.hb-depot-delta.is-up {
+  color: var(--success);
+}
+.hb-depot-delta.is-down {
+  color: var(--urgent);
+}
+.hb-depot-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--surface-sunken);
+}
+li.hb-depot-row:first-child {
+  border-top: 0;
+}
+.hb-depot-share {
+  display: block;
+  height: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+}
+.hb-depot-share span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width var(--dur-slow) var(--ease-out);
+}
