@@ -1,5 +1,5 @@
-import { AlertCircle, BarChart3, CalendarRange, ChevronLeft, ChevronRight, Clock, Store, Target } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { AlertCircle, BarChart3, LineChart, CalendarRange, ChevronLeft, ChevronRight, Clock, Store, Target } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { Sheet } from '../../components/Sheet'
@@ -9,6 +9,8 @@ import { useSettings } from '../../lib/settings'
 import { supabase } from '../../lib/supabase'
 import type { TileProps } from '../types'
 import { euro, iconOf, useFinProfile } from './finStore'
+import { BalanceChart, balanceSeries } from './BalanceChart'
+import { budgetHints, trends, type BudgetHint } from './budgetHints'
 
 export type OverviewCategory = { id: string; name: string; icon: string; color: string; spent: number; avg3: number; budget: number | null }
 export type Overview = {
@@ -24,6 +26,11 @@ export type Overview = {
   heatmap: { dow: number; hour: number; n: number; sum: number }[]
   heatmap_n: number
   merchants: { name: string; n: number; avg: number; sum: number }[]
+  /** pro Kategorie 6 volle Monate und 8 volle Wochen (Vorschläge, Tendenzen) */
+  history?: { id: string; months: number[]; weeks: number[] }[]
+  first_month?: string | null
+  /** Summe aller Buchungen pro Tag (Kontoverlauf; am Tablet leer) */
+  daily?: [string, number][]
 }
 
 /** Auswertung aus der RPC fin_overview (eigene + Haushalt; das Tablet bekommt immer nur Haushalt) */
@@ -140,9 +147,12 @@ export function BudgetRing({ value, size = 76 }: { value: number; size?: number 
   )
 }
 
-/** Budgets: Stand und Prognose bis Monatsende */
-export function BudgetCard({ o, onPick, max }: { o: Overview; onPick?: (c: OverviewCategory) => void; max?: number }) {
+/** Budgets: Stand und Prognose bis Monatsende; am Handy dazu Vorschläge aus den letzten Monaten (übernehmen mit einem Tipp) */
+export function BudgetCard({ o, onPick, onApply, max }: { o: Overview; onPick?: (c: OverviewCategory) => void; onApply?: (c: OverviewCategory, value: number) => void; max?: number }) {
   const list = o.categories.filter((c) => c.budget).slice(0, max)
+  const hints = onApply ? budgetHints(o) : []
+  const adjust = hints.filter((h) => h.kind !== 'new')
+  const fresh = hints.filter((h) => h.kind === 'new').slice(0, list.length ? 3 : 5)
   return (
     <section className="hb-tile hb-tile-static gap-3">
       <h3 className="flex items-center gap-2 font-semibold text-ink">
@@ -150,7 +160,7 @@ export function BudgetCard({ o, onPick, max }: { o: Overview; onPick?: (c: Overv
         Budgets
       </h3>
       {list.length === 0 ? (
-        <p className="text-label text-ink-muted">Noch kein Budget. {onPick ? 'Tipp im Monat auf eine Kategorie, um eins festzulegen.' : 'Leg sie am Handy fest.'}</p>
+        !fresh.length && <p className="text-label text-ink-muted">Noch kein Budget. {onPick ? 'Tipp im Monat auf eine Kategorie, um eins festzulegen.' : 'Leg sie am Handy fest.'}</p>
       ) : (
         <div className="hb-goal-grid">
           {list.map((c) => {
@@ -169,13 +179,44 @@ export function BudgetCard({ o, onPick, max }: { o: Overview; onPick?: (c: Overv
           })}
         </div>
       )}
+      {onApply && adjust.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <span className="text-label font-semibold text-ink-muted">Anpassen?</span>
+          {adjust.map((h) => (
+            <HintRow key={h.cat.id} h={h} label={`${h.kind === 'raise' ? 'Erhöhen' : 'Senken'} auf ${euro(h.value)}`} onApply={onApply} />
+          ))}
+        </div>
+      )}
+      {onApply && fresh.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <span className="text-label font-semibold text-ink-muted">{list.length ? 'Weitere Vorschläge' : 'Vorschläge aus euren letzten Monaten'}</span>
+          {fresh.map((h) => (
+            <HintRow key={h.cat.id} h={h} label={`${euro(h.value)} übernehmen`} onApply={onApply} />
+          ))}
+        </div>
+      )}
     </section>
   )
 }
 
+function HintRow({ h, label, onApply }: { h: BudgetHint; label: string; onApply: (c: OverviewCategory, value: number) => void }) {
+  return (
+    <div className="hb-fin-hint">
+      <span className="hb-fin-swatch" style={catVar(h.cat)} />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate font-semibold text-ink">{h.cat.name}</span>
+        <span className="text-label text-ink-muted">{h.text}</span>
+      </span>
+      <Button onClick={() => onApply(h.cat, h.value)}>
+        {label}
+      </Button>
+    </div>
+  )
+}
+
 /** Auffällig: Kategorien deutlich über ihrem Schnitt, Budgets ab 90 % */
-export function unusual(o: Overview): { tone: 'urgent' | 'warning'; title: string; text: string }[] {
-  const out: { tone: 'urgent' | 'warning'; title: string; text: string }[] = []
+export function unusual(o: Overview): { tone: 'urgent' | 'warning' | 'info'; title: string; text: string }[] {
+  const out: { tone: 'urgent' | 'warning' | 'info'; title: string; text: string }[] = []
   // nur was schon jetzt (ohne Hochrechnung) deutlich über dem Schnitt liegt; Einmalzahlungen würden sonst übertrieben
   for (const c of o.categories) {
     const d = pct(c.spent, c.avg3)
@@ -186,7 +227,14 @@ export function unusual(o: Overview): { tone: 'urgent' | 'warning'; title: strin
     const v = (c.spent / c.budget) * 100
     if (v >= 90) out.push({ tone: v > 100 ? 'urgent' : 'warning', title: `${c.name} bei ${Math.round(v)} %`, text: `Budget ${euro(c.budget)}, Prognose bis Monatsende ${euro(forecast(o, c.spent))}` })
   }
-  return out.slice(0, 4)
+  // Tendenz über Wochen (letzte 4 gegen die 4 davor)
+  for (const t of trends(o))
+    out.push({
+      tone: t.dir === 'up' ? 'warning' : 'info',
+      title: `${t.cat.name} ${t.dir === 'up' ? 'steigt' : 'sinkt'}`,
+      text: `Letzte 4 Wochen ${euro(t.recent)}, die 4 davor ${euro(t.before)}`,
+    })
+  return out.slice(0, 5)
 }
 
 export function UnusualCard({ o }: { o: Overview }) {
@@ -208,21 +256,96 @@ export function UnusualCard({ o }: { o: Overview }) {
   )
 }
 
-/** Verlauf: 12 Monate Ausgaben (Balken) und Einnahmen (Punkt), Saldo des gewählten Monats */
+
+/** Verlauf: 12 Monate Ausgaben (Balken) und Einnahmen (Punkt) oder Kontoverlauf als Kurve (Umschalter, nur am Handy) */
 export function MonthsCard({ o }: { o: Overview }) {
+  const canBalance = (o.daily?.length ?? 0) > 1
+  const [mode, setMode] = useState<'monate' | 'konto'>(() => {
+    try {
+      return localStorage.getItem('hb-fin-verlauf') === 'konto' ? 'konto' : 'monate'
+    } catch {
+      return 'monate'
+    }
+  })
+  const choose = (m: 'monate' | 'konto') => {
+    setMode(m)
+    try {
+      localStorage.setItem('hb-fin-verlauf', m)
+    } catch {
+      // nur Komfort
+    }
+  }
+  const showBalance = mode === 'konto' && canBalance
+  return (
+    <section className="hb-tile hb-tile-static gap-3">
+      <div className="flex items-center gap-2">
+        <h3 className="flex flex-1 items-center gap-2 font-semibold text-ink">
+          <Icon icon={showBalance ? LineChart : BarChart3} size={18} />
+          Verlauf
+        </h3>
+        {canBalance && (
+          <div className="hb-seg is-small" role="group" aria-label="Ansicht">
+            <button type="button" aria-pressed={!showBalance} className={!showBalance ? 'is-on' : ''} onClick={() => choose('monate')}>
+              Monate
+            </button>
+            <button type="button" aria-pressed={showBalance} className={showBalance ? 'is-on' : ''} onClick={() => choose('konto')}>
+              Kontostand
+            </button>
+          </div>
+        )}
+      </div>
+      {showBalance ? <BalanceView o={o} /> : <MonthBars o={o} />}
+    </section>
+  )
+}
+
+/** Neuester Kontostand laut Bank (aus dem letzten CSV-Import, ein Wert pro Konto) */
+function useBalanceAnchor() {
+  const [anchor, setAnchor] = useState<{ amount: number; on: string } | null | undefined>(undefined)
+  useEffect(() => {
+    supabase
+      .from('fin_balances')
+      .select('amount, as_of')
+      .then(({ data }) => {
+        if (!data?.length) return setAnchor(null)
+        setAnchor({ amount: data.reduce((t, r) => t + Number(r.amount), 0), on: data.reduce((m, r) => (r.as_of > m ? r.as_of : m), data[0].as_of) })
+      })
+  }, [])
+  return anchor
+}
+
+function BalanceView({ o }: { o: Overview }) {
+  const anchor = useBalanceAnchor()
+  const today = new Date().toISOString().slice(0, 10)
+  const points = useMemo(() => (anchor === undefined ? [] : balanceSeries(o.daily ?? [], today, anchor)), [o.daily, today, anchor])
+  if (points.length < 2) return null
+  const last = points[points.length - 1].v
+  const day = (d: string, year = false) => new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', ...(year ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`))
+  const ago = points[Math.max(0, points.length - 31)].v
+  return (
+    <>
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <span className="hb-depot-value">{euro(last, !anchor)}</span>
+        <span className={`hb-depot-delta ${last - ago > 0 ? 'is-up' : last - ago < 0 ? 'is-down' : ''}`}>{euro(last - ago, true)} in 30 Tagen</span>
+      </div>
+      <span className="text-label text-ink-muted">
+        {anchor
+          ? `Kontostand jetzt · laut Bank am ${day(anchor.on)}${anchor.on < today ? ', seitdem mit Apple Pay gerechnet' : ''}`
+          : `Veränderung seit ${day(points[0].d, true)}. Lad einmal einen neuen Export hoch, dann steht hier der echte Kontostand.`}
+      </span>
+      <BalanceChart points={points} />
+    </>
+  )
+}
+
+function MonthBars({ o }: { o: Overview }) {
   const max = Math.max(1, ...o.months.flatMap((m) => [m.spent, m.income]))
   const label = (m: string) => new Intl.DateTimeFormat('de-DE', { month: 'narrow', timeZone: 'UTC' }).format(new Date(`${m}T12:00:00Z`))
   const withData = o.months.filter((m) => m.spent > 0 || m.income > 0)
   const avg = withData.length ? withData.reduce((s, m) => s + m.income - m.spent, 0) / withData.length : 0
   return (
-    <section className="hb-tile hb-tile-static gap-3">
-      <div className="flex items-baseline gap-2">
-        <h3 className="flex flex-1 items-center gap-2 font-semibold text-ink">
-          <Icon icon={BarChart3} size={18} />
-          Verlauf · 12 Monate
-        </h3>
-        <span className={`hb-depot-delta ${avg > 0 ? 'is-up' : avg < 0 ? 'is-down' : ''}`}>Ø Saldo {euro(avg, true)}</span>
-      </div>
+    <>
+      <span className={`hb-depot-delta ${avg > 0 ? 'is-up' : avg < 0 ? 'is-down' : ''}`}>12 Monate · Ø Saldo {euro(avg, true)}</span>
       <div className="hb-fin-months">
         {o.months.map((m, i) => (
           <div key={m.month} className={`hb-fin-month ${i === o.months.length - 1 ? 'is-now' : ''}`} title={`${monthName(m.month)}: Ausgaben ${euro(m.spent)}, Einnahmen ${euro(m.income)}`}>
@@ -235,7 +358,7 @@ export function MonthsCard({ o }: { o: Overview }) {
       <span className="text-label text-ink-muted">
         <span className="hb-fin-key is-out" /> Ausgaben <span className="hb-fin-key is-in" /> Einnahmen · Umbuchungen (z. B. Depot) zählen nicht
       </span>
-    </section>
+    </>
   )
 }
 
@@ -350,7 +473,15 @@ export function AnalysisSection({ showToast, onEmpty }: { showToast: (m: string)
   return (
     <>
       <MonthCard o={o} onMonth={setMonth} onPick={setBudget} />
-      <BudgetCard o={o} onPick={setBudget} />
+      <BudgetCard
+        o={o}
+        onPick={setBudget}
+        onApply={async (c, value) => {
+          const { error } = await supabase.from('fin_categories').update({ monthly_budget: value }).eq('id', c.id)
+          showToast(error ? 'Speichern hat nicht geklappt.' : `Budget ${c.name}: ${euro(value)} im Monat`)
+          reload()
+        }}
+      />
       <UnusualCard o={o} />
       <MonthsCard o={o} />
       <WhenCard o={o} />

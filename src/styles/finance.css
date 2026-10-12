@@ -691,3 +691,149 @@ li:first-child > .hb-fin-catrow {
 li:first-child > .hb-fin-month-head {
   margin-top: 0;
 }
+.hb-fin-note.is-info {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+.hb-fin-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--line);
+}
+/* Kontoverlauf */
+.hb-bal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hb-bal-plot {
+  position: relative;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+.hb-bal-plot svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.hb-bal-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.hb-bal-zero {
+  stroke: var(--ink-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.6;
+}
+.hb-bal-area {
+  animation: hb-bal-fade var(--dur-calm) var(--ease-out) both;
+}
+.hb-bal-line {
+  fill: none;
+  stroke: var(--pine-600);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+/* Kurve deckt sich beim Erscheinen von links auf */
+.hb-bal-svg {
+  animation: hb-bal-draw 1.2s var(--ease-out) both;
+}
+@keyframes hb-bal-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes hb-bal-fade {
+  from {
+    opacity: 0;
+  }
+}
+.hb-bal-tag {
+  position: absolute;
+  transform: translate(-50%, -140%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.hb-bal-tag.is-min {
+  transform: translate(-50%, 40%);
+}
+.hb-bal-tag.is-max.is-start {
+  transform: translate(0, -140%);
+}
+.hb-bal-tag.is-max.is-end {
+  transform: translate(-100%, -140%);
+}
+.hb-bal-tag.is-min.is-start {
+  transform: translate(0, 40%);
+}
+.hb-bal-tag.is-min.is-end {
+  transform: translate(-100%, 40%);
+}
+.hb-bal-cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--ink-muted);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hb-bal-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border: 2px solid var(--surface-raised);
+  border-radius: 50%;
+  background: var(--pine-600);
+  box-shadow: var(--shadow-tile);
+  pointer-events: none;
+}
+.hb-bal-tip {
+  position: absolute;
+  top: -6px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  margin-left: 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  font-size: 12px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.hb-bal-tip.is-left {
+  transform: translateX(calc(-100% - 20px));
+}
+.hb-bal-tip b {
+  font-size: 15px;
+  color: var(--ink);
+}
+.hb-bal-axis {
+  position: relative;
+  height: 14px;
+}
+.hb-bal-axis span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-bal-svg,
+  .hb-bal-area {
+    animation: none;
+  }
+}

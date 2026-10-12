@@ -2,8 +2,9 @@
 // Gebaut an einem echten ING-Export (11.10.2026): Kopfbereich mit Kontoinfos, dann eine Tabelle mit Semikolon,
 // deutschen Zahlen (1.234,56) und Datumsangaben (TT.MM.JJJJ), Zeichensatz Windows-1252.
 // Spalten werden über die Kopfzeile gefunden, nicht über feste Positionen.
-// Datenschutz: IBAN, BIC, Mandatsreferenzen, Gläubiger-IDs, Kartenreferenzen (ARN) und Kontostände werden hier
-// entfernt und erreichen die Datenbank nie (Spalten „Referenz“ und „Saldo“ werden gar nicht gelesen).
+// Datenschutz: IBAN, BIC, Mandatsreferenzen, Gläubiger-IDs und Kartenreferenzen (ARN) werden hier entfernt und
+// erreichen die Datenbank nie (Spalte „Referenz“ wird gar nicht gelesen). Aus der Spalte „Saldo“ wird nur der
+// neueste Stand gelesen (`balance`, Entscheidung Jonathan 12.10.2026: Kontoverlauf mit echtem Kontostand).
 
 export type FinRow = {
   /** Buchungstag YYYY-MM-DD */
@@ -36,6 +37,8 @@ export type FinParse = {
   to: string | null
   /** Zeilen, die nicht gelesen werden konnten (Zeilennummer + Grund) */
   skipped: { line: number; reason: string }[]
+  /** Kontostand nach der neuesten Buchung (nur dieser eine Wert), sonst null */
+  balance: { amount: number; on: string } | null
 }
 
 /** Bytes → Text: zuerst UTF-8 (streng), sonst Windows-1252 (so liefert ING die Datei) */
@@ -156,7 +159,7 @@ export function parseIngCsv(text: string): FinParse {
     }
     if (cells.length >= 2 && cells[0]) meta[cells[0].toLowerCase()] = cells[1]
   }
-  const result: FinParse = { rows: [], account: null, joint: false, from: null, to: null, skipped: [] }
+  const result: FinParse = { rows: [], account: null, joint: false, from: null, to: null, skipped: [], balance: null }
   if (headerAt < 0) {
     result.skipped.push({ line: 0, reason: 'Keine Kopfzeile mit „Buchung“ und „Betrag“ gefunden' })
     return result
@@ -179,6 +182,8 @@ export function parseIngCsv(text: string): FinParse {
   const cPurpose = col((c) => c.startsWith('verwendungszweck'))
   const cAmount = col((c) => c === 'betrag')
   const cCur = col((c) => c.startsWith('w'), cAmount)
+  const cSaldo = col((c) => c === 'saldo')
+  const saldos: { on: string; amount: number }[] = []
   if (cDate < 0 || cAmount < 0) {
     result.skipped.push({ line: headerAt + 1, reason: 'Spalten „Buchung“ oder „Betrag“ fehlen' })
     return result
@@ -193,6 +198,10 @@ export function parseIngCsv(text: string): FinParse {
     if (!booked_on || amount === null) {
       result.skipped.push({ line: i + 1, reason: 'Datum oder Betrag nicht lesbar' })
       continue
+    }
+    if (cSaldo >= 0) {
+      const sv = parseAmount(cells[cSaldo] ?? '')
+      if (sv !== null) saldos.push({ on: booked_on, amount: sv })
     }
     const rawParty = cParty >= 0 ? (cells[cParty] ?? '') : ''
     const rawPurpose = cPurpose >= 0 ? (cells[cPurpose] ?? '') : ''
@@ -229,6 +238,11 @@ export function parseIngCsv(text: string): FinParse {
       card,
       key: `${base}|${n}`,
     })
+  }
+  // neuester Saldo: ING listet die neueste Buchung zuerst; ist die Datei aufsteigend sortiert, die letzte Zeile
+  if (saldos.length) {
+    const newestFirst = saldos[0].on >= saldos[saldos.length - 1].on
+    result.balance = newestFirst ? saldos[0] : saldos[saldos.length - 1]
   }
   if (!result.from && result.rows.length) result.from = result.rows.reduce((a, r) => (r.booked_on < a ? r.booked_on : a), result.rows[0].booked_on)
   if (!result.to && result.rows.length) result.to = result.rows.reduce((a, r) => (r.booked_on > a ? r.booked_on : a), result.rows[0].booked_on)

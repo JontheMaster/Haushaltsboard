@@ -3,7 +3,7 @@
 //   Authorization: Bearer nfc_<Token> (persönlicher Kurzbefehl-Token aus dem NFC-Modul) oder die Anmeldung der App.
 //   ?name=<Dateiname>  ?joint=1|0 (Gemeinschaftskonto: alles Haushalt, wird pro Konto gemerkt)  ?dry=1 (nur zählen)
 // Antwort: { ok, message, total, new, duplicate, review, from, to } – message ist kurz und deutsch für die Mitteilung.
-// Der Parser (_shared/finCsv.ts) entfernt IBAN, BIC, Mandate, Gläubiger-IDs, Kartenreferenzen und Kontostände.
+// Der Parser (_shared/finCsv.ts) entfernt IBAN, BIC, Mandate, Gläubiger-IDs und Kartenreferenzen; vom Saldo nur der neueste Stand.
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
 import { decodeCsv, findRule, parseIngCsv, safeFileName, sha256Hex, type FinRule } from '../_shared/finCsv.ts'
 import { dayDiff, similarMerchant } from '../_shared/finMatch.ts'
@@ -176,6 +176,13 @@ Deno.serve(async (req) => {
         rows_new: fresh.length,
         rows_duplicate: duplicate,
       })
+      // neuester Kontostand als Anker für den Kontoverlauf (nur ein Wert pro Konto, nur wenn neuer als der gemerkte)
+      if (parsed.balance) {
+        const key = account ?? 'Konto'
+        const { data: had } = await db.from('fin_balances').select('as_of').eq('owner', member).eq('account', key).maybeSingle()
+        if (!had || had.as_of <= parsed.balance.on)
+          await db.from('fin_balances').upsert({ owner: member, account: key, amount: parsed.balance.amount, as_of: parsed.balance.on, household: joint, updated_at: new Date().toISOString() })
+      }
       // Wertpapierkäufe (Sparpläne) mit echtem Datum ins Depot übernehmen (Stufe 5)
       if (fresh.some((t) => /wertpapier/i.test(t.kind))) await db.rpc('fin_link_giro_buys', { p_owner: member })
       if (account && !remembered.includes(joint ? account : `-${account}`)) {

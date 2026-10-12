@@ -241,6 +241,12 @@ export type Database = {
         Update: { label?: string; pattern?: string; field?: 'counterparty' | 'purpose'; min_amount?: number; from_day?: number }
         Relationships: []
       }
+      fin_balances: {
+        Row: { owner: string; account: string; amount: number; as_of: string; household: boolean; updated_at: string }
+        Insert: { owner: string; account: string; amount: number; as_of: string; household?: boolean }
+        Update: { amount?: number; as_of?: string; household?: boolean }
+        Relationships: []
+      }
       fin_imports: {
         Row: { id: string; owner: string; file_name: string | null; account: string | null; from: string | null; to: string | null; rows_total: number; rows_new: number; rows_duplicate: number; at: string }
         Insert: { owner: string }

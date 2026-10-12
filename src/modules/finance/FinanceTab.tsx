@@ -331,7 +331,7 @@ function ImportSheet({ file, data, onClose, onDone }: { file: File; data: Import
         </dl>
         <p className="flex gap-2 rounded-md bg-surface-sunken p-3 text-label text-ink">
           <Icon icon={ShieldCheck} size={18} className="shrink-0 text-ink-muted" />
-          IBAN, BIC, Mandatsreferenzen, Gläubiger-IDs, Kartennummern und Kontostand werden vor dem Speichern entfernt.
+          IBAN, BIC, Mandatsreferenzen, Gläubiger-IDs und Kartennummern werden vor dem Speichern entfernt. Vom Kontostand bleibt nur der neueste, für den Verlauf.
         </p>
         {data.parse.skipped.length > 0 && (
           <p className="text-label text-ink-muted">

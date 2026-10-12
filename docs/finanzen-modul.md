@@ -21,7 +21,7 @@ Voraussetzungen: Login, Modul-System, Einstellungen. Persönliche Tokens (`membe
 
 ## Datenschutz (gilt für alle Stufen)
 
-- Gespeichert werden nur: Buchungsdatum, Uhrzeit (falls bekannt), Gegenpartei (Name), gekürzter Verwendungszweck, Betrag, Kategorie, Quelle, Hash. **IBAN, BIC, Mandatsreferenzen, Gläubiger-IDs und Kontostände werden vor dem Speichern entfernt** (Regex) und nie gespeichert.
+- Gespeichert werden nur: Buchungsdatum, Uhrzeit (falls bekannt), Gegenpartei (Name), gekürzter Verwendungszweck, Betrag, Kategorie, Quelle, Hash. **IBAN, BIC, Mandatsreferenzen und Gläubiger-IDs werden vor dem Speichern entfernt** (Regex) und nie gespeichert. Vom Kontostand wird nur der neueste Saldo pro Konto gemerkt (Anker für den Kontoverlauf, nur am Handy; Entscheidung Jonathan 12.10.2026).
 - Jede Buchung gehört einer Person (`owner`). RLS: Eigene Buchungen sieht nur der Besitzer. Buchungen mit `household = true` sehen beide.
 - Am Wand-Tablet nur zusammengefasste Haushaltszahlen (Budgets, Summen), nie einzelne private Buchungen. Der Besuchsmodus blendet das ganze Modul aus.
 - Leviona nutzt das Modul nur, wenn sie selbst zustimmt und ihre eigenen Daten hochlädt.
