@@ -227,6 +227,12 @@ export type Database = {
         Update: Record<string, never>
         Relationships: []
       }
+      fin_sub_marks: {
+        Row: { owner: string; sub_key: string; status: 'cancel' | 'hide'; todo: string | null; created_at: string }
+        Insert: { owner?: string; sub_key: string; status: 'cancel' | 'hide'; todo?: string | null }
+        Update: { status?: 'cancel' | 'hide'; todo?: string | null }
+        Relationships: []
+      }
       fin_imports: {
         Row: { id: string; owner: string; file_name: string | null; account: string | null; from: string | null; to: string | null; rows_total: number; rows_new: number; rows_duplicate: number; at: string }
         Insert: { owner: string }

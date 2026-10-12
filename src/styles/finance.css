@@ -660,3 +660,18 @@ li:first-child > .hb-fin-catrow {
     animation: none;
   }
 }
+.hb-fin-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+.hb-fin-facts dt {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.hb-fin-facts dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ink);
+}

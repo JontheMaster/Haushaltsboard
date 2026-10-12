@@ -12,7 +12,7 @@ Fünf Stufen, jeweils erst nach Jonathans Go:
 1. Grundlage: Tabellen, Kategorien, CSV-Import, Zuordnen
 2. Apple Pay live und Abgleich mit der CSV
 3. Auswertung und Budgets
-4. Gemeinsame Ausgaben und Abos
+4. Abos und Fixkosten (ohne „Wer schuldet wem“)
 5. Depot: Bestände, Kurse, Sparpläne, Sparziele (unabhängig von Stufe 2–4, braucht nur Stufe 1)
 
 Voraussetzungen: Login, Modul-System, Einstellungen. Persönliche Tokens (`member_tokens`) aus dem NFC-Modul wiederverwenden; gibt es sie noch nicht, hier anlegen, genau wie in `docs/nfc-modul.md` beschrieben.
@@ -110,14 +110,11 @@ Wand-Ansicht „Finanzen“ (Entwurf 11.10.2026), zwei Reihen à drei Karten:
 
 ---
 
-## Stufe 4: Gemeinsame Ausgaben und Abos
+## Stufe 4: Abos und Fixkosten
 
 ### Wer schuldet wem
 
-- Haushaltsbuchungen haben einen Zahler (`owner`) und eine Aufteilung (`split`, Standard 50/50, pro Kategorie oder Buchung änderbar).
-- Saldo zwischen beiden: „Leviona bekommt 42,50 € von Jonathan“, mit Verlauf.
-- „Ausgleichen“ setzt den Saldo per Gegenbuchung auf null (vermerkt, wer wem was überwiesen hat; das Board überweist nie selbst).
-- Funktioniert nur, wenn beide ihre Daten hochladen oder Apple Pay verbinden; sonst Hinweis statt falscher Zahlen.
+Entfällt (Entscheidung Jonathan 12.10.2026): alles Gemeinsame wird vom Gemeinschaftskonto bezahlt.
 
 ### Abos und Fixkosten
 

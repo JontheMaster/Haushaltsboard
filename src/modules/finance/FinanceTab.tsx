@@ -9,6 +9,7 @@ import { useMembers } from '../../lib/members'
 import { createToken, revokeToken, useMyTokens } from '../nfc/nfcStore'
 import { AnalysisSection } from './Analysis'
 import { DepotView } from './DepotView'
+import { SubscriptionsCard } from './Subscriptions'
 import {
   assignTx,
   euro,
@@ -89,6 +90,7 @@ export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
         <>
           <StartView key={me.id} onReview={() => setView('review')} onGuide={() => setView('guide')} showToast={showToast} />
           <AnalysisSection key={`a-${me.id}`} showToast={showToast} />
+          <SubscriptionsCard key={`s-${me.id}`} showToast={showToast} />
         </>
       )}
     </div>
