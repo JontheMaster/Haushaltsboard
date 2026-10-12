@@ -1,12 +1,14 @@
-// Finanzen Stufe 2: Apple Pay live. Die iPhone-Automation „Transaktion“ (Wallet) schickt jede Zahlung hierher.
-//   POST JSON { amount, merchant, card } (Betrag, Händler, Karte aus der Kurzbefehl-Eingabe), auch als Formular,
+// Finanzen Stufe 2: Apple Pay / Google Pay live.
+//   iPhone: Automation „Transaktion“ (Wallet) schickt POST JSON { amount, merchant, card }, auch als Formular.
+//   Android (12.10.2026): MacroDroid schickt die Google-Wallet-Mitteilung als { title, text }
+//   („KALCHREUTHER FILIALE 70“, „6,20 € mit ♡“), Betrag/Händler/Karte liest parseNotification. Ohne Betrag → nichts.
 //   Authorization: Bearer nfc_<Token> (persönlicher Kurzbefehl-Token) oder die Anmeldung der App.
 // Legt eine Buchung an (source applepay, status pending, Uhrzeit jetzt, Kategorie über die Regeln); der spätere
 // CSV-Import gleicht sie ab. Doppelt innerhalb von 2 Minuten (gleicher Betrag und Händler) wird ignoriert.
 // Antwort: { ok, message } z. B. „REWE · 23,47 € · Lebensmittel“ für die Mitteilung am iPhone.
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
 import { findRule, sha256Hex, type FinRule } from '../_shared/finCsv.ts'
-import { parseLooseAmount } from '../_shared/finMatch.ts'
+import { parseLooseAmount, parseNotification } from '../_shared/finMatch.ts'
 
 const db = adminClient()
 const TZ = 'Europe/Berlin'
@@ -25,7 +27,7 @@ async function caller(req: Request): Promise<string | null> {
 }
 
 /** Anfragetext: JSON oder Formular; Feldnamen auch deutsch (Betrag, Händler, Karte) */
-async function readBody(req: Request): Promise<{ amount: unknown; merchant: string; card: string }> {
+async function readBody(req: Request): Promise<{ amount: unknown; merchant: string; card: string; title: string; text: string }> {
   const raw = (await req.text()).trim()
   let d: Record<string, unknown> = {}
   try {
@@ -38,6 +40,8 @@ async function readBody(req: Request): Promise<{ amount: unknown; merchant: stri
     amount: d.amount ?? d.Betrag ?? d.betrag,
     merchant: s(d.merchant ?? d.Händler ?? d.Haendler ?? d.haendler).slice(0, 120),
     card: s(d.card ?? d.Karte ?? d.karte).slice(0, 40),
+    title: s(d.title ?? d.Titel ?? d.titel).slice(0, 200),
+    text: s(d.text ?? d.Text).slice(0, 400),
   }
 }
 
@@ -56,12 +60,32 @@ Deno.serve(async (req) => {
     if (mod && !mod.enabled) return json(req, { ok: false, message: 'Finanzen ist ausgeschaltet.' }, 403)
     if (!profile?.enabled) return json(req, { ok: false, message: 'Finanzen ist für dich noch aus.' }, 403)
 
-    const { amount: rawAmount, merchant: rawMerchant, card } = await readBody(req)
-    const value = parseLooseAmount(rawAmount)
-    if (value === null || value === 0) return json(req, { ok: false, message: 'Kein Betrag angekommen. Im Kurzbefehl bei amount den Betrag einsetzen.' }, 400)
-    const merchant = rawMerchant || 'Apple Pay'
-    // Zahlungen sind Ausgaben; Erstattungen kommen mit Minus vom iPhone und werden zu Einnahmen
-    const amount = typeof rawAmount === 'string' && rawAmount.trim().startsWith('-') ? Math.abs(value) : -Math.abs(value)
+    const body = await readBody(req)
+    let value = 0
+    let merchant: string
+    let card: string
+    let refund: boolean
+    let source: 'applepay' | 'googlepay' = 'applepay'
+    if (body.amount === undefined && body.text) {
+      // Android: Mitteilungstext lesen
+      const n = parseNotification(body.title, body.text)
+      if (!n) return json(req, { ok: false, message: 'Kein Betrag in der Mitteilung, nichts eingetragen.' })
+      value = n.amount
+      merchant = body.merchant || n.merchant || 'Google Pay'
+      card = n.card
+      refund = n.refund
+      source = 'googlepay'
+    } else {
+      const parsed = parseLooseAmount(body.amount)
+      if (parsed === null || parsed === 0) return json(req, { ok: false, message: 'Kein Betrag angekommen. Im Kurzbefehl bei amount den Betrag einsetzen.' }, 400)
+      value = parsed
+      merchant = body.merchant || 'Apple Pay'
+      card = body.card
+      refund = typeof body.amount === 'string' && body.amount.trim().startsWith('-')
+    }
+    const wallet = source === 'googlepay' ? 'Google Pay' : 'Apple Pay'
+    // Zahlungen sind Ausgaben; Erstattungen (Minus vorne bzw. „Erstattung“ in der Mitteilung) werden zu Einnahmen
+    const amount = refund ? Math.abs(value) : -Math.abs(value)
 
     // doppelt innerhalb von 2 Minuten?
     const since = new Date(Date.now() - 2 * 60_000).toISOString()
@@ -69,7 +93,7 @@ Deno.serve(async (req) => {
       .from('fin_transactions')
       .select('id')
       .eq('owner', member)
-      .eq('source', 'applepay')
+      .eq('source', source)
       .eq('amount', amount)
       .ilike('counterparty', merchant)
       .gte('created_at', since)
@@ -80,7 +104,7 @@ Deno.serve(async (req) => {
       db.from('fin_rules').select('id, pattern, field, category, household, owner, created_from').or(`owner.is.null,owner.eq.${member}`),
       db.from('fin_categories').select('id, name, household_default'),
     ])
-    const rule = findRule((rules ?? []) as FinRule[], { counterparty: merchant, purpose: '', kind: 'Apple Pay' }, member)
+    const rule = findRule((rules ?? []) as FinRule[], { counterparty: merchant, purpose: '', kind: wallet }, member)
     const category = rule?.category ?? (amount > 0 ? 'einnahmen' : 'sonstiges')
     const cat = (cats ?? []).find((c) => c.id === category)
     // alles ist Haushalt (Entscheidung Jonathan 12.10.2026: alles läuft über das Gemeinschaftskonto)
@@ -91,15 +115,15 @@ Deno.serve(async (req) => {
       booked_on: berlinDay(now),
       booked_at: now.toISOString(),
       counterparty: merchant,
-      purpose: ['Apple Pay', card].filter(Boolean).join(' · ').slice(0, 140),
-      kind: 'Apple Pay',
+      purpose: [wallet, card].filter(Boolean).join(' · ').slice(0, 140),
+      kind: wallet,
       amount,
       category,
       household,
       needs_review: !rule && amount < 0,
-      source: 'applepay',
+      source,
       status: 'pending',
-      wallet: 'Apple Pay',
+      wallet,
       hash: `ap:${crypto.randomUUID()}`,
     })
     if (error) throw error

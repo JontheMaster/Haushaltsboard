@@ -124,7 +124,7 @@ export type Database = {
           category: string
           household: boolean
           needs_review: boolean
-          source: 'csv' | 'applepay'
+          source: 'csv' | 'applepay' | 'googlepay'
           status: 'pending' | 'booked'
           wallet: string | null
           card: string | null

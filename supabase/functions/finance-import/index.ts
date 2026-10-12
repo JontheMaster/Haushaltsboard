@@ -83,7 +83,9 @@ Deno.serve(async (req) => {
     const hashes = await Promise.all(parsed.rows.map((r) => sha256Hex(r.key)))
     const known = new Set<string>()
     for (let i = 0; i < hashes.length; i += 200) {
-      const { data } = await db.from('fin_transactions').select('hash').eq('owner', member).in('hash', hashes.slice(i, i + 200))
+      // Gemeinschaftskonto: auch Buchungen der anderen Person zählen (z. B. ihre abgeglichenen Google-Pay-Zahlungen)
+      const q = db.from('fin_transactions').select('hash').in('hash', hashes.slice(i, i + 200))
+      const { data } = await (joint ? q.or(`owner.eq.${member},household.eq.true`) : q.eq('owner', member))
       for (const row of data ?? []) known.add(row.hash)
     }
 
@@ -120,12 +122,14 @@ Deno.serve(async (req) => {
     // Stufe 2: Kartenzahlungen mit offenen Apple-Pay-Einträgen abgleichen (gleicher Betrag, ±3 Tage, ähnlicher Händler).
     // Treffer: aus beiden wird eine Buchung; Uhrzeit und (selbst gesetzte) Kategorie von Apple Pay bleiben, der
     // CSV-Hash kommt dazu (damit ein erneuter Import sie als „schon da“ erkennt), Status booked.
-    const { data: pending } = await db
+    // Gemeinschaftskonto: auch die vorgemerkten Zahlungen der anderen Person (Apple Pay oder Google Pay mit der Karte
+    // am selben Konto), sonst stünden sie nach dem Import doppelt da
+    const pq = db
       .from('fin_transactions')
       .select('id, amount, booked_on, counterparty, needs_review')
-      .eq('owner', member)
-      .eq('source', 'applepay')
+      .in('source', ['applepay', 'googlepay'])
       .eq('status', 'pending')
+    const { data: pending } = await (joint ? pq.or(`owner.eq.${member},household.eq.true`) : pq.eq('owner', member))
     const open = [...(pending ?? [])]
     const matches: { applepay: string; csv: (typeof fresh)[number] }[] = []
     for (const t of fresh) {

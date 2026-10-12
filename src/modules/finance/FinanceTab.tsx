@@ -242,7 +242,7 @@ function StartView({
                           {day(t.booked_on)}
                           {t.booked_at ? ` · ${time(t.booked_at)}` : ''} · {catOf(t.category)?.name ?? t.category}
                           {!mine ? ` · ${byId.get(t.owner)?.name ?? ''}` : ''}
-                          {t.source === 'applepay' && t.status === 'pending' ? ' · vorgemerkt' : ''}
+                          {t.source !== 'csv' && t.status === 'pending' ? ' · vorgemerkt' : ''}
                         </span>
                       </span>
                       {t.needs_review && <Icon icon={CircleAlert} size={16} label="Noch zuordnen" className="text-warning" />}
@@ -536,6 +536,25 @@ function GuideView({ onBack, showToast }: { onBack: () => void; showToast: (m: s
           <li>Neuer leerer Kurzbefehl → Aktion „Inhalte von URL abrufen“: URL unten, Methode POST, Header „Authorization“ = „Bearer “ + dein Token.</li>
           <li>Anfragetext JSON mit drei Feldern: amount = Kurzbefehl-Eingabe → Betrag, merchant = Händler, card = Karte.</li>
           <li>Optional „Mitteilung anzeigen“ mit dem Ergebnis, z. B. „REWE · 23,47 € · Lebensmittel“.</li>
+        </Steps>
+        <CopyLine label="URL" value={FINANCE_TX_URL} onCopy={copy} />
+      </section>
+
+      <section className="hb-tile hb-tile-static gap-3">
+        <h3 className="font-semibold text-ink">Android: Google Pay live (MacroDroid)</h3>
+        <p className="text-label text-ink-muted">
+          Android hat keine Automation „bei Zahlung“. MacroDroid liest dafür die Mitteilung von Google Wallet („KALCHREUTHER FILIALE 70“, „6,20 € mit ♡“) und schickt sie ans Board.
+          Mitteilungen ohne Betrag werden ignoriert.
+        </p>
+        <Steps>
+          <li>MacroDroid installieren und beim ersten Start „Zugriff auf Benachrichtigungen“ erlauben.</li>
+          <li>Neues Makro → Auslöser „Benachrichtigung“ → „Benachrichtigung erhalten“ → App „Google Wallet“, Text: beliebig.</li>
+          <li>Aktion „HTTP-Anfrage“: Methode POST, URL unten, Header „Authorization“ = „Bearer “ + dein Token.</li>
+          <li>
+            Inhalt „JSON“: {'{"title": "[notification_title]", "text": "[notification]"}'}. Die beiden Platzhalter über den Knopf mit den drei Punkten einsetzen („Benachrichtigungstitel“ und
+            „Benachrichtigungstext“).
+          </li>
+          <li>Optional „Toast/Benachrichtigung anzeigen“ mit der Antwort. Speichern, einmal mit Google Pay bezahlen, unter Buchungen steht es dann als „vorgemerkt“.</li>
         </Steps>
         <CopyLine label="URL" value={FINANCE_TX_URL} onCopy={copy} />
       </section>
