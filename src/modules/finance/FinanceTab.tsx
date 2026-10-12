@@ -7,6 +7,7 @@ import { Sheet } from '../../components/Sheet'
 import { Toggle } from '../../components/Toggle'
 import { useMembers } from '../../lib/members'
 import { createToken, revokeToken, useMyTokens } from '../nfc/nfcStore'
+import { AnalysisSection } from './Analysis'
 import { DepotView } from './DepotView'
 import {
   assignTx,
@@ -85,7 +86,10 @@ export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
       {area === 'depot' ? (
         <DepotView showToast={showToast} />
       ) : (
-        <StartView key={me.id} onReview={() => setView('review')} onGuide={() => setView('guide')} showToast={showToast} />
+        <>
+          <StartView key={me.id} onReview={() => setView('review')} onGuide={() => setView('guide')} showToast={showToast} />
+          <AnalysisSection key={`a-${me.id}`} showToast={showToast} />
+        </>
       )}
     </div>
   )

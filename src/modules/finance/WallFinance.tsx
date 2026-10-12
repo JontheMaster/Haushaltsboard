@@ -6,6 +6,7 @@ import { HistoryChart } from './DepotCharts'
 import { fmtPct, quoteStamp } from './depotStore'
 import { GoalRing } from './Goals'
 import { euro } from './finStore'
+import { BudgetCard, MonthCard, MonthsCard, monthName, type Overview, UnusualCard, WhenCard, WhereCard } from './Analysis'
 
 export type WallSummary = {
   percent_only: boolean
@@ -21,23 +22,31 @@ export type WallSummary = {
   gain: number | null
 }
 
+export type WallData = { depot: WallSummary | null; home: Overview | null }
+
+const hasDepot = (d: WallSummary | null) => !!d && (d.gain_pct !== null || d.spark.length > 1)
+
 /**
- * Zusammenfassung für die Wand (RPC fin_wall_summary): nur gemeinsame Depots und Ziele, nur Prozent
- * (Euro nur, wenn „An der Wand nur Prozent“ am Handy aus ist). Alle 5 Minuten neu; null = nichts zu zeigen.
+ * Daten für die Wand: fin_wall_summary (nur gemeinsame Depots und Ziele, nur Prozent; Euro nur, wenn „An der Wand
+ * nur Prozent“ am Handy aus ist) und fin_overview nur Haushalt (Summen, Budgets; nie einzelne Buchungen).
+ * Alle 5 Minuten neu; null = nichts zu zeigen.
  */
-export function useWallFinance(enabled: boolean) {
-  const [summary, setSummary] = useState<WallSummary | null>(null)
+export function useWallFinance(enabled: boolean): WallData | null {
+  const [data, setData] = useState<WallData | null>(null)
   const load = useCallback(async () => {
-    const { data } = await supabase.rpc('fin_wall_summary')
-    setSummary((data as WallSummary | null) ?? null)
+    const [d, h] = await Promise.all([supabase.rpc('fin_wall_summary'), supabase.rpc('fin_overview', { p_household_only: true })])
+    const depot = (d.data as WallSummary | null) ?? null
+    const ov = (h.data as Overview | null) ?? null
+    const home = ov && ov.months.some((m) => m.spent > 0) ? ov : null
+    setData(depot || home ? { depot, home } : null)
   }, [])
   useEffect(() => {
-    if (!enabled) return setSummary(null)
+    if (!enabled) return setData(null)
     load()
     const t = setInterval(load, 5 * 60_000)
     return () => clearInterval(t)
   }, [enabled, load])
-  return summary
+  return data
 }
 
 /** Dezenter Hinweis am Board bei Apple-Pay-Haushaltseinkäufen (fin_hints, nur wenn eingeschaltet), als kurzer Toast */
@@ -57,14 +66,41 @@ export function useFinHints(enabled: boolean, show: (text: string) => void) {
 const tone = (n: number | null) => (n === null ? '' : n > 0.005 ? 'is-up' : n < -0.005 ? 'is-down' : '')
 
 /**
- * Ansicht „Finanzen“ am Wand-Tablet (Stufe 5, später mit Stufe 3 erweitert): gemeinsames Depot und Sparziele.
- * Ruhige Ansicht (Standard): Woche und 30 Tage statt Tagesschwankung. Nie einzelne Positionen oder Buchungen.
+ * Ansicht „Finanzen“ am Wand-Tablet: oben der Haushalt (Stufe 3: Monat, Budgets, Auffällig, Verlauf, Wann, Wo),
+ * darunter gemeinsames Depot und Sparziele (Stufe 5). Ruhige Ansicht: Woche und 30 Tage statt Tagesschwankung.
+ * Nie einzelne Buchungen oder Positionen, nichts Privates.
  */
-export function WallFinance({ summary }: { summary: WallSummary }) {
+export function WallFinance({ data }: { data: WallData }) {
+  const { home, depot } = data
+  return (
+    <div className="flex flex-col gap-5">
+      {home && (
+        <div className="hb-wallfin-home">
+          <MonthCard o={home} title={`${monthName(home.month)} · Haushalt`} />
+          <BudgetCard o={home} max={4} />
+          <div className="flex flex-col gap-5">
+            <UnusualCard o={home} />
+            <WhereCard o={home} max={5} />
+          </div>
+          <MonthsCard o={home} />
+          <WhenCard o={home} />
+        </div>
+      )}
+      {depot && (hasDepot(depot) || depot.goals.length > 0) && <WallDepot summary={depot} />}
+      <p className="hb-wallfin-note">
+        <Icon icon={Lock} size={16} />
+        Nur Haushalt und gemeinsame Depots{depot?.percent_only ? ' (Depot nur in Prozent)' : ''}. Einzelnes und Privates nur am Handy.
+      </p>
+    </div>
+  )
+}
+
+function WallDepot({ summary }: { summary: WallSummary }) {
   const main = summary.calm ? { label: 'diese Woche', pct: summary.week_pct } : { label: 'seit gestern', pct: summary.day_pct }
   const points = summary.spark.map((v, i) => ({ day: String(i), value: v, invested: v }))
   return (
     <div className="hb-wallfin">
+      {hasDepot(summary) && (
       <section className="hb-tile hb-wallfin-depot">
         <header className="hb-tile-head">
           <span className="hb-tile-icon">
@@ -100,6 +136,7 @@ export function WallFinance({ summary }: { summary: WallSummary }) {
           </div>
         </dl>
       </section>
+      )}
 
       {summary.goals.length > 0 && (
         <section className="hb-tile hb-wallfin-goals">
@@ -123,11 +160,6 @@ export function WallFinance({ summary }: { summary: WallSummary }) {
           </div>
         </section>
       )}
-
-      <p className="hb-wallfin-note">
-        <Icon icon={Lock} size={16} />
-        Nur gemeinsame Depots{summary.percent_only ? ', nur Prozent' : ''}. Einzelnes und Privates nur am Handy.
-      </p>
     </div>
   )
 }

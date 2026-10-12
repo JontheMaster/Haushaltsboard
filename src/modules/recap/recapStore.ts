@@ -79,6 +79,8 @@ export type Recap = {
   /** fertige Timer (z. B. Wäsche-Runden) und Heimwege mit dem Auto */
   timers?: { label: string; n: number }[]
   drives?: { n: number; km: number }
+  /** Haushaltsausgaben der Woche (nur Summen, aus dem Modul Finanzen) */
+  fin?: { total: number; top: { name: string; amount: number } | null } | null
   best_day: { day: string; n: number } | null
   meals: { title: string; day: string; recipe_id: string | null }[]
   open: number

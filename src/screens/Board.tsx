@@ -294,7 +294,7 @@ export function Board({ weather }: { weather: Weather | null }) {
         </main>
       ) : view === 'finanzen' && finWall ? (
         <main className="min-h-0 flex-1 overflow-y-auto hb-scroll-quiet">
-          <WallFinance summary={finWall} />
+          <WallFinance data={finWall} />
         </main>
       ) : view === 'abfahrten' ? (
         <main className="min-h-0 flex-1 overflow-y-auto hb-scroll-quiet">

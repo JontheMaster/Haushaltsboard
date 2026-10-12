@@ -18,6 +18,7 @@ import {
   TrendingDown,
   TrendingUp,
   UtensilsCrossed,
+  Wallet,
   WashingMachine,
   X,
   type LucideIcon,
@@ -26,6 +27,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { CountUp } from '../../components/CountUp'
 import { Icon } from '../../components/Icon'
 import { useMembers } from '../../lib/members'
+import { useSettings } from '../../lib/settings'
+import { useEnabledModules } from '../useModules'
 import { addDays, dayLabel, weekdayShort } from '../../lib/time'
 import { eventsOnDay } from '../calendar/rules'
 import { kindOf, shortenTitle } from '../calendar/shorten'
@@ -102,6 +105,10 @@ export function RecapStory({ recap, week, thisWeek, today, onWeek }: { recap: Re
   const { recipes } = useRecipes()
   const weather = useWeekWeather(week, today)
   const isThisWeek = week === thisWeek
+  const enabled = useEnabledModules()
+  const { settings } = useSettings()
+  // Finanzen nur, wenn das Modul an ist und kein Besuch da ist (nur die Haushaltssumme, nie Einzelnes)
+  const fin = enabled?.has('finanzen') && !settings?.visit_mode ? recap.fin : null
 
   const done = recap.todos.done + recap.chores.done
   const diff = done - recap.prev_done
@@ -147,6 +154,7 @@ export function RecapStory({ recap, week, thisWeek, today, onWeek }: { recap: Re
   if (weekEvents?.length) numbers.push({ icon: CalendarDays, value: weekEvents.length, label: weekEvents.length === 1 ? 'Termin' : 'Termine' })
   if (washes) numbers.push({ icon: WashingMachine, value: washes, label: washes === 1 ? 'Wäsche-Runde' : 'Wäsche-Runden' })
   if (recap.drives?.n) numbers.push({ icon: Car, value: recap.drives.n, label: `${recap.drives.n === 1 ? 'Heimweg' : 'Heimwege'} · ${recap.drives.km} km` })
+  if (fin?.total) numbers.push({ icon: Wallet, value: fin.total, unit: ' €', label: fin.top ? `für den Haushalt, davon ${fin.top.amount} € ${fin.top.name}` : 'für den Haushalt' })
   if (recap.photos) numbers.push({ icon: Image, value: recap.photos, label: recap.photos === 1 ? 'neues Foto' : 'neue Fotos' })
   if (weather?.warm) numbers.push({ icon: Thermometer, value: weather.warm.t, unit: '°', label: `am ${dayName(weather.warm.day)}, wärmster Tag` })
   if (weather) numbers.push({ icon: Sun, value: weather.sunHours, unit: ' Std', label: 'Sonne' })

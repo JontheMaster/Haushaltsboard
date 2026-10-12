@@ -1,9 +1,11 @@
-import { CalendarCheck, Image, ListChecks, Sparkles, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
+import { CalendarCheck, Image, ListChecks, Sparkles, UtensilsCrossed, Wallet, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from '../../components/Icon'
 import { CountUp } from '../../components/CountUp'
 import { PersonChip } from '../../components/PersonChip'
 import { useMembers } from '../../lib/members'
+import { useSettings } from '../../lib/settings'
+import { useEnabledModules } from '../useModules'
 import { dayLabel, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import { closeRecap, markRecapSeen, useRecap, useRecapOpen, type Recap } from './recapStore'
 import { RecapStory } from './RecapStory'
@@ -72,6 +74,9 @@ function Card({ icon, title, children, className = '' }: { icon: LucideIcon; tit
 
 /** Übersicht mit allen Listen (letzte Karte der Story) */
 export function RecapContent({ recap }: { recap: Recap }) {
+  const enabled = useEnabledModules()
+  const { settings } = useSettings()
+  const fin = enabled?.has('finanzen') && !settings?.visit_mode ? recap.fin : null
   const { people, byId, personKey } = useMembers()
   const done = recap.todos.done + recap.chores.done
   const diff = done - recap.prev_done
@@ -178,6 +183,12 @@ export function RecapContent({ recap }: { recap: Recap }) {
             <Icon icon={Image} size={16} className="inline align-[-3px]" /> {recap.photos} neue {recap.photos === 1 ? 'Foto' : 'Fotos'}.
           </>
         )}
+        {fin?.total ? (
+          <>
+            {' '}
+            <Icon icon={Wallet} size={16} className="inline align-[-3px]" /> Diese Woche {fin.total} € für den Haushalt{fin.top ? `, davon ${fin.top.amount} € ${fin.top.name}` : ''}.
+          </>
+        ) : null}
       </p>
     </>
   )
