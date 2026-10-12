@@ -874,7 +874,7 @@ li:first-child > .hb-fin-month-head {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 3fr);
   gap: var(--space-4);
-  align-items: stretch;
+  align-items: start;
 }
 .hb-wf-side {
   align-self: start;
@@ -911,9 +911,7 @@ li:first-child > .hb-fin-month-head {
 /* Kategorien */
 .hb-wf-catlist {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  justify-content: space-around;
   gap: 10px;
   margin: 0;
   padding: 0;
@@ -1004,10 +1002,9 @@ li:first-child > .hb-fin-month-head {
 /* 12 Monate */
 .hb-wf-chart {
   display: grid;
-  flex: 1;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 6px;
-  min-height: 230px;
+  height: 230px;
 }
 .hb-wf-col {
   display: flex;

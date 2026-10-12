@@ -1,7 +1,7 @@
-import { AlertCircle, BarChart3, Clock, LayoutList, Store, Target } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { AlertCircle, BarChart3, Clock, LayoutList, LineChart, Store, Target } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from '../../components/Icon'
-import { BudgetRing, catForecast, catVar, monthName, pct, shopName, signed, totalForecast, unusual, type Overview } from './Analysis'
+import { BalanceView, BudgetRing, catForecast, catVar, monthName, pct, shopName, signed, totalForecast, unusual, type Overview } from './Analysis'
 import { isFixedCat } from './budgetHints'
 import { euro, iconOf, useFinNames } from './finStore'
 
@@ -48,6 +48,15 @@ export function WallHome({ o, after }: { o: Overview; after?: ReactNode }) {
   const notes = unusual(o)
   const budgets = o.categories.filter((c) => c.budget)
   const month = monthName(o.month)
+  // Verlauf: 12 Monate oder Kontostand (wie am Handy); an der Wand nach 2 Minuten wieder 12 Monate
+  const [mode, setMode] = useState<'monate' | 'konto'>('monate')
+  const canBalance = (o.daily?.length ?? 0) > 1
+  const showBalance = mode === 'konto' && canBalance
+  useEffect(() => {
+    if (mode === 'monate') return
+    const t = setTimeout(() => setMode('monate'), 120_000)
+    return () => clearTimeout(t)
+  }, [mode])
 
   return (
     <div className="hb-wf">
@@ -107,8 +116,24 @@ export function WallHome({ o, after }: { o: Overview; after?: ReactNode }) {
           </ul>
         </Card>
 
-        <Card icon={BarChart3} title="12 Monate" className="hb-wf-months">
-          <WallMonths o={o} />
+        <Card
+          icon={showBalance ? LineChart : BarChart3}
+          title="Verlauf"
+          className="hb-wf-months"
+          extra={
+            canBalance && (
+              <div className="hb-seg is-small" role="group" aria-label="Ansicht">
+                <button type="button" aria-pressed={!showBalance} className={!showBalance ? 'is-on' : ''} onClick={() => setMode('monate')}>
+                  12 Monate
+                </button>
+                <button type="button" aria-pressed={showBalance} className={showBalance ? 'is-on' : ''} onClick={() => setMode('konto')}>
+                  Kontostand
+                </button>
+              </div>
+            )
+          }
+        >
+          {showBalance ? <BalanceView o={o} height={210} /> : <WallMonths o={o} />}
         </Card>
 
         <div className="hb-wf-side">

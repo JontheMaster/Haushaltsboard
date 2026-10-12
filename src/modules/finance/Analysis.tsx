@@ -34,6 +34,8 @@ export type Overview = {
   first_month?: string | null
   /** Summe aller Buchungen pro Tag (Kontoverlauf; am Tablet leer) */
   daily?: [string, number][]
+  /** neuester Saldo laut Bank (Anker für den Kontoverlauf; Tablet: nur Gemeinschaftskonten) */
+  balance?: { amount: number; on: string } | null
 }
 
 /** Auswertung aus der RPC fin_overview (eigene + Haushalt; das Tablet bekommt immer nur Haushalt) */
@@ -362,25 +364,11 @@ export function MonthsCard({ o }: { o: Overview }) {
   )
 }
 
-/** Neuester Kontostand laut Bank (aus dem letzten CSV-Import, ein Wert pro Konto) */
-function useBalanceAnchor() {
-  const [anchor, setAnchor] = useState<{ amount: number; on: string } | null | undefined>(undefined)
-  useEffect(() => {
-    supabase
-      .from('fin_balances')
-      .select('amount, as_of')
-      .then(({ data }) => {
-        if (!data?.length) return setAnchor(null)
-        setAnchor({ amount: data.reduce((t, r) => t + Number(r.amount), 0), on: data.reduce((m, r) => (r.as_of > m ? r.as_of : m), data[0].as_of) })
-      })
-  }, [])
-  return anchor
-}
-
-function BalanceView({ o }: { o: Overview }) {
-  const anchor = useBalanceAnchor()
+/** Kontoverlauf: Stand jetzt, Veränderung in 30 Tagen, Kurve (Handy und Wand) */
+export function BalanceView({ o, height }: { o: Overview; height?: number }) {
+  const anchor = o.balance ? { amount: Number(o.balance.amount), on: o.balance.on } : null
   const today = new Date().toISOString().slice(0, 10)
-  const points = useMemo(() => (anchor === undefined ? [] : balanceSeries(o.daily ?? [], today, anchor)), [o.daily, today, anchor])
+  const points = useMemo(() => balanceSeries(o.daily ?? [], today, anchor), [o.daily, today, anchor?.amount, anchor?.on]) // eslint-disable-line react-hooks/exhaustive-deps
   if (points.length < 2) return null
   const last = points[points.length - 1].v
   const day = (d: string, year = false) => new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', ...(year ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`))
@@ -396,7 +384,7 @@ function BalanceView({ o }: { o: Overview }) {
           ? `Kontostand jetzt · laut Bank am ${day(anchor.on)}${anchor.on < today ? ', seitdem mit Apple Pay gerechnet' : ''}`
           : `Veränderung seit ${day(points[0].d, true)}. Lad einmal einen neuen Export hoch, dann steht hier der echte Kontostand.`}
       </span>
-      <BalanceChart points={points} />
+      <BalanceChart points={points} height={height} />
     </>
   )
 }
