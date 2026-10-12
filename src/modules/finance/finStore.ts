@@ -252,3 +252,25 @@ export async function runImport(file: File, joint: boolean): Promise<{ ok: boole
 
 export const FINANCE_IMPORT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finance-import`
 export const FINANCE_TX_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finance-tx`
+
+/** Eigene Anzeigenamen für Gegenparteien (fin_names, gilt für beide), z. B. Vermieter → „Miete“ */
+export function useFinNames() {
+  const [map, setMap] = useState<Map<string, string>>(new Map())
+  const load = useCallback(async () => {
+    const { data } = await supabase.from('fin_names').select('counterparty, label')
+    setMap(new Map((data ?? []).map((r) => [r.counterparty, r.label])))
+  }, [])
+  useEffect(() => {
+    load()
+  }, [load])
+  const nameOf = useCallback((counterparty: string) => map.get(counterparty) ?? null, [map])
+  async function setName(counterparty: string, label: string): Promise<boolean> {
+    const clean = label.trim().slice(0, 60)
+    const { error } = clean
+      ? await supabase.from('fin_names').upsert({ counterparty, label: clean, updated_at: new Date().toISOString() })
+      : await supabase.from('fin_names').delete().eq('counterparty', counterparty)
+    await load()
+    return !error
+  }
+  return { nameOf, setName }
+}

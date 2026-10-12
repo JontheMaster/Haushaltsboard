@@ -24,6 +24,18 @@ export function fullMonths(o: Overview, catId: string): number[] {
   return h.months.filter((_, i) => addMonths(o.month, i - h.months.length) > o.first_month!)
 }
 
+/** Fester Betrag: mind. 2/3 der Monate liegen innerhalb ±5 % vom Median (Miete, WLAN, Abos) */
+function isFixed(vals: number[]): boolean {
+  if (vals.length < 2) return false
+  const med = [...vals].sort((a, b) => a - b)[Math.floor(vals.length / 2)]
+  return med > 0 && vals.filter((v) => Math.abs(v - med) <= med * 0.05).length >= vals.length * 0.66
+}
+
+/** Kategorie mit festen Monatsbeträgen? (für die Hochrechnung: zählt einmal, nicht nach Tempo) */
+export function isFixedCat(o: Overview, catId: string): boolean {
+  return isFixed(fullMonths(o, catId))
+}
+
 /**
  * Neue Budgets: Kategorien ohne Budget mit mind. 2 vollen Monaten, Ø ab 20 €, nicht fest (Miete, Versicherung:
  * Schwankung unter 10 % brauchen kein Budget). Vorschlag = 75 %-Wert, auf 10 € aufgerundet (ein normaler Monat passt rein).
@@ -37,9 +49,7 @@ export function budgetHints(o: Overview): BudgetHint[] {
     const avg = vals.reduce((s, v) => s + v, 0) / vals.length
     if (!c.budget) {
       // feste Beträge (meist gleich, z. B. Miete, Handy, Versicherung) brauchen kein Budget
-      const med = [...vals].sort((a, b) => a - b)[Math.floor(vals.length / 2)]
-      const fixed = vals.filter((v) => Math.abs(v - med) <= med * 0.05).length >= vals.length * 0.66
-      if (avg < 20 || fixed) continue
+      if (avg < 20 || isFixed(vals)) continue
       out.push({ kind: 'new', cat: c, value: up10(p75(vals)), text: `Ø ${euro0(avg)} in ${vals.length} Monaten` })
       continue
     }

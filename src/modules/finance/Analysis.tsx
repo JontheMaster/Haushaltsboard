@@ -8,9 +8,9 @@ import { useMembers } from '../../lib/members'
 import { useSettings } from '../../lib/settings'
 import { supabase } from '../../lib/supabase'
 import type { TileProps } from '../types'
-import { euro, iconOf, useFinProfile } from './finStore'
+import { euro, iconOf, useFinNames, useFinProfile } from './finStore'
 import { BalanceChart, balanceSeries } from './BalanceChart'
-import { budgetHints, trends, type BudgetHint } from './budgetHints'
+import { budgetHints, isFixedCat, trends, type BudgetHint } from './budgetHints'
 
 export type OverviewCategory = { id: string; name: string; icon: string; color: string; spent: number; avg3: number; budget: number | null }
 export type Overview = {
@@ -22,6 +22,9 @@ export type Overview = {
   total_spent: number
   total_avg3: number
   total_income: number
+  total_income_avg3?: number
+  /** Einnahmen nach Quelle (nur am Handy) */
+  income_sources?: { name: string; amount: number; avg3: number }[]
   months: { month: string; spent: number; income: number }[]
   heatmap: { dow: number; hour: number; n: number; sum: number }[]
   heatmap_n: number
@@ -51,12 +54,20 @@ export function useOverview(month: string | null, householdOnly: boolean, pollMs
 
 export const monthName = (m: string, withYear = false) =>
   new Intl.DateTimeFormat('de-DE', { month: 'long', ...(withYear ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(`${m}T12:00:00Z`))
-const pct = (a: number, b: number) => (b > 0 ? Math.round(((a - b) / b) * 100) : null)
-const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n)} %`
-/** Hochrechnung bis Monatsende (Tempo der bisherigen Tage) */
-const forecast = (o: Overview, spent: number) => (o.days_passed < o.days_in_month ? (spent / Math.max(1, o.days_passed)) * o.days_in_month : spent)
-const catVar = (c: { color: string }) => ({ ['--cat' as string]: `var(--${c.color})` })
-const shopName = (n: string) => n.toLowerCase().replace(/(^|[\s-])([a-zäöü])/g, (_, a, b) => a + b.toUpperCase())
+export const pct = (a: number, b: number) => (b > 0 ? Math.round(((a - b) / b) * 100) : null)
+export const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n)} %`
+/**
+ * Hochrechnung bis Monatsende pro Kategorie: feste Beträge (Miete, WLAN, Abos) zählen einmal (höchstens der Schnitt,
+ * auch wenn sie noch nicht abgebucht sind), alles andere nach dem Tempo der bisherigen Tage.
+ */
+export function catForecast(o: Overview, c: OverviewCategory): number {
+  if (o.days_passed >= o.days_in_month) return c.spent
+  if (isFixedCat(o, c.id)) return Math.max(c.spent, c.avg3)
+  return (c.spent / Math.max(1, o.days_passed)) * o.days_in_month
+}
+export const totalForecast = (o: Overview) => o.categories.reduce((t, c) => t + catForecast(o, c), 0)
+export const catVar = (c: { color: string }) => ({ ['--cat' as string]: `var(--${c.color})` })
+export const shopName = (n: string) => n.toLowerCase().replace(/(^|[\s-])([a-zäöü])/g, (_, a, b) => a + b.toUpperCase())
 
 function addMonths(m: string, n: number): string {
   const d = new Date(`${m}T12:00:00Z`)
@@ -64,31 +75,52 @@ function addMonths(m: string, n: number): string {
   return d.toISOString().slice(0, 8) + '01'
 }
 
-/** Monat: Summe, Vergleich zum Schnitt der letzten 3 Monate, gestapelter Balken, Liste mit Abweichung */
-export function MonthCard({ o, onMonth, onPick, title }: { o: Overview; onMonth?: (m: string) => void; onPick?: (c: OverviewCategory) => void; title?: string }) {
-  const diff = pct(forecast(o, o.total_spent), o.total_avg3)
-  const shown = o.categories.filter((c) => c.spent > 0)
-  const top = shown.slice(0, 5)
-  const rest = shown.slice(5).reduce((s, c) => s + c.spent, 0)
+/** Monat: Ausgaben oder Einnahmen (Umschalter), Vergleich zum Schnitt der letzten 3 Monate, Liste mit Abweichung */
+export function MonthCard({ o, onMonth, onPick }: { o: Overview; onMonth?: (m: string) => void; onPick?: (c: OverviewCategory) => void }) {
+  const [mode, setMode] = useState<'out' | 'in'>('out')
+  const { nameOf } = useFinNames()
   const current = o.days_passed < o.days_in_month
   return (
     <section className="hb-tile hb-tile-static gap-2">
       <div className="flex items-center gap-1">
-        <h3 className="flex flex-1 items-center gap-2 font-semibold text-ink">
-          <Icon icon={CalendarRange} size={18} />
-          {title ?? monthName(o.month, true)}
-        </h3>
+        <div className="hb-seg is-small" role="group" aria-label="Ausgaben oder Einnahmen">
+          <button type="button" aria-pressed={mode === 'out'} className={mode === 'out' ? 'is-on' : ''} onClick={() => setMode('out')}>
+            Ausgaben
+          </button>
+          <button type="button" aria-pressed={mode === 'in'} className={mode === 'in' ? 'is-on' : ''} onClick={() => setMode('in')}>
+            Einnahmen
+          </button>
+        </div>
+        <span className="flex-1" />
         {onMonth && (
           <>
             <button type="button" className="hb-icon-btn" aria-label="Monat davor" onClick={() => onMonth(addMonths(o.month, -1))}>
               <Icon icon={ChevronLeft} size={20} />
             </button>
-            <button type="button" className="hb-icon-btn" aria-label="Monat danach" disabled={!current ? false : true} onClick={() => onMonth(addMonths(o.month, 1))}>
+            <button type="button" className="hb-icon-btn" aria-label="Monat danach" disabled={current} onClick={() => onMonth(addMonths(o.month, 1))}>
               <Icon icon={ChevronRight} size={20} />
             </button>
           </>
         )}
       </div>
+      <span className="hb-fin-kicker">
+        <Icon icon={CalendarRange} size={16} />
+        {mode === 'out' ? 'Ausgaben' : 'Einnahmen'} im {monthName(o.month, true)}
+      </span>
+      {mode === 'out' ? <SpendBody o={o} onPick={onPick} /> : <IncomeBody o={o} nameOf={nameOf} />}
+    </section>
+  )
+}
+
+function SpendBody({ o, onPick }: { o: Overview; onPick?: (c: OverviewCategory) => void }) {
+  const current = o.days_passed < o.days_in_month
+  const fc = totalForecast(o)
+  const diff = pct(current ? fc : o.total_spent, o.total_avg3)
+  const shown = o.categories.filter((c) => c.spent > 0)
+  const top = shown.slice(0, 5)
+  const rest = shown.slice(5).reduce((s, c) => s + c.spent, 0)
+  return (
+    <>
       <div className="flex flex-wrap items-baseline gap-x-3">
         <span className="hb-depot-value">{euro(o.total_spent)}</span>
         {diff !== null && (
@@ -98,9 +130,8 @@ export function MonthCard({ o, onMonth, onPick, title }: { o: Overview; onMonth?
         )}
       </div>
       <span className="text-label text-ink-muted">
-        Schnitt der letzten 3 Monate {euro(o.total_avg3)}
-        {current ? ` · noch ${o.days_in_month - o.days_passed} Tage` : ''}
-        {o.total_income > 0 ? ` · Einnahmen ${euro(o.total_income)}` : ''}
+        Schnitt {euro(o.total_avg3)}
+        {current ? ` · Prognose ${euro(fc)} · noch ${o.days_in_month - o.days_passed} Tage` : ''}
       </span>
       {o.total_spent > 0 && (
         <div className="hb-fin-stack" aria-hidden="true">
@@ -127,7 +158,39 @@ export function MonthCard({ o, onMonth, onPick, title }: { o: Overview; onMonth?
         })}
       </ul>
       {shown.length === 0 && <p className="text-label text-ink-muted">In diesem Monat noch keine Ausgaben.</p>}
-    </section>
+    </>
+  )
+}
+
+function IncomeBody({ o, nameOf }: { o: Overview; nameOf: (cp: string) => string | null }) {
+  const avg = o.total_income_avg3 ?? 0
+  const diff = pct(o.total_income, avg)
+  const left = o.total_income - o.total_spent
+  const sources = o.income_sources ?? []
+  return (
+    <>
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <span className="hb-depot-value">{euro(o.total_income)}</span>
+        {diff !== null && <span className={`hb-depot-delta ${diff < -5 ? 'is-down' : diff > 5 ? 'is-up' : ''}`}>{signed(diff)} zum Schnitt</span>}
+      </div>
+      <span className="text-label text-ink-muted">
+        Schnitt {euro(avg)} · übrig nach Ausgaben <b className={left >= 0 ? 'text-success' : 'text-urgent'}>{euro(left, true)}</b>
+      </span>
+      <ul className="flex flex-col">
+        {sources.map((x) => {
+          const d = pct(x.amount, x.avg3)
+          return (
+            <li key={x.name} className="hb-fin-catrow">
+              <span className="hb-fin-swatch is-in" />
+              <span className="min-w-0 flex-1 truncate text-left">{nameOf(x.name) ?? shopName(x.name)}</span>
+              <span className="hb-fin-amount is-in">{euro(x.amount)}</span>
+              <span className="hb-fin-dev">{x.amount === 0 ? 'fehlt noch' : d === null ? 'neu' : signed(d)}</span>
+            </li>
+          )
+        })}
+      </ul>
+      {!sources.length && <p className="text-label text-ink-muted">In diesem Monat noch keine Einnahmen.</p>}
+    </>
   )
 }
 
@@ -165,7 +228,7 @@ export function BudgetCard({ o, onPick, onApply, max }: { o: Overview; onPick?: 
         <div className="hb-goal-grid">
           {list.map((c) => {
             const v = (c.spent / (c.budget ?? 1)) * 100
-            const f = forecast(o, c.spent)
+            const f = catForecast(o, c)
             return (
               <button key={c.id} type="button" className="hb-goal" disabled={!onPick} onClick={() => onPick?.(c)}>
                 <BudgetRing value={v} />
@@ -225,7 +288,7 @@ export function unusual(o: Overview): { tone: 'urgent' | 'warning' | 'info'; tit
   for (const c of o.categories) {
     if (!c.budget) continue
     const v = (c.spent / c.budget) * 100
-    if (v >= 90) out.push({ tone: v > 100 ? 'urgent' : 'warning', title: `${c.name} bei ${Math.round(v)} %`, text: `Budget ${euro(c.budget)}, Prognose bis Monatsende ${euro(forecast(o, c.spent))}` })
+    if (v >= 90) out.push({ tone: v > 100 ? 'urgent' : 'warning', title: `${c.name} bei ${Math.round(v)} %`, text: `Budget ${euro(c.budget)}, Prognose bis Monatsende ${euro(catForecast(o, c))}` })
   }
   // Tendenz über Wochen (letzte 4 gegen die 4 davor)
   for (const t of trends(o))
@@ -403,6 +466,7 @@ export function WhenCard({ o }: { o: Overview }) {
 
 /** Wo: Läden mit Anzahl und Ø pro Einkauf (letzte 90 Tage, nur Kartenzahlungen) */
 export function WhereCard({ o, max = 6 }: { o: Overview; max?: number }) {
+  const { nameOf } = useFinNames()
   if (!o.merchants.length) return null
   return (
     <section className="hb-tile hb-tile-static gap-1">
@@ -413,7 +477,7 @@ export function WhereCard({ o, max = 6 }: { o: Overview; max?: number }) {
       {o.merchants.slice(0, max).map((m, i) => (
         <div key={m.name} className="hb-fin-where">
           <span className="text-ink-muted">{i + 1}</span>
-          <span className="min-w-0 flex-1 truncate">{shopName(m.name)}</span>
+          <span className="min-w-0 flex-1 truncate">{nameOf(m.name) ?? shopName(m.name)}</span>
           <span className="text-label text-ink-muted">
             {m.n}× · Ø {euro(m.avg)}
           </span>
@@ -508,16 +572,38 @@ function useFinTileGuard() {
   return !!profile?.enabled && !settings?.visit_mode
 }
 
-/** Kachel „Monat“ für die Handy-Startseite (Haushalt diesen Monat vs. Schnitt) */
+/** Kachel „Monat“ für die Handy-Startseite: Ausgaben oder Einnahmen des Haushalts diesen Monat vs. Schnitt */
 export function MonthTile({ delay }: TileProps) {
   const ok = useFinTileGuard()
   const { data: o } = useOverview(null, true)
+  const [mode, setMode] = useState<'out' | 'in'>('out')
   if (!ok || !o || !o.months.some((m) => m.spent > 0)) return null
-  const diff = pct(forecast(o, o.total_spent), o.total_avg3)
+  const fc = totalForecast(o)
+  const value = mode === 'out' ? o.total_spent : o.total_income
+  const diff = mode === 'out' ? pct(fc, o.total_avg3) : pct(o.total_income, o.total_income_avg3 ?? 0)
   return (
-    <Tile title={`${monthName(o.month)} · Haushalt`} icon={CalendarRange} delay={delay}>
-      <span className="hb-depot-value">{euro(o.total_spent)}</span>
-      {diff !== null && <span className={`hb-depot-delta ${diff > 10 ? 'is-down' : diff < -5 ? 'is-up' : ''}`}>{signed(diff)} hochgerechnet zum Schnitt ({euro(o.total_avg3)})</span>}
+    <Tile
+      title={monthName(o.month)}
+      icon={CalendarRange}
+      delay={delay}
+      action={
+        <div className="hb-seg is-small" role="group" aria-label="Ausgaben oder Einnahmen">
+          <button type="button" aria-pressed={mode === 'out'} className={mode === 'out' ? 'is-on' : ''} onClick={() => setMode('out')}>
+            Ausgaben
+          </button>
+          <button type="button" aria-pressed={mode === 'in'} className={mode === 'in' ? 'is-on' : ''} onClick={() => setMode('in')}>
+            Einnahmen
+          </button>
+        </div>
+      }
+    >
+      <span className="hb-fin-kicker">{mode === 'out' ? 'Ausgaben' : 'Einnahmen'} bisher</span>
+      <span className="hb-depot-value">{euro(value)}</span>
+      {diff !== null && (
+        <span className={`hb-depot-delta ${mode === 'out' ? (diff > 10 ? 'is-down' : diff < -5 ? 'is-up' : '') : diff < -5 ? 'is-down' : ''}`}>
+          {mode === 'out' ? `${signed(diff)} hochgerechnet zum Schnitt (${euro(o.total_avg3)})` : `${signed(diff)} zum Schnitt (${euro(o.total_income_avg3 ?? 0)})`}
+        </span>
+      )}
     </Tile>
   )
 }

@@ -6,7 +6,8 @@ import { HistoryChart } from './DepotCharts'
 import { fmtPct, quoteStamp } from './depotStore'
 import { GoalRing } from './Goals'
 import { euro } from './finStore'
-import { BudgetCard, MonthCard, MonthsCard, monthName, type Overview, UnusualCard, WhenCard, WhereCard } from './Analysis'
+import type { Overview } from './Analysis'
+import { WallHome } from './WallHome'
 
 export type WallSummary = {
   percent_only: boolean
@@ -72,25 +73,24 @@ const tone = (n: number | null) => (n === null ? '' : n > 0.005 ? 'is-up' : n < 
  */
 export function WallFinance({ data }: { data: WallData }) {
   const { home, depot } = data
+  const depotView = depot && (hasDepot(depot) || depot.goals.length > 0) ? <WallDepot summary={depot} /> : null
+  const note = (
+    <p className="hb-wallfin-note">
+      <Icon icon={Lock} size={16} />
+      Nur Haushalt und gemeinsame Depots{depot?.percent_only ? ' (Depot nur in Prozent)' : ''}. Einzelnes und Privates nur am Handy.
+    </p>
+  )
+  if (!home)
+    return (
+      <div className="flex flex-col gap-5">
+        {depotView}
+        {note}
+      </div>
+    )
   return (
     <div className="flex flex-col gap-5">
-      {home && (
-        <div className="hb-wallfin-home">
-          <MonthCard o={home} title={`${monthName(home.month)} · Haushalt`} />
-          <BudgetCard o={home} max={4} />
-          <div className="flex flex-col gap-5">
-            <UnusualCard o={home} />
-            <WhereCard o={home} max={5} />
-          </div>
-          <MonthsCard o={home} />
-          <WhenCard o={home} />
-        </div>
-      )}
-      {depot && (hasDepot(depot) || depot.goals.length > 0) && <WallDepot summary={depot} />}
-      <p className="hb-wallfin-note">
-        <Icon icon={Lock} size={16} />
-        Nur Haushalt und gemeinsame Depots{depot?.percent_only ? ' (Depot nur in Prozent)' : ''}. Einzelnes und Privates nur am Handy.
-      </p>
+      <WallHome o={home} after={depotView} />
+      {note}
     </div>
   )
 }

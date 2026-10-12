@@ -19,6 +19,7 @@ import {
   ruleForCounterparty,
   runImport,
   useFinCategories,
+  useFinNames,
   useFinProfile,
   useLastImport,
   useReviewQueue,
@@ -155,6 +156,7 @@ function StartView({
   const { profile } = useFinProfile(me.id)
   const cats = useFinCategories()
   const { txs } = useTransactions(part === 'list' ? 300 : 1)
+  const { nameOf } = useFinNames()
   const { queue } = useReviewQueue(me.id)
   const last = useLastImport(me.id)
   const input = useRef<HTMLInputElement>(null)
@@ -235,7 +237,7 @@ function StartView({
                     <button type="button" className="hb-fin-row" disabled={!mine} onClick={() => mine && setEdit(t)}>
                       <CategoryDot cat={catOf(t.category)} />
                       <span className="flex min-w-0 flex-1 flex-col text-left">
-                        <span className="truncate text-ink">{t.counterparty}</span>
+                        <span className="truncate text-ink">{nameOf(t.counterparty) ?? t.counterparty}</span>
                         <span className="truncate text-label text-ink-muted">
                           {day(t.booked_on)}
                           {t.booked_at ? ` · ${time(t.booked_at)}` : ''} · {catOf(t.category)?.name ?? t.category}

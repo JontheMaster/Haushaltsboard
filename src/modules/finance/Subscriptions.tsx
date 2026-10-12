@@ -5,7 +5,7 @@ import { Icon } from '../../components/Icon'
 import { Sheet } from '../../components/Sheet'
 import { useMembers } from '../../lib/members'
 import { supabase } from '../../lib/supabase'
-import { euro, useFinCategories } from './finStore'
+import { euro, useFinCategories, useFinNames } from './finStore'
 import { monthName } from './Analysis'
 
 type Row = { booked_on: string; counterparty: string; amount: number; category: string }
@@ -18,6 +18,8 @@ const PERIODS: Period[] = [
 export type Sub = {
   key: string
   name: string
+  /** Gegenpartei wie in der Bank (für den eigenen Anzeigenamen) */
+  counterparty: string
   period: Period
   amount: number
   perMonth: number
@@ -91,6 +93,7 @@ export function detectSubs(rows: Row[], today: string): Sub[] {
       out.push({
         key: series.length > 1 ? `${key}#${i}` : key,
         name: niceName(last.counterparty),
+        counterparty: last.counterparty,
         period,
         amount,
         perMonth: amount / period.months,
@@ -136,7 +139,10 @@ const dayMonth = (d: string) => new Intl.DateTimeFormat('de-DE', { day: 'numeric
 
 /** Karte „Abos und Fixkosten“ im Reiter Finanzen (Konto) */
 export function SubscriptionsCard({ showToast, empty }: { showToast: (m: string) => void; empty?: boolean }) {
-  const { subs, marks, reload, cats } = useSubs()
+  const { subs: raw, marks, reload, cats } = useSubs()
+  const { nameOf, setName } = useFinNames()
+  // eigener Anzeigename (z. B. Vermieter → „Miete“) statt des Namens aus der Bank
+  const subs = raw?.map((x) => ({ ...x, name: nameOf(x.counterparty) ?? x.name })) ?? null
   const [open, setOpen] = useState<Sub | null>(null)
   const [showHidden, setShowHidden] = useState(false)
   if (!subs) return null
@@ -209,6 +215,7 @@ export function SubscriptionsCard({ showToast, empty }: { showToast: (m: string)
       {open && (
         <SubSheet
           sub={open}
+          onRename={setName}
           mark={markOf(open.key)}
           onClose={() => setOpen(null)}
           onDone={(msg) => {
@@ -222,8 +229,21 @@ export function SubscriptionsCard({ showToast, empty }: { showToast: (m: string)
   )
 }
 
-function SubSheet({ sub, mark, onClose, onDone }: { sub: Sub; mark: Mark | undefined; onClose: () => void; onDone: (m: string) => void }) {
+function SubSheet({
+  sub,
+  mark,
+  onRename,
+  onClose,
+  onDone,
+}: {
+  sub: Sub
+  mark: Mark | undefined
+  onRename: (counterparty: string, label: string) => Promise<boolean>
+  onClose: () => void
+  onDone: (m: string) => void
+}) {
   const { me } = useMembers()
+  const [label, setLabel] = useState(sub.name)
   async function cancel() {
     // Todo für die Person, die gerade tippt („Offen, noch ohne Tag“); das Board kündigt nie selbst
     const { data: todo, error } = await supabase.from('todos').insert({ title: `${sub.name} kündigen`, assignee: me.id }).select('id').single()
@@ -242,6 +262,15 @@ function SubSheet({ sub, mark, onClose, onDone }: { sub: Sub; mark: Mark | undef
   return (
     <Sheet title={sub.name} onClose={onClose}>
       <div className="flex flex-col gap-4">
+        <div className="flex items-end gap-2">
+          <label className="flex flex-1 flex-col gap-1">
+            <span className="text-label text-ink-muted">Name (gilt überall in Finanzen, für euch beide)</span>
+            <input className="hb-input" value={label} maxLength={60} onChange={(e) => setLabel(e.target.value)} />
+          </label>
+          <Button disabled={label.trim() === sub.name} onClick={async () => onDone((await onRename(sub.counterparty, label)) ? `Heißt jetzt „${label.trim() || sub.counterparty}“` : 'Das hat nicht geklappt.')}>
+            Umbenennen
+          </Button>
+        </div>
         <dl className="hb-fin-facts">
           <div>
             <dt>Betrag</dt>

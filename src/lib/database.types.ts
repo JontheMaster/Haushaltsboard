@@ -247,6 +247,12 @@ export type Database = {
         Update: { amount?: number; as_of?: string; household?: boolean }
         Relationships: []
       }
+      fin_names: {
+        Row: { counterparty: string; label: string; updated_at: string }
+        Insert: { counterparty: string; label: string; updated_at?: string }
+        Update: { label?: string; updated_at?: string }
+        Relationships: []
+      }
       fin_imports: {
         Row: { id: string; owner: string; file_name: string | null; account: string | null; from: string | null; to: string | null; rows_total: number; rows_new: number; rows_duplicate: number; at: string }
         Insert: { owner: string }
