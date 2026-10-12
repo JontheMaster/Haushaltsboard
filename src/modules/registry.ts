@@ -4,6 +4,7 @@ import { FinanceSettings } from './finance/FinanceSettings'
 import { DepotTile } from './finance/DepotCharts'
 import { GoalsTile } from './finance/Goals'
 import { BudgetTile, MonthTile } from './finance/Analysis'
+import { FinanceHeader } from './finance/ReviewHeader'
 import { NfcSettings } from './nfc/NfcSettings'
 import { NfcHeader } from './nfc/NfcHeader'
 import { DriveTile, useDriveShow } from './nfc/DriveHeader'
@@ -67,7 +68,7 @@ export const MODULES: ModuleDef[] = [
   { id: 'nfc', title: 'NFC-Tags', description: 'Sticker antippen: Todo anlegen, abhaken, einkaufen und mehr', icon: Nfc, phase: 5, sizes: ['s'], Tile: DriveTile, Settings: NfcSettings, Header: NfcHeader, stackOn: 'uhr-wetter.kurve', useShow: useDriveShow },
   // Finanzen (docs/finanzen-modul.md): jede Person schaltet es in den Einstellungen für sich ein, dann Reiter am Handy.
   // Keine Kachel; an der Wand nie einzelne Buchungen, im Besuchsmodus ganz weg
-  { id: 'finanzen', title: 'Finanzen', description: 'Ausgaben aus dem ING-Export, eigene privat, Haushalt gemeinsam', icon: Wallet, phase: 5, sizes: [], Settings: FinanceSettings, phoneTiles: [{ id: 'depot', title: 'Depot', description: 'Depotwert, seit gestern, Linie 30 Tage', icon: TrendingUp, Tile: DepotTile }, { id: 'ziele', title: 'Sparziele', description: 'Ziel-Ringe, z. B. Urlaub 2027: 64 %', icon: Target, Tile: GoalsTile }, { id: 'monat', title: 'Haushalt diesen Monat', description: 'Ausgaben im Vergleich zum Schnitt', icon: CalendarRange, Tile: MonthTile }, { id: 'budget', title: 'Budget', description: 'Ringe der Haushaltsbudgets', icon: Target, Tile: BudgetTile }] },
+  { id: 'finanzen', title: 'Finanzen', description: 'Ausgaben aus dem ING-Export, eigene privat, Haushalt gemeinsam', icon: Wallet, phase: 5, sizes: [], Settings: FinanceSettings, Header: FinanceHeader, phoneTiles: [{ id: 'depot', title: 'Depot', description: 'Depotwert, seit gestern, Linie 30 Tage', icon: TrendingUp, Tile: DepotTile }, { id: 'ziele', title: 'Sparziele', description: 'Ziel-Ringe, z. B. Urlaub 2027: 64 %', icon: Target, Tile: GoalsTile }, { id: 'monat', title: 'Haushalt diesen Monat', description: 'Ausgaben im Vergleich zum Schnitt', icon: CalendarRange, Tile: MonthTile }, { id: 'budget', title: 'Budget', description: 'Ringe der Haushaltsbudgets', icon: Target, Tile: BudgetTile }] },
   // Handy-Widget (Scriptable am iPhone, KWGT an Android): nur Einrichtung, kein Schalter; Daten über Edge Function `widget`
   { id: 'widget', title: 'Handy-Widget', description: 'Termine, Todos und Essen auf dem Home-Bildschirm', icon: Smartphone, phase: 5, sizes: [], Settings: WidgetSettings, toggle: false },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary , phoneTiles: [{ id: 'foto', title: 'Foto des Tages', description: 'Jeden Tag ein Bild aus eurer Fotobibliothek', icon: Image, Tile: PhotoOfDayTile }] },

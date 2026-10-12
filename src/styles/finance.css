@@ -1163,3 +1163,57 @@ li:first-child > .hb-fin-month-head {
 .hb-fin-amount.is-in {
   color: var(--success);
 }
+
+/* Zuordnen an der Wand: größere Knöpfe zum Antippen */
+.hb-fin-chips.is-wall {
+  gap: var(--space-2);
+}
+.hb-fin-chips.is-wall .hb-fin-pick {
+  min-height: 52px;
+  padding: 0 var(--space-4);
+  font-size: 17px;
+}
+
+/* Einkauf-Kachel: Lebensmittel diesen Monat (aus Finanzen) */
+.hb-grocery-line {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  /* Platz für die Punkte des Stapels an der Wand */
+  margin-bottom: 14px;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.hb-grocery-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.hb-grocery-text b {
+  color: var(--ink);
+}
+.hb-grocery-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.hb-grocery-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--success-fill);
+}
+.hb-grocery-line.is-near .hb-grocery-bar i {
+  background: var(--highlight-ink);
+}
+.hb-grocery-line.is-over {
+  color: var(--urgent);
+}
+.hb-grocery-line.is-over .hb-grocery-bar i {
+  background: var(--urgent);
+}

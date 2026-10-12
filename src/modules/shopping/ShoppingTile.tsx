@@ -7,6 +7,7 @@ import { TaskItem } from '../../components/TaskItem'
 import { Tile } from '../../components/Tile'
 import { useFlip } from '../../lib/useFlip'
 import type { TileProps } from '../types'
+import { GroceryLine } from '../finance/FinanceBits'
 import { useBring } from './useBring'
 
 export function ShoppingTile({ size, delay }: TileProps) {
@@ -71,6 +72,7 @@ export function ShoppingTile({ size, delay }: TileProps) {
           ))}
         </div>
       )}
+      <GroceryLine />
     </Tile>
   )
 }

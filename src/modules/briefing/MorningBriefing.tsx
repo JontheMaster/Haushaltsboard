@@ -10,6 +10,7 @@ import { useMealsByDay } from '../meals/MealLine'
 import { hm as mealHm } from '../meals/mealStore'
 import { useTodos } from '../todos/useTodos'
 import { hm, usePlans } from '../transit/api'
+import { BriefingBudgetCard } from '../finance/FinanceBits'
 import { useEnabledModules, useModuleConfig } from '../useModules'
 import { DayCurve } from './DayCurve'
 import { RevealText } from './RevealText'
@@ -258,6 +259,8 @@ export function MorningBriefing({ weather, onClose }: { weather: Weather | null;
               </div>
             </div>
           )}
+
+          <BriefingBudgetCard style={enter()} />
 
           {trips.length > 0 && (
             <div className="hb-brief-card" style={enter()}>

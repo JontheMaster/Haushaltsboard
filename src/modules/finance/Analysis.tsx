@@ -39,12 +39,13 @@ export type Overview = {
 }
 
 /** Auswertung aus der RPC fin_overview (eigene + Haushalt; das Tablet bekommt immer nur Haushalt) */
-export function useOverview(month: string | null, householdOnly: boolean, pollMs = 0) {
+export function useOverview(month: string | null, householdOnly: boolean, pollMs = 0, enabled = true) {
   const [data, setData] = useState<Overview | null>(null)
   const load = useCallback(async () => {
+    if (!enabled) return setData(null)
     const { data } = await supabase.rpc('fin_overview', { ...(month ? { p_month: month } : {}), p_household_only: householdOnly })
     setData((data as Overview | null) ?? null)
-  }, [month, householdOnly])
+  }, [month, householdOnly, enabled])
   useEffect(() => {
     load()
     if (!pollMs) return

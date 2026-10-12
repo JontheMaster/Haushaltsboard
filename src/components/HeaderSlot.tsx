@@ -10,10 +10,11 @@ const ROTATE_MS = 8000
  * - Weg + Musik: Weg-Karte oben, Musik als schmale Zeile darunter (beides gleichzeitig)
  * - zwei Wege: untereinander; zwei Wege + Musik: die Wege wechseln sich ab, die Musikzeile bleibt
  * - Essen („meal“, auch der Wochenrückblick): allein eine normale Karte, mit anderen eine schmale Zeile; bei Weg + Musik zugleich weicht es
+ * - Unwichtiges („low“, z. B. Buchungen zuordnen): nur, wenn sonst nichts da ist (Entscheidung Jonathan 12.10.2026)
  */
 export function HeaderSlot({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [kinds, setKinds] = useState({ trips: 0, music: 0, meals: 0 })
+  const [kinds, setKinds] = useState({ trips: 0, music: 0, meals: 0, low: 0 })
   const [index, setIndex] = useState(0)
   const rotate = kinds.music > 0 && kinds.trips > 1
 
@@ -26,6 +27,7 @@ export function HeaderSlot({ children }: { children: ReactNode }) {
         trips: el.querySelectorAll('.hb-slot-item[data-kind="trip"]').length,
         music: el.querySelectorAll('.hb-slot-item[data-kind="music"]').length,
         meals: el.querySelectorAll('.hb-slot-item[data-kind="meal"]').length,
+        low: el.querySelectorAll('.hb-slot-item[data-kind="low"]').length,
       })
     update()
     const mo = new MutationObserver(update)
@@ -51,9 +53,14 @@ export function HeaderSlot({ children }: { children: ReactNode }) {
       if (kinds.trips && kinds.music) item.dataset.hidden = '1'
       else delete item.dataset.hidden
     })
+    // Unwichtiges nur, wenn sonst nichts da ist (und dann nur die erste Karte)
+    ref.current?.querySelectorAll<HTMLElement>('.hb-slot-item[data-kind="low"]').forEach((item, i) => {
+      if (kinds.trips + kinds.music + kinds.meals > 0 || i > 0) item.dataset.hidden = '1'
+      else delete item.dataset.hidden
+    })
   })
 
-  const empty = kinds.trips + kinds.music + kinds.meals === 0
+  const empty = kinds.trips + kinds.music + kinds.meals + kinds.low === 0
   const cls = [
     'hb-header-slot',
     empty && 'is-empty',

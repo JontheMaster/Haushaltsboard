@@ -80,7 +80,14 @@ export type Recap = {
   timers?: { label: string; n: number }[]
   drives?: { n: number; km: number }
   /** Haushaltsausgaben der Woche (nur Summen, aus dem Modul Finanzen) */
-  fin?: { total: number; top: { name: string; amount: number } | null } | null
+  fin?: {
+    total: number
+    top: { name: string; amount: number } | null
+    prev?: number
+    cats?: { name: string; color: string; amount: number }[] | null
+    shop?: { name: string; n: number; amount: number } | null
+    card_payments?: number
+  } | null
   best_day: { day: string; n: number } | null
   meals: { title: string; day: string; recipe_id: string | null }[]
   open: number

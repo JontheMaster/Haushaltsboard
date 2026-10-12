@@ -573,6 +573,8 @@ export type Database = {
       // Wand: nur Prozent und Ziel-Fortschritt gemeinsamer Depots (security definer)
       fin_wall_summary: { Args: Record<string, never>; Returns: Json }
       // Stufe 3: Monat, Verlauf, Wann, Wo, Budgets (eigene + Haushalt; Tablet nur Haushalt)
+      fin_review_list: { Args: Record<string, never>; Returns: Json }
+      fin_review_assign: { Args: { p_id: string; p_category: string; p_always?: boolean }; Returns: number }
       fin_overview: { Args: { p_month?: string; p_household_only?: boolean }; Returns: Json }
     }
     Enums: { [_ in never]: never }

@@ -482,3 +482,38 @@
     height: min(42vh, 300px);
   }
 }
+
+/* Eure Woche in Euro: Balken pro Kategorie */
+.hb-story-money {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  margin: var(--space-2) 0;
+  padding: 0;
+  list-style: none;
+}
+.hb-story-money li {
+  display: grid;
+  grid-template-columns: minmax(0, 8em) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.hb-story-money b {
+  height: 18px;
+  border-radius: 9px;
+  background: var(--cat);
+  transform-origin: left;
+  animation: hb-fin-grow 0.9s var(--ease-out) both;
+  animation-delay: inherit;
+}
+.hb-story-money em {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+.hb-story-stack .hb-story-trend {
+  align-self: flex-start;
+}

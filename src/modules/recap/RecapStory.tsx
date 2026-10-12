@@ -98,6 +98,9 @@ type Slide = { id: string; tone: string; render: () => ReactNode }
  * laufen von selbst weiter (7 s), antippen rechts = weiter, links = zurück, wischen am Handy, Finger halten = Pause.
  * Karten ohne Inhalt fallen weg. Am Ende die Übersicht mit allen Listen.
  */
+/** „NETTO MARKEN-DISCOUNT“ → „Netto Marken-Discount“, eigene Anzeigenamen bleiben wie sie sind */
+const shopTitle = (n: string) => (n === n.toUpperCase() ? n.toLowerCase().replace(/(^|[\s-])([a-zäöü])/g, (_, a, b) => a + b.toUpperCase()) : n)
+
 export function RecapStory({ recap, week, thisWeek, today, onWeek }: { recap: Recap; week: string; thisWeek: string; today: string; onWeek: (w: string) => void }) {
   const { people, personKey } = useMembers()
   const { events } = useCalendar()
@@ -154,7 +157,7 @@ export function RecapStory({ recap, week, thisWeek, today, onWeek }: { recap: Re
   if (weekEvents?.length) numbers.push({ icon: CalendarDays, value: weekEvents.length, label: weekEvents.length === 1 ? 'Termin' : 'Termine' })
   if (washes) numbers.push({ icon: WashingMachine, value: washes, label: washes === 1 ? 'Wäsche-Runde' : 'Wäsche-Runden' })
   if (recap.drives?.n) numbers.push({ icon: Car, value: recap.drives.n, label: `${recap.drives.n === 1 ? 'Heimweg' : 'Heimwege'} · ${recap.drives.km} km` })
-  if (fin?.total) numbers.push({ icon: Wallet, value: fin.total, unit: ' €', label: fin.top ? `für den Haushalt, davon ${fin.top.amount} € ${fin.top.name}` : 'für den Haushalt' })
+  if (fin?.total && !fin.cats?.length) numbers.push({ icon: Wallet, value: fin.total, unit: ' €', label: fin.top ? `für den Haushalt, davon ${fin.top.amount} € ${fin.top.name}` : 'für den Haushalt' })
   if (recap.photos) numbers.push({ icon: Image, value: recap.photos, label: recap.photos === 1 ? 'neues Foto' : 'neue Fotos' })
   if (weather?.warm) numbers.push({ icon: Thermometer, value: weather.warm.t, unit: '°', label: `am ${dayName(weather.warm.day)}, wärmster Tag` })
   if (weather) numbers.push({ icon: Sun, value: weather.sunHours, unit: ' Std', label: 'Sonne' })
@@ -319,6 +322,49 @@ export function RecapStory({ recap, week, thisWeek, today, onWeek }: { recap: Re
         </div>
       ),
     })
+
+  // Geld: Haushaltsausgaben der Woche (nur Summen, aus Finanzen; nicht im Besuchsmodus)
+  const finCats = fin?.cats ?? []
+  if (fin?.total && finCats.length) {
+    const maxCat = Math.max(1, ...finCats.map((c) => c.amount))
+    const delta = fin.prev ? fin.total - fin.prev : null
+    slides.push({
+      id: 'money',
+      tone: 'success',
+      render: () => (
+        <div className="hb-story-stack">
+          <p className="hb-story-kicker hb-story-in">Eure Woche in Euro</p>
+          <p className="hb-story-title hb-story-in" style={{ ['--i' as string]: 1 }}>
+            <span className="hb-story-num">
+              <CountUp value={fin.total} delay={300} />
+            </span>{' '}
+            € für den Haushalt
+          </p>
+          {delta !== null && (
+            <p className={`hb-story-trend hb-story-in ${delta <= 0 ? 'is-up' : 'is-down'}`} style={{ ['--i' as string]: 2 }}>
+              <Icon icon={delta <= 0 ? TrendingDown : TrendingUp} size={20} />
+              {delta === 0 ? 'genauso viel wie letzte Woche' : `${Math.abs(delta)} € ${delta < 0 ? 'weniger' : 'mehr'} als letzte Woche`}
+            </p>
+          )}
+          <ul className="hb-story-money">
+            {finCats.map((c, i) => (
+              <li key={c.name} className="hb-story-pop" style={{ ['--i' as string]: i + 3, ['--cat' as string]: `var(--${c.color})` }}>
+                <span>{c.name}</span>
+                <b style={{ width: `${(c.amount / maxCat) * 100}%` }} />
+                <em>{c.amount} €</em>
+              </li>
+            ))}
+          </ul>
+          {fin.shop && (
+            <p className="hb-story-sub hb-story-in" style={{ ['--i' as string]: 8 }}>
+              Am häufigsten bezahlt bei <b>{shopTitle(fin.shop.name)}</b> ({fin.shop.n}×, {fin.shop.amount} €)
+              {fin.card_payments ? ` · ${fin.card_payments} Kartenzahlungen` : ''}
+            </p>
+          )}
+        </div>
+      ),
+    })
+  }
 
   if (numbers.length >= 2)
     slides.push({
