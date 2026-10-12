@@ -28,7 +28,7 @@ import type { TileSize } from '../modules/types'
 import { useEnabledModules, useLayout, useModuleConfig } from '../modules/useModules'
 import { WeekView } from '../modules/week/WeekView'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
-import { useWallFinance, WallFinance } from '../modules/finance/WallFinance'
+import { useFinHints, useWallFinance, WallFinance } from '../modules/finance/WallFinance'
 import { useTapFromUrl } from '../modules/nfc/nfcStore'
 import { TimerDoneAlert } from '../modules/nfc/TimerDoneAlert'
 
@@ -184,6 +184,8 @@ export function Board({ weather }: { weather: Weather | null }) {
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
   // Sticker mit Link (?tap=<slug>): NFC-Tag mit der eigenen Anmeldung auslösen
   useTapFromUrl(showToast)
+  // Apple Pay (Stufe 2): kurzer Hinweis bei Haushaltseinkäufen, nie im Besuchsmodus
+  useFinHints(enabled?.has('finanzen') === true && !settings?.visit_mode, showToast)
   const hideToast = useCallback(() => setToast(null), [])
 
   useEffect(() => {

@@ -129,6 +129,7 @@ export type Database = {
           account: string | null
           hash: string
           linked_id: string | null
+          review_reason: string | null
           split: Json | null
           created_at: string
         }
@@ -219,6 +220,12 @@ export type Database = {
         Insert: { owner: string; name: string; target_amount: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean; manual_amount?: number }
         Update: { name?: string; target_amount?: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean; manual_amount?: number }
         Relationships: [Rel<'fin_goals_owner_fkey', 'owner', 'members'>]
+      }
+      fin_hints: {
+        Row: { id: string; text: string; created_at: string }
+        Insert: { text: string }
+        Update: Record<string, never>
+        Relationships: []
       }
       fin_imports: {
         Row: { id: string; owner: string; file_name: string | null; account: string | null; from: string | null; to: string | null; rows_total: number; rows_new: number; rows_duplicate: number; at: string }

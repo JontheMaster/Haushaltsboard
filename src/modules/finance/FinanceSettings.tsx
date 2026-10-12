@@ -13,7 +13,7 @@ import { setModuleConfig, useModuleConfig } from '../useModules'
 export function FinanceSettings({ onBack }: { onBack: () => void }) {
   const { me } = useMembers()
   const { profile } = useFinProfile(me.id)
-  const wall = useModuleConfig<{ wall_percent_only?: boolean; wall_calm?: boolean }>('finanzen', {})
+  const wall = useModuleConfig<{ wall_percent_only?: boolean; wall_calm?: boolean; wall_hint?: boolean }>('finanzen', {})
   const accounts = (profile?.joint_accounts ?? []).map((a) => ({ name: a.replace(/^-/, ''), joint: !a.startsWith('-') }))
 
   // Das Wand-Tablet sieht nie einzelne Buchungen und hat keine eigenen
@@ -70,7 +70,12 @@ export function FinanceSettings({ onBack }: { onBack: () => void }) {
             onChange={(on) => setModuleConfig('finanzen', { wall_calm: on })}
             label="Ruhige Ansicht: Woche und 30 Tage statt Tagesschwankung"
           />
-          <p className="text-label text-ink-muted">Gilt für beide. An der Wand stehen nur gemeinsame Depots und Ziele, im Besuchsmodus gar nichts.</p>
+          <Toggle
+            checked={wall.wall_hint === true}
+            onChange={(on) => setModuleConfig('finanzen', { wall_hint: on })}
+            label="Hinweis bei Apple Pay: Haushaltseinkäufe kurz am Board zeigen"
+          />
+          <p className="text-label text-ink-muted">Gilt für beide. An der Wand stehen nur gemeinsame Depots, Ziele und Haushaltssummen, private Buchungen nie, im Besuchsmodus gar nichts.</p>
         </section>
       )}
 

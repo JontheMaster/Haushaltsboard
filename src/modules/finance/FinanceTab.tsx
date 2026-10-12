@@ -12,6 +12,7 @@ import {
   assignTx,
   euro,
   FINANCE_IMPORT_URL,
+  FINANCE_TX_URL,
   iconOf,
   previewImport,
   ruleForCounterparty,
@@ -172,6 +173,7 @@ function StartView({ onReview, onGuide, showToast }: { onReview: () => void; onG
                         {day(t.booked_on)}
                         {t.booked_at ? ` · ${time(t.booked_at)}` : ''} · {catOf(t.category)?.name ?? t.category}
                         {!mine ? ` · ${byId.get(t.owner)?.name ?? ''}` : ''}
+                        {t.source === 'applepay' && t.status === 'pending' ? ' · vorgemerkt' : ''}
                       </span>
                     </span>
                     {t.needs_review && <Icon icon={CircleAlert} size={16} label="Noch zuordnen" className="text-warning" />}
@@ -343,6 +345,7 @@ function AssignEditor({ tx, cats, onDone }: { tx: FinTx; cats: FinCategory[]; on
           <span className={`hb-fin-amount hb-fin-big ${tx.amount > 0 ? 'is-in' : ''}`}>{euro(tx.amount, true)}</span>
         </div>
         {tx.purpose && <span className="text-label text-ink-muted">{tx.purpose}</span>}
+        {tx.review_reason && <span className="text-label font-semibold text-warning">{tx.review_reason}</span>}
       </div>
 
       <div className="hb-fin-chips" role="group" aria-label="Kategorie">
@@ -476,6 +479,18 @@ function GuideView({ onBack, showToast }: { onBack: () => void; showToast: (m: s
         <p className="rounded-md bg-success-soft p-3 text-label text-ink">
           Die Mitteilung sagt dann z. B. „79 neu, 5 schon da · 7 Buchungen zum Zuordnen“. Doppelt hochladen schadet nicht.
         </p>
+      </section>
+
+      <section className="hb-tile hb-tile-static gap-3">
+        <h3 className="font-semibold text-ink">Apple Pay live (Automation „Transaktion“)</h3>
+        <p className="text-label text-ink-muted">Jede Zahlung mit der ING-Karte in Apple Pay landet sofort mit Uhrzeit im Board. Der Monats-Export gleicht sie später ab, sie zählt nur einmal. Braucht iOS 17 oder neuer.</p>
+        <Steps>
+          <li>Kurzbefehle → Automation → + → „Transaktion“ (Wallet) → die ING-Karte wählen → „Sofort ausführen“ → Weiter.</li>
+          <li>Neuer leerer Kurzbefehl → Aktion „Inhalte von URL abrufen“: URL unten, Methode POST, Header „Authorization“ = „Bearer “ + dein Token.</li>
+          <li>Anfragetext JSON mit drei Feldern: amount = Kurzbefehl-Eingabe → Betrag, merchant = Händler, card = Karte.</li>
+          <li>Optional „Mitteilung anzeigen“ mit dem Ergebnis, z. B. „REWE · 23,47 € · Lebensmittel“.</li>
+        </Steps>
+        <CopyLine label="URL" value={FINANCE_TX_URL} onCopy={copy} />
       </section>
 
       <section className="hb-tile hb-tile-static gap-3">

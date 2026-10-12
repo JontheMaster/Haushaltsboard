@@ -40,6 +40,20 @@ export function useWallFinance(enabled: boolean) {
   return summary
 }
 
+/** Dezenter Hinweis am Board bei Apple-Pay-Haushaltseinkäufen (fin_hints, nur wenn eingeschaltet), als kurzer Toast */
+export function useFinHints(enabled: boolean, show: (text: string) => void) {
+  useEffect(() => {
+    if (!enabled) return
+    const ch = supabase
+      .channel(`fin-hints-${crypto.randomUUID()}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fin_hints' }, (p) => show(String((p.new as { text?: string }).text ?? '')))
+      .subscribe()
+    return () => {
+      supabase.removeChannel(ch)
+    }
+  }, [enabled, show])
+}
+
 const tone = (n: number | null) => (n === null ? '' : n > 0.005 ? 'is-up' : n < -0.005 ? 'is-down' : '')
 
 /**

@@ -251,3 +251,4 @@ export async function runImport(file: File, joint: boolean): Promise<{ ok: boole
 }
 
 export const FINANCE_IMPORT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finance-import`
+export const FINANCE_TX_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finance-tx`

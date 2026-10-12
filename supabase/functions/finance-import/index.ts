@@ -6,6 +6,7 @@
 // Der Parser (_shared/finCsv.ts) entfernt IBAN, BIC, Mandate, Gläubiger-IDs, Kartenreferenzen und Kontostände.
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
 import { decodeCsv, findRule, parseIngCsv, safeFileName, sha256Hex, type FinRule } from '../_shared/finCsv.ts'
+import { dayDiff, similarMerchant } from '../_shared/finMatch.ts'
 
 const db = adminClient()
 /** größer ist kein Monats-Export mehr */
@@ -116,13 +117,50 @@ Deno.serve(async (req) => {
           hash,
         }
       })
-    const review = fresh.filter((t) => t.needs_review).length
+    // Stufe 2: Kartenzahlungen mit offenen Apple-Pay-Einträgen abgleichen (gleicher Betrag, ±3 Tage, ähnlicher Händler).
+    // Treffer: aus beiden wird eine Buchung; Uhrzeit und (selbst gesetzte) Kategorie von Apple Pay bleiben, der
+    // CSV-Hash kommt dazu (damit ein erneuter Import sie als „schon da“ erkennt), Status booked.
+    const { data: pending } = await db
+      .from('fin_transactions')
+      .select('id, amount, booked_on, counterparty, needs_review')
+      .eq('owner', member)
+      .eq('source', 'applepay')
+      .eq('status', 'pending')
+    const open = [...(pending ?? [])]
+    const matches: { applepay: string; csv: (typeof fresh)[number] }[] = []
+    for (const t of fresh) {
+      if (t.amount >= 0) continue
+      const day = t.booked_at ? t.booked_at.slice(0, 10) : t.booked_on
+      const i = open.findIndex((p) => Number(p.amount) === t.amount && dayDiff(p.booked_on, day) <= 3 && similarMerchant(p.counterparty, t.counterparty))
+      if (i < 0) continue
+      matches.push({ applepay: open[i].id, csv: t })
+      open.splice(i, 1)
+    }
+    const matchedHashes = new Set(matches.map((m) => m.csv.hash))
+    const toInsert = fresh.filter((t) => !matchedHashes.has(t.hash))
+
+    const review = toInsert.filter((t) => t.needs_review).length
     const duplicate = parsed.rows.length - fresh.length
 
     if (url.searchParams.get('dry') !== '1') {
-      if (fresh.length) {
-        const { error } = await db.from('fin_transactions').upsert(fresh, { onConflict: 'owner,hash', ignoreDuplicates: true })
+      if (toInsert.length) {
+        const { error } = await db.from('fin_transactions').upsert(toInsert, { onConflict: 'owner,hash', ignoreDuplicates: true })
         if (error) throw error
+      }
+      for (const m of matches) {
+        const ap = (pending ?? []).find((p) => p.id === m.applepay)
+        await db
+          .from('fin_transactions')
+          .update({
+            status: 'booked',
+            hash: m.csv.hash,
+            review_reason: null,
+            card: m.csv.card,
+            account: m.csv.account,
+            // noch nicht zugeordnet und die Bank-Regel weiß es → Kategorie aus der CSV
+            ...(ap?.needs_review && !m.csv.needs_review ? { category: m.csv.category, needs_review: false } : {}),
+          })
+          .eq('id', m.applepay)
       }
       for (const [id, n] of hits) {
         const { data: r } = await db.from('fin_rules').select('hits').eq('id', id).single()
@@ -147,9 +185,9 @@ Deno.serve(async (req) => {
     }
 
     const message = fresh.length
-      ? `${fresh.length} neu, ${duplicate} schon da${review ? ` · ${plural(review, 'Buchung', 'Buchungen')} zum Zuordnen` : ''}`
+      ? `${toInsert.length} neu, ${duplicate} schon da${matches.length ? `, ${matches.length} mit Apple Pay abgeglichen` : ''}${review ? ` · ${plural(review, 'Buchung', 'Buchungen')} zum Zuordnen` : ''}`
       : `Alles schon da (${plural(parsed.rows.length, 'Buchung', 'Buchungen')})`
-    return json(req, { ok: true, message, total: parsed.rows.length, new: fresh.length, duplicate, review, from: parsed.from, to: parsed.to, joint, account })
+    return json(req, { ok: true, message, total: parsed.rows.length, new: toInsert.length, matched: matches.length, duplicate, review, from: parsed.from, to: parsed.to, joint, account })
   } catch (e) {
     console.error(e)
     return json(req, { ok: false, message: 'Import gerade nicht möglich. Probier es gleich noch mal.' }, 502)
