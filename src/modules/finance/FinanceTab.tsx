@@ -4,10 +4,9 @@ import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { PageHeader } from '../../components/PageHeader'
 import { Sheet } from '../../components/Sheet'
-import { Toggle } from '../../components/Toggle'
 import { useMembers } from '../../lib/members'
 import { createToken, revokeToken, useMyTokens } from '../nfc/nfcStore'
-import { AnalysisSection } from './Analysis'
+import { AnalysisSection, monthName } from './Analysis'
 import { DepotView } from './DepotView'
 import { SubscriptionsCard } from './Subscriptions'
 import {
@@ -29,7 +28,8 @@ import {
   type ImportPreview,
 } from './finStore'
 
-const day = (iso: string) => new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`))
+const day = (iso: string) =>
+  new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`))
 const time = (iso: string) => new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
 
 /** Farbiger Kreis mit dem Symbol der Kategorie (Farbe = Palettenton aus dem Design System) */
@@ -46,6 +46,8 @@ export function CategoryDot({ cat, size = 32 }: { cat: FinCategory | undefined; 
  * Zuordnen mit „Immer so für …?“, letzte Buchungen, Anleitung für den Teilen-Kurzbefehl.
  * Eigene Buchungen sieht nur man selbst, Haushaltsbuchungen sehen beide (RLS).
  */
+type KontoPart = 'overview' | 'list' | 'subs'
+
 export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
   const { me } = useMembers()
   const [view, setView] = useState<'start' | 'review' | 'guide'>('start')
@@ -56,6 +58,23 @@ export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
       return 'konto'
     }
   })
+  // Konto in drei Teilen, damit man nicht unter allen Buchungen nach der Auswertung suchen muss (Wunsch Jonathan 12.10.2026)
+  const [part, setPart] = useState<KontoPart>(() => {
+    try {
+      const v = localStorage.getItem('hb-fin-part')
+      return v === 'list' || v === 'subs' ? v : 'overview'
+    } catch {
+      return 'overview'
+    }
+  })
+  const choosePart = (p: KontoPart) => {
+    setPart(p)
+    try {
+      localStorage.setItem('hb-fin-part', p)
+    } catch {
+      // nur Komfort
+    }
+  }
   if (view === 'review') return <ReviewView onBack={() => setView('start')} showToast={showToast} />
   if (view === 'guide') return <GuideView onBack={() => setView('start')} showToast={showToast} />
   const choose = (a: 'konto' | 'depot') => {
@@ -88,20 +107,54 @@ export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
         <DepotView showToast={showToast} />
       ) : (
         <>
-          <StartView key={me.id} onReview={() => setView('review')} onGuide={() => setView('guide')} showToast={showToast} />
-          <AnalysisSection key={`a-${me.id}`} showToast={showToast} />
-          <SubscriptionsCard key={`s-${me.id}`} showToast={showToast} />
+          <div className="hb-seg hb-seg-fill" role="group" aria-label="Konto">
+            {(
+              [
+                ['overview', 'Überblick'],
+                ['list', 'Buchungen'],
+                ['subs', 'Abos'],
+              ] as const
+            ).map(([id, label]) => (
+              <button key={id} type="button" aria-pressed={part === id} className={part === id ? 'is-on' : ''} onClick={() => choosePart(id)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {part === 'subs' ? (
+            <SubscriptionsCard key={`s-${me.id}`} showToast={showToast} empty />
+          ) : (
+            <StartView
+              key={me.id}
+              part={part}
+              onList={() => choosePart('list')}
+              onReview={() => setView('review')}
+              onGuide={() => setView('guide')}
+              showToast={showToast}
+            />
+          )}
         </>
       )}
     </div>
   )
 }
 
-function StartView({ onReview, onGuide, showToast }: { onReview: () => void; onGuide: () => void; showToast: (m: string) => void }) {
+function StartView({
+  part,
+  onList,
+  onReview,
+  onGuide,
+  showToast,
+}: {
+  part: 'overview' | 'list'
+  onList: () => void
+  onReview: () => void
+  onGuide: () => void
+  showToast: (m: string) => void
+}) {
   const { me, byId } = useMembers()
   const { profile } = useFinProfile(me.id)
   const cats = useFinCategories()
-  const { txs } = useTransactions(40)
+  const { txs } = useTransactions(part === 'list' ? 300 : 1)
   const { queue } = useReviewQueue(me.id)
   const last = useLastImport(me.id)
   const input = useRef<HTMLInputElement>(null)
@@ -124,25 +177,27 @@ function StartView({ onReview, onGuide, showToast }: { onReview: () => void; onG
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="hb-tile hb-tile-static gap-3">
-        <div className="flex flex-col gap-1">
-          <h3 className="font-semibold text-ink">Umsätze importieren</h3>
-          <p className="text-label text-ink-muted">
-            {last
-              ? `Zuletzt ${day(last.at.slice(0, 10))}: ${last.rows_new} neu${last.to ? `, Buchungen bis ${day(last.to)}` : ''}.`
-              : 'Exportiere im ING-Banking die Umsätze als CSV und wähle die Datei hier aus.'}
-          </p>
-        </div>
-        <input ref={input} type="file" accept=".csv,text/csv,text/plain" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
-        <Button variant="primary" size="lg" icon={<Icon icon={Upload} size={20} />} onClick={() => input.current?.click()}>
-          Datei wählen
-        </Button>
-        <button type="button" className="hb-fin-link" onClick={onGuide}>
-          <Icon icon={Share} size={16} />
-          Oder direkt aus dem Teilen-Menü hochladen
-          <Icon icon={ChevronRight} size={16} />
-        </button>
-      </section>
+      {part === 'list' && (
+        <section className="hb-tile hb-tile-static gap-3">
+          <div className="flex flex-col gap-1">
+            <h3 className="font-semibold text-ink">Umsätze importieren</h3>
+            <p className="text-label text-ink-muted">
+              {last
+                ? `Zuletzt ${day(last.at.slice(0, 10))}: ${last.rows_new} neu${last.to ? `, Buchungen bis ${day(last.to)}` : ''}.`
+                : 'Exportiere im ING-Banking die Umsätze als CSV und wähle die Datei hier aus.'}
+            </p>
+          </div>
+          <input ref={input} type="file" accept=".csv,text/csv,text/plain" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
+          <Button variant="primary" size="lg" icon={<Icon icon={Upload} size={20} />} onClick={() => input.current?.click()}>
+            Datei wählen
+          </Button>
+          <button type="button" className="hb-fin-link" onClick={onGuide}>
+            <Icon icon={Share} size={16} />
+            Oder direkt aus dem Teilen-Menü hochladen
+            <Icon icon={ChevronRight} size={16} />
+          </button>
+        </section>
+      )}
 
       {queue && queue.length > 0 && (
         <button type="button" className="hb-tile hb-tile-static hb-fin-review-card" onClick={onReview}>
@@ -159,42 +214,49 @@ function StartView({ onReview, onGuide, showToast }: { onReview: () => void; onG
         </button>
       )}
 
-      <section className="hb-tile hb-tile-static gap-1">
-        <h3 className="mb-1 font-semibold text-ink">Letzte Buchungen</h3>
-        {txs === null ? (
-          <p className="text-label text-ink-muted">Einen Moment …</p>
-        ) : txs.length === 0 ? (
-          <p className="text-body text-ink-muted">Noch keine Buchungen. Importier deinen ersten Monat, dann siehst du hier, wofür das Geld weg ist.</p>
-        ) : (
-          <ul className="flex flex-col">
-            {txs.map((t) => {
-              const mine = t.owner === me.id
-              return (
-                <li key={t.id}>
-                  <button type="button" className="hb-fin-row" disabled={!mine} onClick={() => mine && setEdit(t)}>
-                    <CategoryDot cat={catOf(t.category)} />
-                    <span className="flex min-w-0 flex-1 flex-col text-left">
-                      <span className="truncate text-ink">{t.counterparty}</span>
-                      <span className="truncate text-label text-ink-muted">
-                        {day(t.booked_on)}
-                        {t.booked_at ? ` · ${time(t.booked_at)}` : ''} · {catOf(t.category)?.name ?? t.category}
-                        {!mine ? ` · ${byId.get(t.owner)?.name ?? ''}` : ''}
-                        {t.source === 'applepay' && t.status === 'pending' ? ' · vorgemerkt' : ''}
+      {part === 'overview' && <AnalysisSection key={`a-${me.id}`} showToast={showToast} onEmpty={onList} />}
+
+      {part === 'list' && (
+        <section className="hb-tile hb-tile-static gap-1">
+          <h3 className="mb-1 font-semibold text-ink">Buchungen</h3>
+          {txs === null ? (
+            <p className="text-label text-ink-muted">Einen Moment …</p>
+          ) : txs.length === 0 ? (
+            <p className="text-body text-ink-muted">Noch keine Buchungen. Importier deinen ersten Monat, dann siehst du hier, wofür das Geld weg ist.</p>
+          ) : (
+            <ul className="flex flex-col">
+              {txs.map((t, i) => {
+                const mine = t.owner === me.id
+                const month = t.booked_on.slice(0, 7)
+                const newMonth = i === 0 || txs[i - 1].booked_on.slice(0, 7) !== month
+                return (
+                  <li key={t.id}>
+                    {newMonth && <h4 className="hb-fin-month-head">{monthName(`${month}-01`, true)}</h4>}
+                    <button type="button" className="hb-fin-row" disabled={!mine} onClick={() => mine && setEdit(t)}>
+                      <CategoryDot cat={catOf(t.category)} />
+                      <span className="flex min-w-0 flex-1 flex-col text-left">
+                        <span className="truncate text-ink">{t.counterparty}</span>
+                        <span className="truncate text-label text-ink-muted">
+                          {day(t.booked_on)}
+                          {t.booked_at ? ` · ${time(t.booked_at)}` : ''} · {catOf(t.category)?.name ?? t.category}
+                          {!mine ? ` · ${byId.get(t.owner)?.name ?? ''}` : ''}
+                          {t.source === 'applepay' && t.status === 'pending' ? ' · vorgemerkt' : ''}
+                        </span>
                       </span>
-                    </span>
-                    {t.needs_review && <Icon icon={CircleAlert} size={16} label="Noch zuordnen" className="text-warning" />}
-                    <span className={`hb-fin-amount ${t.amount > 0 ? 'is-in' : ''}`}>{euro(t.amount, true)}</span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </section>
+                      {t.needs_review && <Icon icon={CircleAlert} size={16} label="Noch zuordnen" className="text-warning" />}
+                      <span className={`hb-fin-amount ${t.amount > 0 ? 'is-in' : ''}`}>{euro(t.amount, true)}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      )}
 
       <p className="flex items-center gap-2 px-1 text-label text-ink-muted">
         <Icon icon={Lock} size={16} />
-        Nur du siehst deine Buchungen. Haushalt sehen beide, an der Wand nur Summen.
+        Buchungen sehen nur ihr beide, an der Wand stehen nur Summen.
       </p>
 
       {preview && (
@@ -226,7 +288,8 @@ function StartView({ onReview, onGuide, showToast }: { onReview: () => void; onG
 
 /** Vorschau vor dem Import: Zeitraum, Anzahl, neu/schon da, Summen, Gemeinschaftskonto */
 function ImportSheet({ file, data, onClose, onDone }: { file: File; data: ImportPreview; onClose: () => void; onDone: (m: string) => void }) {
-  const [joint, setJoint] = useState(data.joint)
+  // alles zählt zum Haushalt (Entscheidung Jonathan 12.10.2026)
+  const joint = true
   const [busy, setBusy] = useState(false)
   const range = data.parse.from && data.parse.to ? `${day(data.parse.from)} – ${day(data.parse.to)}` : ''
 
@@ -266,20 +329,14 @@ function ImportSheet({ file, data, onClose, onDone }: { file: File; data: Import
             <dd>{data.review}</dd>
           </div>
         </dl>
-        {data.parse.account && (
-          <Toggle
-            checked={joint}
-            onChange={setJoint}
-            label={`${data.parse.account} ist euer gemeinsames Konto: alle Buchungen zählen zum Haushalt`}
-          />
-        )}
         <p className="flex gap-2 rounded-md bg-surface-sunken p-3 text-label text-ink">
           <Icon icon={ShieldCheck} size={18} className="shrink-0 text-ink-muted" />
           IBAN, BIC, Mandatsreferenzen, Gläubiger-IDs, Kartennummern und Kontostand werden vor dem Speichern entfernt.
         </p>
         {data.parse.skipped.length > 0 && (
           <p className="text-label text-ink-muted">
-            {data.parse.skipped.length} {data.parse.skipped.length === 1 ? 'Zeile ließ' : 'Zeilen ließen'} sich nicht lesen und {data.parse.skipped.length === 1 ? 'wird' : 'werden'} übersprungen.
+            {data.parse.skipped.length} {data.parse.skipped.length === 1 ? 'Zeile ließ' : 'Zeilen ließen'} sich nicht lesen und{' '}
+            {data.parse.skipped.length === 1 ? 'wird' : 'werden'} übersprungen.
           </p>
         )}
         {data.fresh > 0 ? (
@@ -307,25 +364,19 @@ function Stat({ value, label, tone }: { value: number; label: string; tone?: 'su
 }
 
 /**
- * Kategorie wählen, Haushalt umschalten, danach „Immer so für …?“ (legt eine eigene Regel an und ordnet
+ * Kategorie wählen, danach „Immer so für …?“ (legt eine eigene Regel an und ordnet
  * alle offenen Buchungen dieser Gegenpartei gleich mit zu)
  */
 function AssignEditor({ tx, cats, onDone }: { tx: FinTx; cats: FinCategory[]; onDone: (message?: string) => void }) {
   const { me } = useMembers()
-  const { profile } = useFinProfile(me.id)
-  // Gemeinschaftskonto: alles ist Haushalt, der Schalter wäre nur Rauschen (Entscheidung Jonathan 11.10.2026)
-  const jointAccount = !!tx.account && (profile?.joint_accounts ?? []).includes(tx.account)
-  const [household, setHousehold] = useState(tx.household)
-  const [touched, setTouched] = useState(false)
+  // alles ist Haushalt, es gibt keine Frage mehr dazu (Entscheidung Jonathan 12.10.2026)
+  const household = true
   const [picked, setPicked] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const pickedCat = cats.find((c) => c.id === picked)
 
   function choose(category: string) {
     setPicked(category)
-    // Haushalt folgt der Kategorie, solange man ihn nicht selbst umgestellt hat (gemeinsames Konto bleibt Haushalt)
-    const cat = cats.find((c) => c.id === category)
-    if (cat && !touched && !tx.household) setHousehold(cat.household_default)
   }
 
   async function save(always: boolean) {
@@ -370,17 +421,6 @@ function AssignEditor({ tx, cats, onDone }: { tx: FinTx; cats: FinCategory[]; on
         ))}
       </div>
 
-      {!jointAccount && (
-        <Toggle
-          checked={household}
-          onChange={(on) => {
-            setTouched(true)
-            setHousehold(on)
-          }}
-          label="Für den Haushalt"
-        />
-      )}
-
       {picked && (
         <div className="hb-fin-always">
           <span className="font-semibold text-ink">Immer so für {tx.counterparty}?</span>
@@ -414,11 +454,7 @@ function ReviewView({ onBack, showToast }: { onBack: () => void; showToast: (m: 
         <div className="min-w-0 flex-1">
           <PageHeader title="Zuordnen" onBack={onBack} />
         </div>
-        {tx && (
-          <span className="text-label text-ink-muted">
-            1 von {open.length}
-          </span>
-        )}
+        {tx && <span className="text-label text-ink-muted">1 von {open.length}</span>}
       </div>
       {queue === null || !cats ? (
         <p className="text-label text-ink-muted">Einen Moment …</p>
@@ -489,7 +525,10 @@ function GuideView({ onBack, showToast }: { onBack: () => void; showToast: (m: s
 
       <section className="hb-tile hb-tile-static gap-3">
         <h3 className="font-semibold text-ink">Apple Pay live (Automation „Transaktion“)</h3>
-        <p className="text-label text-ink-muted">Jede Zahlung mit der ING-Karte in Apple Pay landet sofort mit Uhrzeit im Board. Der Monats-Export gleicht sie später ab, sie zählt nur einmal. Braucht iOS 17 oder neuer.</p>
+        <p className="text-label text-ink-muted">
+          Jede Zahlung mit der ING-Karte in Apple Pay landet sofort mit Uhrzeit im Board. Der Monats-Export gleicht sie später ab, sie zählt nur einmal. Braucht
+          iOS 17 oder neuer.
+        </p>
         <Steps>
           <li>Kurzbefehle → Automation → + → „Transaktion“ (Wallet) → die ING-Karte wählen → „Sofort ausführen“ → Weiter.</li>
           <li>Neuer leerer Kurzbefehl → Aktion „Inhalte von URL abrufen“: URL unten, Methode POST, Header „Authorization“ = „Bearer “ + dein Token.</li>

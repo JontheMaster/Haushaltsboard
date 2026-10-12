@@ -83,9 +83,8 @@ Deno.serve(async (req) => {
     const rule = findRule((rules ?? []) as FinRule[], { counterparty: merchant, purpose: '', kind: 'Apple Pay' }, member)
     const category = rule?.category ?? (amount > 0 ? 'einnahmen' : 'sonstiges')
     const cat = (cats ?? []).find((c) => c.id === category)
-    // Karte am Gemeinschaftskonto (gemerkt aus dem CSV-Import) → Haushalt
-    const joint = (profile.joint_accounts ?? []).some((a: string) => !a.startsWith('-'))
-    const household = rule?.household ?? (joint ? true : (cat?.household_default ?? false))
+    // alles ist Haushalt (Entscheidung Jonathan 12.10.2026: alles läuft über das Gemeinschaftskonto)
+    const household = true
     const now = new Date()
     const { error } = await db.from('fin_transactions').insert({
       owner: member,

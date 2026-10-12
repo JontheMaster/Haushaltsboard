@@ -675,3 +675,19 @@ li:first-child > .hb-fin-catrow {
   font-weight: 600;
   color: var(--ink);
 }
+.hb-seg.hb-seg-fill {
+  display: flex;
+  width: 100%;
+}
+.hb-seg.hb-seg-fill button {
+  flex: 1;
+}
+.hb-fin-month-head {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+li:first-child > .hb-fin-month-head {
+  margin-top: 0;
+}

@@ -135,11 +135,21 @@ function useSubs() {
 const dayMonth = (d: string) => new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`))
 
 /** Karte „Abos und Fixkosten“ im Reiter Finanzen (Konto) */
-export function SubscriptionsCard({ showToast }: { showToast: (m: string) => void }) {
+export function SubscriptionsCard({ showToast, empty }: { showToast: (m: string) => void; empty?: boolean }) {
   const { subs, marks, reload, cats } = useSubs()
   const [open, setOpen] = useState<Sub | null>(null)
   const [showHidden, setShowHidden] = useState(false)
-  if (!subs || !subs.length) return null
+  if (!subs) return null
+  if (!subs.length)
+    return empty ? (
+      <section className="hb-tile hb-tile-static gap-2">
+        <h3 className="flex items-center gap-2 font-semibold text-ink">
+          <Icon icon={Repeat} size={18} />
+          Abos und Fixkosten
+        </h3>
+        <p className="text-body text-ink-muted">Noch nichts erkannt. Ein Abo erscheint, sobald es mindestens dreimal im festen Abstand abgebucht wurde.</p>
+      </section>
+    ) : null
   const markOf = (k: string) => marks.find((m) => m.sub_key === k)
   const visible = subs.filter((s) => markOf(s.key)?.status !== 'hide')
   const hidden = subs.filter((s) => markOf(s.key)?.status === 'hide')

@@ -333,26 +333,22 @@ export function BudgetSheet({ cat, onClose, onDone }: { cat: OverviewCategory; o
 }
 
 /** Auswertung im Reiter Finanzen (Konto): Alles oder nur Haushalt, Monat wählbar */
-export function AnalysisSection({ showToast }: { showToast: (m: string) => void }) {
-  const [scope, setScope] = useState<'alles' | 'haushalt'>('alles')
+export function AnalysisSection({ showToast, onEmpty }: { showToast: (m: string) => void; onEmpty?: () => void }) {
   const [month, setMonth] = useState<string | null>(null)
-  const { data: o, reload } = useOverview(month, scope === 'haushalt')
+  const { data: o, reload } = useOverview(month, false)
   const [budget, setBudget] = useState<OverviewCategory | null>(null)
   if (!o) return null
-  if (!o.months.some((m) => m.spent > 0)) return null
+  if (!o.months.some((m) => m.spent > 0))
+    return onEmpty ? (
+      <section className="hb-tile hb-tile-static gap-3">
+        <p className="text-body text-ink-muted">Noch keine Buchungen. Importier deinen ersten Monat, dann siehst du hier, wofür das Geld weg ist.</p>
+        <Button variant="primary" onClick={onEmpty}>
+          Umsätze importieren
+        </Button>
+      </section>
+    ) : null
   return (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-display text-[20px] font-bold text-ink">Auswertung</h3>
-        <div className="hb-seg is-small" role="group" aria-label="Umfang">
-          <button type="button" aria-pressed={scope === 'alles'} className={scope === 'alles' ? 'is-on' : ''} onClick={() => setScope('alles')}>
-            Alles
-          </button>
-          <button type="button" aria-pressed={scope === 'haushalt'} className={scope === 'haushalt' ? 'is-on' : ''} onClick={() => setScope('haushalt')}>
-            Haushalt
-          </button>
-        </div>
-      </div>
       <MonthCard o={o} onMonth={setMonth} onPick={setBudget} />
       <BudgetCard o={o} onPick={setBudget} />
       <UnusualCard o={o} />
