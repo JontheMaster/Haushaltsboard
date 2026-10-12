@@ -113,6 +113,8 @@ export type Database = {
           id: string
           owner: string
           booked_on: string
+          /** Monat für die Auswertung (Folgemonat bei Monatsregeln, z. B. Miete am 30.) */
+          budget_month: string
           booked_at: string | null
           counterparty: string
           purpose: string
@@ -231,6 +233,12 @@ export type Database = {
         Row: { owner: string; sub_key: string; status: 'cancel' | 'hide'; todo: string | null; created_at: string }
         Insert: { owner?: string; sub_key: string; status: 'cancel' | 'hide'; todo?: string | null }
         Update: { status?: 'cancel' | 'hide'; todo?: string | null }
+        Relationships: []
+      }
+      fin_month_rules: {
+        Row: { id: string; label: string; pattern: string; field: 'counterparty' | 'purpose'; min_amount: number; from_day: number; created_at: string }
+        Insert: { label: string; pattern: string; field?: 'counterparty' | 'purpose'; min_amount?: number; from_day?: number }
+        Update: { label?: string; pattern?: string; field?: 'counterparty' | 'purpose'; min_amount?: number; from_day?: number }
         Relationships: []
       }
       fin_imports: {
