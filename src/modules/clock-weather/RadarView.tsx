@@ -1,4 +1,6 @@
+import { ZoomIn, ZoomOut } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Icon } from '../../components/Icon'
 import { levelToMmh } from '../../../supabase/functions/_shared/radarGrid.ts'
 import type { Radar } from './radarStore'
 
@@ -9,7 +11,7 @@ type RadarMap = {
   boundary: string
   water: string
   motorway: string
-  places: { name: string; x: number; y: number; kind: string }[]
+  places: { name: string; x: number; y: number; kind: string; near?: boolean }[]
 }
 let mapPromise: Promise<RadarMap> | null = null
 const loadMap = () => (mapPromise ??= import('./radarMap.json').then((m) => m.default as RadarMap))
@@ -18,6 +20,9 @@ const loadMap = () => (mapPromise ??= import('./radarMap.json').then((m) => m.de
 const LOOP_MS = 7000
 const HOLD_MS = 1000
 const SCALE = 4
+/** Ausschnitt „Nah“ in km (Pixeln), um das Zuhause; „Weit“ = der ganze Ausschnitt (ca. 80 km) */
+const NEAR_KM = 36
+const ZOOM_KEY = 'hb-radar-zoom'
 
 type Rgb = [number, number, number]
 const hex = (v: string): Rgb => {
@@ -103,6 +108,83 @@ export function RadarView({ radar, still, wall }: { radar: Radar; still: boolean
   const [paused, setPaused] = useState(still)
   const posRef = useRef(pos)
   const playFrom = useRef(performance.now())
+  // Zoom: „Nah“ (Standard, um das Zuhause) oder „Weit“, pro Gerät gemerkt
+  const [near, setNear] = useState(() => {
+    try {
+      return localStorage.getItem(ZOOM_KEY) !== 'weit'
+    } catch {
+      return true
+    }
+  })
+  const view = useMemo(() => {
+    if (!near) return { x0: 0, y0: 0, s: radar.width }
+    const s = Math.min(NEAR_KM, radar.width)
+    const cx = radar.home ? radar.home.x + 0.5 : radar.width / 2
+    const cy = radar.home ? radar.home.y + 0.5 : radar.height / 2
+    const clamp = (v: number, max: number) => Math.min(Math.max(v, 0), max)
+    return { x0: clamp(cx - s / 2, radar.width - s), y0: clamp(cy - s / 2, radar.height - s), s }
+  }, [near, radar.width, radar.height, radar.home])
+  const viewRef = useRef(view)
+  viewRef.current = view
+  const px = (x: number) => `${((x - view.x0) / view.s) * 100}%`
+  const py = (y: number) => `${((y - view.y0) / view.s) * 100}%`
+  // Kartengröße in px (für die Ortsnamen: nur so viele, wie ohne Überlappung passen)
+  const mapEl = useRef<HTMLButtonElement>(null)
+  const [mapPx, setMapPx] = useState(300)
+  useEffect(() => {
+    const el = mapEl.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setMapPx(el.clientWidth || 300))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const labels = useMemo(() => {
+    if (!map) return []
+    type Box = { x0: number; y0: number; x1: number; y1: number }
+    const hit = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
+    // freizuhaltende Flächen: Zeit oben links, Zoom oben rechts, OSM unten rechts, Zuhause-Punkt
+    const taken: Box[] = [
+      { x0: 0, y0: 0, x1: 110, y1: 34 },
+      { x0: mapPx - 90, y0: 0, x1: mapPx, y1: 50 },
+      { x0: mapPx - 150, y0: mapPx - 16, x1: mapPx, y1: mapPx },
+    ]
+    if (radar.home) {
+      const hx = ((radar.home.x + 0.5 - view.x0) / view.s) * mapPx
+      const hy = ((radar.home.y + 0.5 - view.y0) / view.s) * mapPx
+      taken.push({ x0: hx - 9, y0: hy - 9, x1: hx + 9, y1: hy + 9 })
+    }
+    const out: { name: string; left: number; top: number; cls: string }[] = []
+    for (const p of map.places) {
+      if (p.near && !near) continue
+      const fx = (p.x - view.x0) / view.s
+      const fy = (p.y - view.y0) / view.s
+      if (fx < 0.02 || fx > 0.98 || fy < 0.02 || fy > 0.98) continue
+      const city = p.kind === 'city'
+      const fs = (city ? 14 : 12) + (wall ? 2 : 0)
+      const w = p.name.length * fs * 0.58 + 4
+      const h = fs * 1.25
+      const cx = fx * mapPx
+      const cy = fy * mapPx
+      // am Rand nach innen ausrichten, damit lange Namen nicht abgeschnitten werden
+      const align = fx < 0.2 ? 'start' : fx > 0.8 ? 'end' : 'mid'
+      const x0 = align === 'start' ? cx - 8 : align === 'end' ? cx - w + 8 : cx - w / 2
+      const box = { x0, y0: cy - h / 2, x1: x0 + w, y1: cy + h / 2 }
+      if (box.x0 < 0 || box.x1 > mapPx || taken.some((t) => hit(t, box))) continue
+      taken.push(box)
+      out.push({ name: p.name, left: fx * 100, top: fy * 100, cls: `${city ? 'is-city' : ''} ${align === 'mid' ? '' : `is-${align}`}` })
+    }
+    return out
+  }, [map, near, view, mapPx, radar.home, wall])
+
+  function switchZoom() {
+    const next = !near
+    setNear(next)
+    try {
+      localStorage.setItem(ZOOM_KEY, next ? 'nah' : 'weit')
+    } catch {
+      // nur Komfort
+    }
+  }
 
   useEffect(() => {
     loadMap().then(setMap)
@@ -138,7 +220,9 @@ export function RadarView({ radar, still, wall }: { radar: Radar; still: boolean
     out.clearRect(0, 0, out.canvas.width, out.canvas.height)
     out.imageSmoothingEnabled = true
     out.imageSmoothingQuality = 'high'
-    out.drawImage(small, 0, 0, out.canvas.width, out.canvas.height)
+    // nur den gewählten Ausschnitt (Nah/Weit) groß zeichnen
+    const v = viewRef.current
+    out.drawImage(small, v.x0, v.y0, v.s, v.s, 0, 0, out.canvas.width, out.canvas.height)
   }
 
   // Schleife
@@ -160,7 +244,7 @@ export function RadarView({ radar, still, wall }: { radar: Radar; still: boolean
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [paused, radar, lut]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [paused, radar, lut, view]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tippen auf die Karte: pausieren auf „jetzt“, nochmal tippen spielt weiter
   function toggle() {
@@ -198,8 +282,8 @@ export function RadarView({ radar, still, wall }: { radar: Radar; still: boolean
     <div className={`hb-radar ${wall ? 'is-wall' : ''}`}>
       {/* Bühne: an der Wand füllt sie die Höhe, die Karte bleibt darin quadratisch */}
       <div className="hb-radar-stage">
-        <button type="button" className="hb-radar-map" onClick={toggle} aria-label={paused ? 'Radar abspielen' : 'Radar anhalten, jetzt zeigen'}>
-          <svg viewBox={`0 0 ${radar.width} ${radar.height}`} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <button ref={mapEl} type="button" className="hb-radar-map" onClick={toggle} aria-label={paused ? 'Radar abspielen' : 'Radar anhalten, jetzt zeigen'}>
+          <svg viewBox={`${view.x0} ${view.y0} ${view.s} ${view.s}`} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
             {map && (
               <>
                 <path d={map.boundary} className="hb-radar-boundary" vectorEffect="non-scaling-stroke" />
@@ -211,25 +295,20 @@ export function RadarView({ radar, still, wall }: { radar: Radar; still: boolean
           <canvas ref={canvas} width={radar.width * SCALE} height={radar.height * SCALE} aria-hidden="true" />
           {map && (
             <span className="hb-radar-labels" aria-hidden="true">
-              {map.places.map((p) => (
-                <span
-                  key={p.name}
-                  className={p.kind === 'city' ? 'is-city' : ''}
-                  style={{ left: `${(p.x / radar.width) * 100}%`, top: `${(p.y / radar.height) * 100}%` }}
-                >
-                  {p.name}
+              {labels.map((l) => (
+                <span key={l.name} className={l.cls} style={{ left: `${l.left}%`, top: `${l.top}%` }}>
+                  {l.name}
                 </span>
               ))}
             </span>
           )}
-          {radar.home && (
-            <span
-              className="hb-radar-home"
-              style={{ left: `${((radar.home.x + 0.5) / radar.width) * 100}%`, top: `${((radar.home.y + 0.5) / radar.height) * 100}%` }}
-              aria-label="Zuhause"
-            />
-          )}
+          {radar.home && <span className="hb-radar-home" style={{ left: px(radar.home.x + 0.5), top: py(radar.home.y + 0.5) }} aria-label="Zuhause" />}
           <span className={`hb-radar-time ${future ? 'is-future' : ''}`}>{isNow ? `jetzt · ${hm(shownTime)}` : hm(shownTime)}</span>
+          <span className="hb-radar-osm">© OpenStreetMap-Mitwirkende</span>
+        </button>
+        <button type="button" className="hb-radar-zoom" onClick={switchZoom} aria-label={near ? 'Weiter herauszoomen' : 'Näher heranzoomen'}>
+          <Icon icon={near ? ZoomOut : ZoomIn} size={18} />
+          {near ? 'Weit' : 'Nah'}
         </button>
       </div>
       <div
@@ -257,7 +336,6 @@ export function RadarView({ radar, still, wall }: { radar: Radar; still: boolean
         <span style={{ left: frac(radar.nowIndex) }}>jetzt</span>
         <span>+2 Std</span>
       </div>
-      <p className="hb-radar-source">Datenbasis: Deutscher Wetterdienst, eigene Bearbeitung · Karte © OpenStreetMap-Mitwirkende</p>
     </div>
   )
 }

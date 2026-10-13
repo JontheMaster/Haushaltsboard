@@ -1,9 +1,10 @@
 // Hintergrundkarte fürs Regenradar (docs/wetter-radar.md): einmalig aus OpenStreetMap (Overpass) holen,
 // ins Radar-Raster (polarstereografisch, 1 km pro Pixel) umrechnen, vereinfachen und als JSON ablegen.
 // Ausschnitt fest um die Stadtmitte (49,45 / 11,08 ± 40 km), unabhängig vom Zuhause.
-// Aufruf: node --experimental-strip-types scripts/build-radar-map.mjs
+// Aufruf: node --experimental-strip-types scripts/build-radar-map.mjs [--places-only]
+//   --places-only: nur die Orte neu holen, Straßen/Flüsse/Grenzen aus der vorhandenen Datei behalten (kleine Abfrage)
 // Daten: © OpenStreetMap-Mitwirkende (ODbL), Quellenzeile in der Kachel.
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { latLonToGrid } from '../supabase/functions/_shared/radarGrid.ts'
 
 // Ausschnitt wie bei Bright Sky für lat 49.45, lon 11.08, distance 40000: bbox [top, left, bottom, right]
@@ -13,19 +14,26 @@ const H = BBOX[2] - BBOX[0] + 1
 // lat/lon-Rahmen etwas größer als der Ausschnitt (Ecken laut Bright Sky: 49.10–49.80 N, 10.54–11.62 E)
 const LL = { s: 49.05, w: 10.45, n: 49.85, e: 11.7 }
 
-const query = `[out:json][timeout:120];
-(
-  way["highway"="motorway"](${LL.s},${LL.w},${LL.n},${LL.e});
-  way["waterway"="river"](${LL.s},${LL.w},${LL.n},${LL.e});
-  way["waterway"="canal"]["name"~"Main-Donau"](${LL.s},${LL.w},${LL.n},${LL.e});
-  relation["boundary"="administrative"]["admin_level"="6"](${LL.s},${LL.w},${LL.n},${LL.e});
-  node["place"~"^(city|town)$"](${LL.s},${LL.w},${LL.n},${LL.e});
-);
-out geom(${LL.s},${LL.w},${LL.n},${LL.e});`
+const placesOnly = process.argv.includes('--places-only')
+const OUT = new URL('../src/modules/clock-weather/radarMap.json', import.meta.url)
+const box = `(${LL.s},${LL.w},${LL.n},${LL.e})`
+const lines = [
+  ...(placesOnly
+    ? []
+    : [
+        `way["highway"="motorway"]${box};`,
+        `way["waterway"="river"]${box};`,
+        `way["waterway"="canal"]["name"~"Main-Donau"]${box};`,
+        `relation["boundary"="administrative"]["admin_level"="6"]${box};`,
+      ]),
+  `node["place"~"^(city|town)$"]${box};`,
+  `node["place"="village"]["name"~"^(Wendelstein|Schwarzenbruck|Cadolzburg|Heroldsberg|Schwaig bei Nürnberg|Rednitzhembach)$"]${box};`,
+]
+const query = `[out:json][timeout:120];\n(\n${lines.join('\n')}\n);\nout geom${box};`
 
 // zwei öffentliche Overpass-Server, der zweite nur, wenn der erste überlastet ist
 let data = null
-for (const server of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+for (const server of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter']) {
   const res = await fetch(server, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Haushaltsboard Radar-Karte (einmalig)' },
@@ -111,20 +119,27 @@ for (const el of data.elements) {
 
 // Orte sparsam und fest gewählt (Reihenfolge = Wichtigkeit), Namen gekürzt („Lauf an der Pegnitz“ → „Lauf“)
 const WANTED = ['Nürnberg', 'Fürth', 'Erlangen', 'Schwabach', 'Roth', 'Lauf an der Pegnitz', 'Forchheim', 'Neumarkt in der Oberpfalz', 'Herzogenaurach', 'Feucht']
+// nur in der nahen Ansicht (kleinere Orte rund um Nürnberg)
+const NEAR = ['Zirndorf', 'Stein', 'Wendelstein', 'Schwarzenbruck', 'Röthenbach an der Pegnitz', 'Cadolzburg', 'Heroldsberg', 'Schwaig bei Nürnberg', 'Rednitzhembach']
 const short = (n) => n.replace(/\s+(in der|an der|am|im)\s.+$/, '')
-const chosen = WANTED.map((w) => places.find((p) => p.name === w))
-  .filter(Boolean)
-  .map((p) => ({ ...p, name: short(p.name) }))
+const pick = (list, near) =>
+  list
+    .map((w) => places.find((p) => p.name === w))
+    .filter(Boolean)
+    .map((p) => ({ ...p, name: short(p.name).replace(/ bei .+$/, ''), near }))
+const chosen = [...pick(WANTED, false), ...pick(NEAR, true)]
 
+// nur Orte: Linien aus der vorhandenen Datei übernehmen
+const prev = placesOnly ? JSON.parse(readFileSync(OUT, 'utf8')) : null
 const out = {
   // © OpenStreetMap-Mitwirkende (ODbL)
   bbox: BBOX,
   width: W,
   height: H,
-  boundary: layers.boundary.filter((p) => p.length > 1).map(toPath).join(''),
-  water: layers.water.filter((p) => p.length > 1).map(toPath).join(''),
-  motorway: layers.motorway.filter((p) => p.length > 1).map(toPath).join(''),
-  places: chosen.map(({ name, x, y, kind }) => ({ name, x, y, kind })),
+  boundary: prev ? prev.boundary : layers.boundary.filter((p) => p.length > 1).map(toPath).join(''),
+  water: prev ? prev.water : layers.water.filter((p) => p.length > 1).map(toPath).join(''),
+  motorway: prev ? prev.motorway : layers.motorway.filter((p) => p.length > 1).map(toPath).join(''),
+  places: chosen.map(({ name, x, y, kind, near }) => ({ name, x, y, kind, near })),
 }
-writeFileSync(new URL('../src/modules/clock-weather/radarMap.json', import.meta.url), JSON.stringify(out))
+writeFileSync(OUT, JSON.stringify(out))
 console.log(`Karte: ${JSON.stringify(out).length} Zeichen, Orte: ${out.places.map((p) => `${p.name} (${p.x}/${p.y})`).join(', ')}`)

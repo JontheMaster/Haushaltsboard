@@ -15,7 +15,7 @@ Geprüft am 13.10.2026 an der OpenAPI-Beschreibung (`https://api.brightsky.dev/o
 - **Zeitraum muss man selbst angeben:** Ohne `date`/`last_date` liefert Bright Sky nur etwa −65 bis +55 min. Mit `date = jetzt − 65 min` und `last_date = jetzt + 125 min` kamen 38 Bilder (−65 bis +120 min). Probe am 13.10.2026: 88 KB, 0,2 s.
 - **Vergangenheit nur 6 Stunden:** Eine Anfrage für den 10.10. kam leer zurück (`radar: []`). Ein Test mit einem älteren Regentag geht deshalb nicht über Bright Sky. Getestet wird mit echtem Regen am Testtag (am 13.10. regnet es gerade) oder mit einem selbst gespeicherten Datensatz (siehe Testen).
 - Keine festen Limits dokumentiert; Bright Sky bittet, Ausschnitte statt des ganzen Rasters zu laden. Wir fragen genau einmal alle 5 Minuten an, zentral für alle Geräte.
-- Quellenangabe in der Kachel, klein unten: **„Datenbasis: Deutscher Wetterdienst, eigene Bearbeitung · Karte © OpenStreetMap-Mitwirkende“**. Das ist die DWD-Vorlage für veränderte Daten; wir rechnen die Werte um, färben sie ein und leiten den Nowcast ab, deshalb nicht „Daten: Deutscher Wetterdienst“. Bright Sky nennen wir zusätzlich in Alle Funktionen → Uhr und Wetter (dort ist Platz).
+- Quellenangabe (Entscheidung Jonathan 13.10.2026): an der Karte nur klein „© OpenStreetMap-Mitwirkende“ (OSM verlangt die Nennung an der Karte). Der DWD („Datenbasis: Deutscher Wetterdienst, eigene Bearbeitung“) steht in Alle Funktionen → Uhr und Wetter; CC BY erlaubt die Nennung an passender Stelle. Das ist die DWD-Vorlage für veränderte Daten; wir rechnen die Werte um, färben sie ein und leiten den Nowcast ab, deshalb nicht „Daten: Deutscher Wetterdienst“. Bright Sky nennen wir zusätzlich in Alle Funktionen → Uhr und Wetter (dort ist Platz).
 
 ## Projektion: Karte im Raster des Radars zeichnen
 
@@ -108,7 +108,8 @@ Das ist der Segment-Umschalter (`hb-seg`) wie bei „Liste | Zeitplan“. Der `T
 - **Ohne Animation:**
   - Nachtmodus (`useIsNight`): kein Abspielen, nur das Bild von „jetzt“
   - `prefers-reduced-motion`: keine Schleife, nur „jetzt“, Zeitleiste von Hand
-- **Quellenzeile** klein unten in der Kachel (am Handy 12 px, an der Wand 14 px).
+- **Zoom** (13.10.2026): „Nah“ (Standard, ca. 36 km ums Zuhause, mit kleineren Orten wie Zirndorf, Stein, Wendelstein) und „Weit“ (ganzer Ausschnitt, ca. 80 km), Knopf oben rechts in der Karte, pro Gerät gemerkt.
+- **OSM-Nennung** klein unten rechts in der Karte.
 
 ### Vorhersage-Ansicht
 

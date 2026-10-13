@@ -93,6 +93,12 @@
   white-space: nowrap;
   pointer-events: none;
 }
+.hb-radar-labels span.is-start {
+  transform: translate(-8px, -50%);
+}
+.hb-radar-labels span.is-end {
+  transform: translate(calc(-100% + 8px), -50%);
+}
 .hb-radar-labels span.is-city {
   font-size: 14px;
   color: var(--ink);
@@ -202,13 +208,49 @@
   font-size: 14px;
   height: 18px;
 }
-.hb-radar-source {
-  font-size: 11px;
-  line-height: 1.3;
+/* OSM verlangt die Nennung an der Karte: klein unten rechts (DWD steht in Alle Funktionen → Uhr und Wetter) */
+.hb-radar-osm {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-sunken) 75%, transparent);
+  font-size: 10px;
   color: var(--ink-muted);
+  pointer-events: none;
 }
-.hb-radar.is-wall .hb-radar-source {
-  font-size: 12px;
+.hb-radar-stage {
+  position: relative;
+}
+/* Zoom Nah/Weit: kleiner Knopf oben rechts in der Karte */
+.hb-radar-zoom {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+  cursor: pointer;
+}
+.hb-radar.is-wall .hb-radar-zoom {
+  min-height: 44px;
+  font-size: 14px;
+}
+/* an der Wand sitzt die Karte mittig in der Bühne: Knopf an der Karte ausrichten */
+.hb-radar.is-wall .hb-radar-stage .hb-radar-zoom {
+  top: calc(50% - min(50cqw, 50cqh) + 6px);
+  right: calc(50% - min(50cqw, 50cqh) + 6px);
 }
 
 @media (prefers-reduced-motion: reduce) {
