@@ -271,3 +271,16 @@
 .hb-weather-wall .hb-tile-head .hb-seg.is-small button {
   flex: 1;
 }
+
+/* Handy: Umschalter klein neben „Wetter“; reicht der Platz nicht, rutscht er darunter statt den Titel zu verdecken */
+.hb-weather-phone .hb-tile-head {
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+}
+.hb-weather-phone .hb-tile-title {
+  flex: 1 0 auto;
+}
+.hb-weather-phone .hb-weather-seg button {
+  padding: 0 8px;
+  font-size: 13px;
+}

@@ -10,7 +10,19 @@ const euro0 = (n: number, sign = false) => {
   return sign ? `${n > 0 ? '+' : n < 0 ? '−' : '±'}${s}` : n < 0 ? `−${s}` : s
 }
 
-function Card({ icon, title, extra, className = '', children }: { icon: typeof Store; title: string; extra?: ReactNode; className?: string; children: ReactNode }) {
+function Card({
+  icon,
+  title,
+  extra,
+  className = '',
+  children,
+}: {
+  icon: typeof Store
+  title: string
+  extra?: ReactNode
+  className?: string
+  children: ReactNode
+}) {
   return (
     <section className={`hb-tile hb-wf-card ${className}`}>
       <header className="hb-wf-head">
@@ -88,55 +100,78 @@ export function WallHome({ o, after }: { o: Overview; after?: ReactNode }) {
         </div>
       </div>
 
+      {/* drei Spalten, die sich ungefähr gleich füllen: Kategorien + Wo | Verlauf + Wann | Auffällig + Budgets */}
       <div className="hb-wf-main">
-        <Card icon={LayoutList} title="Kategorien" className="hb-wf-cats" extra={<span className="hb-wf-head-note">Ø = Schnitt 3 Monate</span>}>
-          <ul className="hb-wf-catlist">
-            {cats.map((c) => {
-              const d = pct(c.spent, c.avg3)
-              const over = c.budget ? c.spent > c.budget : false
-              return (
-                <li key={c.id} className="hb-wf-cat" style={catVar(c)}>
-                  <span className="hb-wf-cat-icon">
-                    <Icon icon={iconOf(c.icon)} size={18} />
-                  </span>
-                  <span className="hb-wf-cat-name">{c.name}</span>
-                  <span className="hb-wf-cat-bar">
-                    {c.avg3 > 0 && <i className="hb-wf-cat-avg" style={{ left: `${(c.avg3 / maxCat) * 100}%` }} />}
-                    {c.budget && <i className="hb-wf-cat-budget" style={{ left: `${(c.budget / maxCat) * 100}%` }} />}
-                    <b className={over ? 'is-over' : ''} style={{ width: `${(c.spent / maxCat) * 100}%` }} />
-                  </span>
-                  <span className="hb-wf-cat-sum">{euro0(c.spent)}</span>
-                  <span className="hb-wf-cat-meta">
-                    {c.budget ? `von ${euro0(c.budget)}` : `Ø ${euro0(c.avg3)}`}
-                    {d !== null && c.spent > 0 && <em className={d >= 20 ? 'is-high' : d <= -20 ? 'is-low' : ''}>{signed(d)}</em>}
-                  </span>
-                </li>
+        <div className="hb-wf-stack">
+          <Card icon={LayoutList} title="Kategorien" className="hb-wf-cats" extra={<span className="hb-wf-head-note">Ø = Schnitt 3 Monate</span>}>
+            <ul className="hb-wf-catlist">
+              {cats.map((c) => {
+                const d = pct(c.spent, c.avg3)
+                const over = c.budget ? c.spent > c.budget : false
+                return (
+                  <li key={c.id} className="hb-wf-cat" style={catVar(c)}>
+                    <span className="hb-wf-cat-icon">
+                      <Icon icon={iconOf(c.icon)} size={18} />
+                    </span>
+                    <span className="hb-wf-cat-name">{c.name}</span>
+                    <span className="hb-wf-cat-bar">
+                      {c.avg3 > 0 && <i className="hb-wf-cat-avg" style={{ left: `${(c.avg3 / maxCat) * 100}%` }} />}
+                      {c.budget && <i className="hb-wf-cat-budget" style={{ left: `${(c.budget / maxCat) * 100}%` }} />}
+                      <b className={over ? 'is-over' : ''} style={{ width: `${(c.spent / maxCat) * 100}%` }} />
+                    </span>
+                    <span className="hb-wf-cat-sum">{euro0(c.spent)}</span>
+                    <span className="hb-wf-cat-meta">
+                      {c.budget ? `von ${euro0(c.budget)}` : `Ø ${euro0(c.avg3)}`}
+                      {d !== null && c.spent > 0 && <em className={d >= 20 ? 'is-high' : d <= -20 ? 'is-low' : ''}>{signed(d)}</em>}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </Card>
+          {o.merchants.length > 0 && (
+            <Card icon={Store} title="Wo · 90 Tage">
+              <ol className="hb-wf-where">
+                {o.merchants.slice(0, 5).map((m) => (
+                  <li key={m.name}>
+                    <span className="truncate">{nameOf(m.name) ?? shopName(m.name)}</span>
+                    <b>{euro0(m.sum)}</b>
+                    <small>
+                      {m.n}× · Ø {euro(m.avg)}
+                    </small>
+                  </li>
+                ))}
+              </ol>
+            </Card>
+          )}
+        </div>
+        <div className="hb-wf-stack">
+          <Card
+            icon={showBalance ? LineChart : BarChart3}
+            title="Verlauf"
+            className="hb-wf-months"
+            extra={
+              canBalance && (
+                <div className="hb-seg is-small" role="group" aria-label="Ansicht">
+                  <button type="button" aria-pressed={!showBalance} className={!showBalance ? 'is-on' : ''} onClick={() => setMode('monate')}>
+                    12 Monate
+                  </button>
+                  <button type="button" aria-pressed={showBalance} className={showBalance ? 'is-on' : ''} onClick={() => setMode('konto')}>
+                    Kontostand
+                  </button>
+                </div>
               )
-            })}
-          </ul>
-        </Card>
-
-        <Card
-          icon={showBalance ? LineChart : BarChart3}
-          title="Verlauf"
-          className="hb-wf-months"
-          extra={
-            canBalance && (
-              <div className="hb-seg is-small" role="group" aria-label="Ansicht">
-                <button type="button" aria-pressed={!showBalance} className={!showBalance ? 'is-on' : ''} onClick={() => setMode('monate')}>
-                  12 Monate
-                </button>
-                <button type="button" aria-pressed={showBalance} className={showBalance ? 'is-on' : ''} onClick={() => setMode('konto')}>
-                  Kontostand
-                </button>
-              </div>
-            )
-          }
-        >
-          {showBalance ? <BalanceView o={o} height={210} /> : <WallMonths o={o} />}
-        </Card>
-
-        <div className="hb-wf-side">
+            }
+          >
+            {showBalance ? <BalanceView o={o} height={210} /> : <WallMonths o={o} />}
+          </Card>
+          {o.heatmap_n >= 5 && (
+            <Card icon={Clock} title="Wann wird eingekauft" className="hb-wf-when">
+              <WallHeat o={o} />
+            </Card>
+          )}
+        </div>
+        <div className="hb-wf-stack">
           {notes.length > 0 && (
             <Card icon={AlertCircle} title="Auffällig">
               {notes.slice(0, 3).map((n) => (
@@ -163,32 +198,10 @@ export function WallHome({ o, after }: { o: Overview; after?: ReactNode }) {
               </div>
             </Card>
           )}
-          {o.merchants.length > 0 && (
-            <Card icon={Store} title="Wo · 90 Tage">
-              <ol className="hb-wf-where">
-                {o.merchants.slice(0, 5).map((m) => (
-                  <li key={m.name}>
-                    <span className="truncate">{nameOf(m.name) ?? shopName(m.name)}</span>
-                    <b>{euro0(m.sum)}</b>
-                    <small>
-                      {m.n}× · Ø {euro(m.avg)}
-                    </small>
-                  </li>
-                ))}
-              </ol>
-            </Card>
-          )}
         </div>
       </div>
 
-      <div className="hb-wf-bottom">
-        {o.heatmap_n >= 5 && (
-          <Card icon={Clock} title="Wann wird eingekauft" className="hb-wf-when">
-            <WallHeat o={o} />
-          </Card>
-        )}
-        {after}
-      </div>
+      {after}
     </div>
   )
 }

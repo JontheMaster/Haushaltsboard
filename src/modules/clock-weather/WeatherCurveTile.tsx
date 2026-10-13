@@ -59,7 +59,8 @@ export function WeatherCurveTile({ delay }: TileProps) {
   const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   const switcher = (
-    <div className={`hb-seg ${wall ? 'is-small' : ''}`} role="group" aria-label="Ansicht">
+    // immer der kleine Umschalter: mit drei Teilen verdeckt der normale am Handy sonst „Wetter“
+    <div className="hb-seg is-small hb-weather-seg" role="group" aria-label="Ansicht">
       <button type="button" aria-pressed={view === 'today'} className={view === 'today' ? 'is-on' : ''} onClick={() => pick('today')}>
         Heute
       </button>
@@ -73,7 +74,7 @@ export function WeatherCurveTile({ delay }: TileProps) {
   )
 
   return (
-    <Tile title="Wetter" icon={CloudSun} delay={delay} action={switcher} className={wall ? 'hb-weather-wall' : ''}>
+    <Tile title="Wetter" icon={CloudSun} delay={delay} action={switcher} className={wall ? 'hb-weather-wall' : 'hb-weather-phone'}>
       {/* key: beim Wechsel blendet die neue Ansicht weich ein */}
       <div key={view} className={`hb-weather-view ${wall ? 'flex h-full flex-col gap-3' : 'flex flex-col gap-3'}`}>
         {view === 'radar' ? (
