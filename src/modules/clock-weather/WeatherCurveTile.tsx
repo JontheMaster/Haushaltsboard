@@ -1,5 +1,5 @@
-import { CloudSun, Shirt, Droplet } from 'lucide-react'
-import { useState } from 'react'
+import { CloudRain, CloudSun, Shirt, Droplet } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from '../../components/Icon'
 import { PlayInView } from '../../components/PlayInView'
 import { Tile } from '../../components/Tile'
@@ -8,51 +8,113 @@ import { addDays, berlinTime, useNow, useToday } from '../../lib/time'
 import { DayCurve } from '../briefing/DayCurve'
 import { weatherSentence } from '../briefing/MorningBriefing'
 import type { TileProps } from '../types'
+import { useIsNight } from '../../lib/idle'
+import { useSettings } from '../../lib/settings'
+import { useModuleConfig } from '../useModules'
+import { RadarView } from './RadarView'
+import { useNowcast, useRadar, type Nowcast } from './radarStore'
 import { describe, useWeather, wxClass, type Weather } from './weather'
+import { WEATHER_DEFAULTS, type WeatherConfig } from './WeatherSettings'
 
 /** Ab dieser Stunde zeigt die Kachel von selbst schon morgen (Klamotten rauslegen) */
 const EVENING_FROM = 18
 
+/** an der Wand gilt eine Wahl von Hand so lange, danach wieder die Standardansicht (wie überall an der Wand) */
+const WALL_PICK_MS = 2 * 60_000
+
+type View = 'today' | 'tomorrow' | 'radar'
+
 /**
  * Wetter-Kachel (Handy-Startseite und an der Wand neben dem Todo-Stapel): Wetter jetzt, Satz zum Tag und die Tageskurve bis Mitternacht (wie im Morgen-Briefing).
- * Umschalter „Heute | Morgen“: morgen mit Kleidungstipp, abends von selbst vorgewählt.
+ * Umschalter „Heute | Morgen | Radar“ (docs/wetter-radar.md): morgen mit Kleidungstipp, abends von selbst vorgewählt;
+ * Radar mit Schleife −60 bis +120 min. Kommt in 30 min Regen (oder regnet es), wechselt die Kachel von selbst aufs Radar.
  */
 export function WeatherCurveTile({ delay }: TileProps) {
   const weather = useWeather()
   const today = useToday()
-  const { hh, mm } = berlinTime(useNow(60_000))
-  const [picked, setPicked] = useState<'today' | 'tomorrow' | null>(null)
-  const view = picked ?? (Number(hh) >= EVENING_FROM ? 'tomorrow' : 'today')
+  const now = useNow(60_000)
+  const { hh, mm } = berlinTime(now)
+  const cfg = useModuleConfig<WeatherConfig>('uhr-wetter', WEATHER_DEFAULTS)
+  const radar = useRadar()
+  const nowcast = useNowcast()
+  const { settings } = useSettings()
+  const night = useIsNight(settings)
+  const [picked, setPicked] = useState<{ view: View; at: number } | null>(null)
   // an der Wand ist die Kachel schmal und hoch: kleiner Umschalter in der Titelzeile, Kurve füllt die Höhe
   const wall = useDevice().device !== 'phone'
 
+  // von Hand Gewähltes läuft an der Wand nach 2 Minuten ab
+  useEffect(() => {
+    if (!wall || !picked) return
+    const t = setTimeout(() => setPicked(null), Math.max(0, picked.at + WALL_PICK_MS - Date.now()))
+    return () => clearTimeout(t)
+  }, [wall, picked])
+
+  const forecast: View = Number(hh) >= EVENING_FROM ? 'tomorrow' : 'today'
+  const rainSoon = !!nowcast && (nowcast.state === 'now' || (nowcast.start_min ?? 99) <= 30)
+  const auto: View = radar && ((cfg.auto_radar && rainSoon) || cfg.default_view === 'radar') ? 'radar' : forecast
+  const view: View = picked?.view ?? auto
+  const pick = (v: View) => setPicked({ view: v, at: Date.now() })
+  const line = nowcast && radar ? <NowcastLine n={nowcast} fetchedAt={radar.fetchedAt} now={now.getTime()} /> : null
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
   const switcher = (
-    <div className={`hb-seg ${wall ? 'is-small' : ''}`} role="group" aria-label="Tag">
-      <button type="button" aria-pressed={view === 'today'} className={view === 'today' ? 'is-on' : ''} onClick={() => setPicked('today')}>
+    <div className={`hb-seg ${wall ? 'is-small' : ''}`} role="group" aria-label="Ansicht">
+      <button type="button" aria-pressed={view === 'today'} className={view === 'today' ? 'is-on' : ''} onClick={() => pick('today')}>
         Heute
       </button>
-      <button type="button" aria-pressed={view === 'tomorrow'} className={view === 'tomorrow' ? 'is-on' : ''} onClick={() => setPicked('tomorrow')}>
+      <button type="button" aria-pressed={view === 'tomorrow'} className={view === 'tomorrow' ? 'is-on' : ''} onClick={() => pick('tomorrow')}>
         Morgen
+      </button>
+      <button type="button" aria-pressed={view === 'radar'} className={view === 'radar' ? 'is-on' : ''} onClick={() => pick('radar')}>
+        Radar
       </button>
     </div>
   )
 
   return (
     <Tile title="Wetter" icon={CloudSun} delay={delay} action={switcher} className={wall ? 'hb-weather-wall' : ''}>
-      <div className={wall ? 'flex h-full flex-col gap-3' : 'flex flex-col gap-3'}>
-        {!weather ? (
+      {/* key: beim Wechsel blendet die neue Ansicht weich ein */}
+      <div key={view} className={`hb-weather-view ${wall ? 'flex h-full flex-col gap-3' : 'flex flex-col gap-3'}`}>
+        {view === 'radar' ? (
+          !radar ? (
+            <p className="text-body text-ink-muted">Radar lädt …</p>
+          ) : radar.stale ? (
+            <p className="text-body text-ink-muted">Radar gerade nicht erreichbar. Es wird alle 5 Minuten neu versucht.</p>
+          ) : (
+            <>
+              {line}
+              <RadarView radar={radar} still={night || calm} wall={wall} />
+            </>
+          )
+        ) : !weather ? (
           <p className="text-body text-ink-muted">Wetter lädt …</p>
         ) : view === 'today' ? (
-          <TodayView weather={weather} today={today} hour={Number(hh)} minute={Number(mm)} wall={wall} />
+          <TodayView weather={weather} today={today} hour={Number(hh)} minute={Number(mm)} wall={wall} nowcast={line} />
         ) : (
-          <TomorrowView weather={weather} day={addDays(today, 1)} wall={wall} />
+          <TomorrowView weather={weather} day={addDays(today, 1)} wall={wall} nowcast={line} />
         )}
       </div>
     </Tile>
   )
 }
 
-function TodayView({ weather, today, hour, minute, wall }: { weather: Weather; today: string; hour: number; minute: number; wall: boolean }) {
+/** Nowcast-Satz: „Regen in 18 min, leicht, bis ca. 16:40“ (Minuten ab jetzt nachgerechnet), Starkregen in urgent */
+function NowcastLine({ n, fetchedAt, now }: { n: Nowcast; fetchedAt: number; now: number }) {
+  let text = n.text
+  if (n.state === 'soon' && n.start_min !== null) {
+    const left = Math.round(n.start_min - (now - fetchedAt) / 60_000)
+    text = text.replace(`in ${n.start_min} min`, left > 0 ? `in ${left} min` : 'gleich')
+  }
+  return (
+    <p className={`hb-nowcast ${n.level === 'Starkregen' ? 'is-urgent' : ''}`}>
+      <Icon icon={CloudRain} size={18} />
+      {text}
+    </p>
+  )
+}
+
+function TodayView({ weather, today, hour, minute, wall, nowcast }: { weather: Weather; today: string; hour: number; minute: number; wall: boolean; nowcast: ReactNode }) {
   const w = describe(weather.now.code, weather.now.isDay)
   const sentence = weatherSentence(weather, today, hour)
   return (
@@ -70,6 +132,7 @@ function TodayView({ weather, today, hour, minute, wall }: { weather: Weather; t
         {sentence.rain && <Icon icon={Droplet} size={18} />}
         {sentence.text}
       </p>
+      {nowcast}
       <PlayInView className={wall ? 'flex min-h-[150px] flex-1 flex-col' : 'h-[150px]'}>
         <DayCurve weather={weather} today={today} nowHour={hour + minute / 60} compact />
       </PlayInView>
@@ -77,7 +140,7 @@ function TodayView({ weather, today, hour, minute, wall }: { weather: Weather; t
   )
 }
 
-function TomorrowView({ weather, day, wall }: { weather: Weather; day: string; wall: boolean }) {
+function TomorrowView({ weather, day, wall, nowcast }: { weather: Weather; day: string; wall: boolean; nowcast: ReactNode }) {
   const d = weather.days.find((x) => x.day === day)
   if (!d) return <p className="text-body text-ink-muted">Für morgen gibt es noch keine Vorhersage.</p>
   const w = describe(d.code, true)
@@ -98,6 +161,7 @@ function TomorrowView({ weather, day, wall }: { weather: Weather; day: string; w
         <Icon icon={Shirt} size={18} />
         {tip.text}
       </p>
+      {nowcast}
       {rain && (
         <p className="hb-tile-sentence is-rain">
           <Icon icon={Droplet} size={18} />

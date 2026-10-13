@@ -4,6 +4,7 @@ import { FinanceSettings } from './finance/FinanceSettings'
 import { DepotTile } from './finance/DepotCharts'
 import { GoalsTile } from './finance/Goals'
 import { BudgetTile, MonthTile } from './finance/Analysis'
+import { WeatherSettings } from './clock-weather/WeatherSettings'
 import { FinanceHeader } from './finance/ReviewHeader'
 import { NfcSettings } from './nfc/NfcSettings'
 import { NfcHeader } from './nfc/NfcHeader'
@@ -42,7 +43,7 @@ import type { LayoutTile, ModuleDef, PhoneTile } from './types'
 
 // Alle Module. Ein neues Modul = ein neuer Eintrag hier, sonst nichts.
 export const MODULES: ModuleDef[] = [
-  { id: 'uhr-wetter', title: 'Uhr und Wetter', description: 'Uhrzeit, Datum und Wetter für Nürnberg', icon: Clock, phase: 1, sizes: ['s', 'm'], Tile: ClockWeatherTile , phoneTiles: [{ id: 'kurve', title: 'Wetter mit Tageskurve', description: 'Jetzt, Regen und Temperatur bis Mitternacht', icon: CloudSun, Tile: WeatherCurveTile }] },
+  { id: 'uhr-wetter', title: 'Uhr und Wetter', description: 'Uhrzeit, Datum und Wetter für Nürnberg', icon: Clock, phase: 1, sizes: ['s', 'm'], Tile: ClockWeatherTile, Settings: WeatherSettings, phoneTiles: [{ id: 'kurve', title: 'Wetter mit Tageskurve', description: 'Jetzt, Regen und Temperatur bis Mitternacht', icon: CloudSun, Tile: WeatherCurveTile }] },
   { id: 'kalender', title: 'Kalender', description: 'Termine heute und morgen, Farben, Besuchsmodus', icon: CalendarDays, phase: 2, sizes: ['s', 'm', 'l'], Tile: CalendarTile, Settings: CalendarSettings , phoneTiles: [{ id: 'woche', title: 'Die nächsten Tage', description: 'Heute bis übermorgen: Termine, Essen, Todos', icon: CalendarRange, Tile: WeekCompactTile }] },
   { id: 'todos', title: 'Todos', description: 'Aufgaben für heute, die Woche und ohne Tag', icon: ListChecks, phase: 1, sizes: ['s', 'm', 'l'], Tile: TodosTile , phoneTiles: [{ id: 'schnell', title: 'Schnellaktionen', description: 'Todo, Einkauf, Was koche ich?, Münze werfen', icon: Zap, Tile: QuickActionsTile }] },
   { id: 'putzplan', title: 'Putzplan', description: 'Wiederkehrende Aufgaben, laufen bei den Todos mit', icon: Sparkles, phase: 2, sizes: [], Settings: PutzplanPage , phoneTiles: [{ id: 'woche', title: 'Putzplan diese Woche', description: 'Was noch ansteht und wer dran ist', icon: Sparkles, Tile: ChoresWeekTile }] },

@@ -253,6 +253,12 @@ export type Database = {
         Update: { label?: string; updated_at?: string }
         Relationships: []
       }
+      weather_radar: {
+        Row: { id: number; fetched_at: string; first_at: string; now_at: string; step_min: number; width: number; height: number; frame_count: number; frames: string; home_x: number | null; home_y: number | null; nowcast: Json | null }
+        Insert: { id: number; fetched_at: string; first_at: string; now_at: string; step_min?: number; width: number; height: number; frame_count: number; frames: string; home_x?: number | null; home_y?: number | null; nowcast?: Json | null }
+        Update: Record<string, never>
+        Relationships: []
+      }
       fin_imports: {
         Row: { id: string; owner: string; file_name: string | null; account: string | null; from: string | null; to: string | null; rows_total: number; rows_new: number; rows_duplicate: number; at: string }
         Insert: { owner: string }

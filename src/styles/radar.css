@@ -1,0 +1,231 @@
+/* ───────── Wetter-Kachel: Regenradar und Nowcast (docs/wetter-radar.md) ───────── */
+
+/* Wechsel Heute | Morgen | Radar: neue Ansicht blendet weich ein */
+.hb-weather-view {
+  animation: hb-weather-in var(--dur-base) var(--ease-out) both;
+}
+@keyframes hb-weather-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Nowcast-Satz: Hinweis in warning, Starkregen in urgent */
+.hb-nowcast {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--highlight);
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--warning);
+}
+.hb-nowcast.is-urgent {
+  background: var(--urgent-soft);
+  color: var(--urgent);
+}
+
+.hb-radar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+.hb-radar.is-wall {
+  flex: 1;
+}
+/* Karte quadratisch, an der Wand so groß wie Platz ist */
+.hb-radar-map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  cursor: pointer;
+}
+.hb-radar.is-wall .hb-radar-stage {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  place-items: center;
+  container-type: size;
+}
+.hb-radar.is-wall .hb-radar-map {
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+}
+.hb-radar-map svg,
+.hb-radar-map canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.hb-radar-boundary {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.hb-radar-water {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.hb-radar-road {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.hb-radar-labels span {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.hb-radar-labels span.is-city {
+  font-size: 14px;
+  color: var(--ink);
+}
+.hb-radar.is-wall .hb-radar-labels span {
+  font-size: 14px;
+}
+/* Zuhause: Punkt in accent mit leisem Puls */
+.hb-radar-home {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border: 2px solid var(--surface-raised);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: hb-radar-pulse 2.4s var(--ease-out) infinite;
+}
+@keyframes hb-radar-pulse {
+  70% {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+.hb-radar-time {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.hb-radar-time.is-future {
+  color: var(--ink-muted);
+}
+.hb-radar.is-wall .hb-radar-time {
+  font-size: 14px;
+}
+
+/* Zeitleiste: Vergangenheit kräftig, Zukunft heller, Strich bei „jetzt“ */
+.hb-radar-track {
+  position: relative;
+  height: 24px;
+  margin: 0 8px;
+  touch-action: none;
+  cursor: pointer;
+}
+.hb-radar-past,
+.hb-radar-future {
+  position: absolute;
+  top: 11px;
+  height: 3px;
+  border-radius: 2px;
+}
+.hb-radar-past {
+  left: 0;
+  background: var(--ink-muted);
+}
+.hb-radar-future {
+  right: 0;
+  background: var(--line);
+}
+.hb-radar-now {
+  position: absolute;
+  top: 5px;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+.hb-radar-dot {
+  position: absolute;
+  top: 5px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border: 2px solid var(--surface-raised);
+  border-radius: 50%;
+  background: var(--blue-600);
+  box-shadow: var(--shadow-tile);
+}
+.hb-radar-scale {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  height: 16px;
+  margin: -6px 8px 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+.hb-radar-scale span:nth-child(2) {
+  position: absolute;
+  transform: translateX(-50%);
+  font-weight: 650;
+  color: var(--ink);
+}
+.hb-radar.is-wall .hb-radar-scale {
+  font-size: 14px;
+  height: 18px;
+}
+.hb-radar-source {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--ink-muted);
+}
+.hb-radar.is-wall .hb-radar-source {
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hb-radar-home,
+  .hb-weather-view {
+    animation: none;
+  }
+}
+
+/* an der Wand: dreiteiliger Umschalter in eigener Zeile über die volle Breite (neben „Wetter“ ist kein Platz) */
+.hb-weather-wall .hb-tile-head > div:last-child {
+  flex-basis: 100%;
+}
+.hb-weather-wall .hb-tile-head .hb-seg.is-small {
+  display: flex;
+  width: 100%;
+}
+.hb-weather-wall .hb-tile-head .hb-seg.is-small button {
+  flex: 1;
+}

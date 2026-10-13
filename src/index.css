@@ -6,6 +6,7 @@
 @import './styles/finance.css';
 @import './styles/briefing.css';
 @import './styles/tiles.css';
+@import './styles/radar.css';
 
 @utility shadow-tile {
   box-shadow: var(--shadow-tile);
