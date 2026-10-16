@@ -70,10 +70,17 @@ Jede Funktion ist ein Modul mit Kachel (Größen s/m/l), Detailseite, Einstellun
 | --- | --- |
 | Uhr und Wetter, Todos, Einkauf (Bring!), Handy-Ansicht | 1 |
 | Kalender + Besuchsmodus, Putzplan, Wochenansicht mit Drag and Drop, Startseite bearbeiten, Alle Funktionen, Nachtmodus | 2 |
+| Erweiterung Kalender: Levionas Schichten aus Supershift (`docs/schichtplan-sync.md`; nur mit ihrer Zustimmung, Secret `ICAL_LEVIONA_SCHICHT` legt Jonathan an) | 2 (Erweiterung, offen) |
 | Alexa-Skill für Todos | 3 |
 | Essensplan mit Zutaten → Bring! | 4 |
 | Abfahrten (VAG `start.vag.de/dm`), Countdown (`#countdown` im Kalendertitel), Wochenrückblick, WLAN-QR im Besuchsmodus, Erinnerungen per Push (Todo mit Uhrzeit, Web Push, Details in der Doku) | 5 |
 | Bildschirmschoner mit eigener Fotobibliothek (Supabase Storage) | 6 |
+| NFC-Tags (`docs/nfc-modul.md`): Stufe 1–2 fertig; Stufe 3 Szenen/Live-Momente zusammen mit Öffi-Heimweg (`docs/oeffi-heimweg.md`) | NFC Stufe 3 (offen) |
+| Finanzen (`docs/finanzen-modul.md`): Stufe 1–5 gebaut; Stufe 1 ergänzt um die smarte Import-Erinnerung (täglich 9 Uhr, Frist 14/30 Tage, Todo hakt sich beim Import ab, Hinweis in der Kachel) | Finanzen Stufe 1 (Ergänzung offen) |
+| Freizeit und Alltag: Filme (`docs/filme-modul.md`), Brettspiele (`docs/brettspiele-modul.md`), Cocktailbar (`docs/cocktailbar-modul.md`), Putz-Party (`docs/putzparty-modul.md`) | 7 (offen) |
+| Smart Home: Hue über Remote-API, Tapo nur über Kurzbefehle (`docs/smarthome-modul.md`) | 8 (offen) |
+
+Regeln für die offenen Module (Jonathan, 16.10.2026): erst nach Go; pro Modul zuerst einen Plan in 5–10 Sätzen zeigen, nach Okay Stufe für Stufe bauen; optionale Teile („einzeln nachfragen“) nur nach Rückfrage. Wo die Spezifikation „vor dem Bau prüfen“ sagt (VAG-Endpunkte, TMDB-Bedingungen, BGG-Token, Hue Remote API), die aktuelle offizielle Doku lesen und kurz berichten, nicht aus dem Gedächtnis bauen. Bestehende Module nicht umbauen; gemeinsame Bausteine (`live_sessions`, `member_tokens`, Web Push) nur einmal bauen wie in `docs/nfc-modul.md`. Tapo nie per inoffizieller API. Alles, was Leviona betrifft (Schichten, ihre Fahrten, Push an sie), bleibt aus, bis sie in den Einstellungen selbst zustimmt. Secrets nur mit Namen nennen, Jonathan trägt sie ein.
 
 ## Datenbank (Startpunkt, Details im Umsetzungsplan)
 
