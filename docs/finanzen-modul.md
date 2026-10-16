@@ -49,7 +49,13 @@ Voraussetzungen: Login, Modul-System, Einstellungen. Persönliche Tokens (`membe
 - Doppelte erkennen über `hash` = sha-256 aus Datum, Betrag, normalisierter Gegenpartei und bereinigtem Verwendungszweck.
 - Kategorie über die Regeln setzen; ohne Treffer → `Sonstiges` + Eintrag in „Zuordnen“.
 - Upload per iPhone-Teilen: Kurzbefehl „Ans Haushaltsboard“ (nimmt Dateien aus dem Teilen-Menü an) schickt die CSV an Edge Function `finance-import` (`POST`, Bearer-Token, Datei als Body). Anleitungskarte dafür in der App.
-- Erinnerung: Am 1. jedes Monats legt ein Cron-Job für jede Person mit aktivem Modul das Todo „Umsätze hochladen“ an.
+- **Erinnerung an den Import (smart):**
+  - Ein Cron prüft täglich um 9 Uhr (Europe/Berlin) pro Person mit aktivem Modul das Datum `to` des letzten Imports.
+  - Liegt es länger zurück als der eingestellte Abstand (Standard 30 Tage, wählbar 14 / 30 Tage), legt er das Todo „Umsätze hochladen“ für diese Person an. Es ist mit dem Finanzen-Modul verknüpft, sodass ein Tipp direkt den Import öffnet.
+  - Solange das Todo offen ist, legt der Cron kein zweites an. Das Todo rutscht nicht nach der Todo-Regel, sondern bleibt bestehen, bis importiert wurde.
+  - Ein erfolgreicher Import (App oder Kurzbefehl) hakt das Todo automatisch ab: grüner Haken und Hinweis „Import fertig, 47 neue Buchungen“.
+  - Die Finanzen-Kachel zeigt ab 7 Tagen über der Frist dezent „Letzter Import vor 37 Tagen“ in `warning`. Am Wand-Tablet steht kein Betrag dabei, nur der Hinweis.
+  - Optional: Web Push am Handy statt Todo (Einstellung), für Leviona nur, wenn sie das Modul nutzt.
 
 ### Zuordnen
 
