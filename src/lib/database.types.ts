@@ -493,6 +493,7 @@ export type Database = {
           ignore: string[]
           leave_days: number[]
           leave_time: string | null
+          home_gap_min: number
           member_id: string
           push_delay: boolean
           push_leave: boolean
@@ -503,6 +504,7 @@ export type Database = {
           ignore?: string[]
           leave_days?: number[]
           leave_time?: string | null
+          home_gap_min?: number
           member_id: string
           push_delay?: boolean
           push_leave?: boolean

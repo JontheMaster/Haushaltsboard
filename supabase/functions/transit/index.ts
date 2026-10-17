@@ -428,6 +428,8 @@ async function candidatesFor(member: string, events: CalendarEvent[], unknown: U
   const s = await settings()
   const prefs = s.prefs.get(member)
   const ignore = new Set<string>((prefs?.ignore ?? []).map((t: string) => t.toLowerCase()))
+  // kürzere Pause zwischen zwei Terminen an verschiedenen Orten: man geht nicht dazwischen heim (Standard 90 Min)
+  const homeGapMs = (prefs?.home_gap_min ?? 90) * 60_000
   const places = s.places.filter((p) => !p.member_id || p.member_id === member)
   const now = Date.now()
   const out: Candidate[] = []
@@ -453,11 +455,14 @@ async function candidatesFor(member: string, events: CalendarEvent[], unknown: U
     if (place) {
       // direkt davor schon am selben Ort (z. B. zweiter Termin bei der Arbeit): kein Weg nötig
       const sameAsBefore = !!prevPlace && prevPlace.id === place.id && start - prevPlace.end < 2 * 60 * 60 * 1000
+      // davor schon woanders unterwegs und zu wenig Zeit, um heimzugehen (z. B. Büro bis 17, Training um 18):
+      // kein Weg ab zuhause vorschlagen (Wunsch Jonathan 17.10.2026)
+      const awayBefore = !!prevPlace && prevPlace.id !== place.id && start - prevPlace.end < homeGapMs
       if (relevant) {
         out.push({
           target: { key: `cal:${e.id}`, title: e.title, start: e.start, place: { id: place.id, name: place.name, buffer: place.buffer_min }, source: 'calendar' },
           place,
-          sameAsBefore,
+          sameAsBefore: sameAsBefore || awayBefore,
         })
       }
       prevPlace = { id: place.id, end: Date.parse(e.end) }

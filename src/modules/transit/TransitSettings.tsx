@@ -34,6 +34,8 @@ type Prefs = {
   /** übliche Zeit, zu der man aus dem Haus geht (für die Abfahrtskachel an der Wand) */
   leave_time: string | null
   leave_days: number[]
+  /** ab dieser Pause zwischen zwei Terminen geht man dazwischen heim (sonst kein Weg ab zuhause) */
+  home_gap_min: number
 }
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
@@ -60,6 +62,7 @@ function useTransitData(memberId: string) {
           ignore: [],
           leave_time: null,
           leave_days: [1, 2, 3, 4, 5],
+          home_gap_min: 90,
         },
     )
   }, [memberId])
@@ -187,6 +190,13 @@ export function TransitSettings({ onBack }: { onBack: () => void }) {
           </div>
         )}
         <Toggle label="Bei Verspätung melden" checked={prefs.push_delay} onChange={(v) => savePrefs({ push_delay: v })} />
+      </Section>
+
+      <Section title="Schon unterwegs" hint="Termin davor woanders und die Pause kürzer: kein Weg ab zuhause (z. B. Büro bis 17, Training um 18)">
+        <div className="flex items-center gap-2">
+          <span className="flex-1 text-body text-ink">Heim ab einer Pause von</span>
+          <Stepper value={prefs.home_gap_min} unit="Min" min={0} max={240} step={15} onChange={(v) => savePrefs({ home_gap_min: v })} />
+        </div>
       </Section>
 
       {prefs.ignore.length > 0 && (
