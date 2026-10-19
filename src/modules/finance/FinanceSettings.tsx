@@ -1,19 +1,47 @@
-import { Lock } from 'lucide-react'
+import { Lock, Send } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { PageHeader } from '../../components/PageHeader'
 import { Toggle } from '../../components/Toggle'
 import { useMembers } from '../../lib/members'
-import { setFinEnabled, setJointAccounts, useFinProfile } from './finStore'
+import { currentSubscription, enablePush, isInstalled, isIOS, pushSupported } from '../../lib/push'
+import { supabase } from '../../lib/supabase'
+import { setFinEnabled, setImportPrefs, setJointAccounts, useFinProfile } from './finStore'
 import { setModuleConfig, useModuleConfig } from '../useModules'
 
 /**
  * Alle Funktionen → Finanzen: jede Person schaltet Finanzen für sich selbst ein (Leviona nur, wenn sie zustimmt).
- * Erst dann erscheint der Reiter „Finanzen“ und am 1. des Monats das Todo „Umsätze hochladen“.
+ * Erst dann erscheint der Reiter „Finanzen“. Liegt der letzte Import länger als die Frist zurück (14 oder 30 Tage),
+ * kommt morgens um 9 das Todo „Umsätze hochladen“ (oder eine Mitteilung, wenn man das wählt).
  */
 export function FinanceSettings({ onBack }: { onBack: () => void }) {
   const { me } = useMembers()
   const { profile } = useFinProfile(me.id)
   const wall = useModuleConfig<{ wall_percent_only?: boolean; wall_calm?: boolean; wall_hint?: boolean }>('finanzen', {})
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const every = profile?.import_every_days === 14 ? 14 : 30
+
+  async function togglePush(next: boolean) {
+    setMessage(null)
+    if (next && !(await currentSubscription())) {
+      // Handy noch nicht für Mitteilungen angemeldet: jetzt anmelden (wie bei den Erinnerungen)
+      if (isIOS() && !isInstalled())
+        return setMessage({ ok: false, text: 'Am iPhone gehen Mitteilungen nur in der installierten App (Teilen → „Zum Home-Bildschirm“).' })
+      const error = pushSupported() ? await enablePush(me.id) : 'Dieser Browser kann keine Mitteilungen.'
+      if (error) return setMessage({ ok: false, text: error })
+    }
+    if (!(await setImportPrefs(me.id, { import_push: next }))) setMessage({ ok: false, text: 'Speichern hat nicht geklappt.' })
+  }
+
+  async function testPush() {
+    setBusy(true)
+    const { data } = await supabase.functions.invoke<{ sent: number }>('reminders', { body: { action: 'fin-import-test' } })
+    setBusy(false)
+    setMessage(data?.sent ? { ok: true, text: 'Test-Mitteilung ist unterwegs.' } : { ok: false, text: 'Keine Mitteilung verschickt. Ist dieses Handy unter „Erinnerungen“ angemeldet?' })
+  }
+
   const accounts = (profile?.joint_accounts ?? []).map((a) => ({ name: a.replace(/^-/, ''), joint: !a.startsWith('-') }))
 
   // Das Wand-Tablet sieht nie einzelne Buchungen und hat keine eigenen
@@ -35,10 +63,41 @@ export function FinanceSettings({ onBack }: { onBack: () => void }) {
           label={`Finanzen für mich (${me.name})`}
         />
         <p className="text-label text-ink-muted">
-          Dann bekommst du unten den Reiter „Finanzen“, kannst den Umsatz-Export aus dem ING-Banking hochladen und am 1. jedes Monats erinnert dich ein Todo daran.
-          Ausschalten blendet alles wieder aus, deine Daten bleiben gespeichert.
+          Dann bekommst du unten den Reiter „Finanzen“ und kannst den Umsatz-Export aus dem ING-Banking hochladen. Ausschalten blendet alles wieder aus,
+          deine Daten bleiben gespeichert.
         </p>
       </section>
+
+      {profile?.enabled && (
+        <section className="hb-tile hb-tile-static gap-3">
+          <h3 className="font-semibold text-ink">Erinnerung an den Import</h3>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-body text-ink">Erinnern nach</span>
+            <div className="hb-seg" role="group" aria-label="Frist">
+              {[14, 30].map((d) => (
+                <button key={d} type="button" aria-pressed={every === d} className={every === d ? 'is-on' : ''} onClick={() => setImportPrefs(me.id, { import_every_days: d })}>
+                  {d} Tagen
+                </button>
+              ))}
+            </div>
+          </div>
+          <Toggle checked={!!profile.import_push} onChange={togglePush} label="Mitteilung aufs Handy statt Todo" />
+          <p className="text-label text-ink-muted">
+            Liegt dein letzter Import länger zurück, kommt morgens um 9 {profile.import_push ? 'eine Mitteilung (höchstens einmal pro Woche)' : 'das Todo „Umsätze hochladen“ für dich'}.
+            Antippen öffnet gleich den Import, nach dem Hochladen hakt es sich selbst ab.
+          </p>
+          {profile.import_push && (
+            <Button variant="ghost" disabled={busy} icon={<Icon icon={Send} size={20} />} onClick={testPush}>
+              Test-Mitteilung schicken
+            </Button>
+          )}
+          {message && (
+            <p role="status" className={`rounded-md px-3 py-2 text-label ${message.ok ? 'bg-success-soft text-success' : 'bg-urgent-soft text-urgent'}`}>
+              {message.text}
+            </p>
+          )}
+        </section>
+      )}
 
       {accounts.length > 0 && (
         <section className="hb-tile hb-tile-static gap-3">

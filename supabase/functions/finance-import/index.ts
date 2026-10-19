@@ -146,6 +146,7 @@ Deno.serve(async (req) => {
     const review = toInsert.filter((t) => t.needs_review).length
     const duplicate = parsed.rows.length - fresh.length
 
+    let reminderDone = false
     if (url.searchParams.get('dry') !== '1') {
       if (toInsert.length) {
         const { error } = await db.from('fin_transactions').upsert(toInsert, { onConflict: 'owner,hash', ignoreDuplicates: true })
@@ -187,6 +188,16 @@ Deno.serve(async (req) => {
         if (!had || had.as_of <= parsed.balance.on)
           await db.from('fin_balances').upsert({ owner: member, account: key, amount: parsed.balance.amount, as_of: parsed.balance.on, household: joint, updated_at: new Date().toISOString() })
       }
+      // Import-Erinnerung erledigt: offenes Todo „Umsätze hochladen“ abhaken, Mitteilungs-Pause zurücksetzen
+      const { data: closed } = await db
+        .from('todos')
+        .update({ done_at: new Date().toISOString(), done_by: member })
+        .eq('link', 'finanzen-import')
+        .eq('assignee', member)
+        .is('done_at', null)
+        .select('id')
+      reminderDone = (closed ?? []).length > 0
+      await db.from('fin_profiles').update({ import_pushed_at: null }).eq('member', member)
       // Wertpapierkäufe (Sparpläne) mit echtem Datum ins Depot übernehmen (Stufe 5)
       if (fresh.some((t) => /wertpapier/i.test(t.kind))) await db.rpc('fin_link_giro_buys', { p_owner: member })
       if (account && !remembered.includes(joint ? account : `-${account}`)) {
@@ -195,10 +206,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    const message = fresh.length
+    const message = reminderDone
+      ? `Import fertig, ${plural(toInsert.length, 'neue Buchung', 'neue Buchungen')}${review ? ` · ${plural(review, 'Buchung', 'Buchungen')} zum Zuordnen` : ''}`
+      : fresh.length
       ? `${toInsert.length} neu, ${duplicate} schon da${matches.length ? `, ${matches.length} mit Apple Pay abgeglichen` : ''}${review ? ` · ${plural(review, 'Buchung', 'Buchungen')} zum Zuordnen` : ''}`
       : `Alles schon da (${plural(parsed.rows.length, 'Buchung', 'Buchungen')})`
-    return json(req, { ok: true, message, total: parsed.rows.length, new: toInsert.length, matched: matches.length, duplicate, review, from: parsed.from, to: parsed.to, joint, account })
+    return json(req, { ok: true, message, total: parsed.rows.length, new: toInsert.length, matched: matches.length, duplicate, review, from: parsed.from, to: parsed.to, joint, account, reminder_done: reminderDone })
   } catch (e) {
     console.error(e)
     return json(req, { ok: false, message: 'Import gerade nicht möglich. Probier es gleich noch mal.' }, 502)

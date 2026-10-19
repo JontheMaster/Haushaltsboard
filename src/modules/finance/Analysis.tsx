@@ -1,4 +1,5 @@
 import { AlertCircle, BarChart3, LineChart, CalendarRange, ChevronLeft, ChevronRight, Clock, Store, Target } from 'lucide-react'
+import { ImportHint } from './FinanceBits'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
@@ -586,6 +587,7 @@ export function MonthTile({ delay }: TileProps) {
         </div>
       }
     >
+      <ImportHint />
       <span className="hb-fin-kicker">{mode === 'out' ? 'Ausgaben' : 'Einnahmen'} bisher</span>
       <span className="hb-depot-value">{euro(value)}</span>
       {diff !== null && (

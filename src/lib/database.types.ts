@@ -81,9 +81,19 @@ export type Database = {
         ]
       }
       fin_profiles: {
-        Row: { member: string; enabled: boolean; joint_accounts: string[]; created_at: string }
-        Insert: { member: string; enabled?: boolean; joint_accounts?: string[] }
-        Update: { enabled?: boolean; joint_accounts?: string[] }
+        Row: {
+          member: string
+          enabled: boolean
+          joint_accounts: string[]
+          created_at: string
+          /** Frist für die Import-Erinnerung in Tagen (14 oder 30) */
+          import_every_days: number
+          /** Mitteilung statt Todo */
+          import_push: boolean
+          import_pushed_at: string | null
+        }
+        Insert: { member: string; enabled?: boolean; joint_accounts?: string[]; import_every_days?: number; import_push?: boolean }
+        Update: { enabled?: boolean; joint_accounts?: string[]; import_every_days?: number; import_push?: boolean }
         Relationships: [Rel<'fin_profiles_member_fkey', 'member', 'members'>]
       }
       fin_categories: {
@@ -540,6 +550,8 @@ export type Database = {
           done_by: string | null
           due_date: string | null
           id: string
+          /** verknüpfte Stelle in der App, z. B. 'finanzen-import' (rutscht nicht, Antippen öffnet sie) */
+          link: string | null
           moved_since: string | null
           reminded_at: string | null
           remind_at: string | null
@@ -548,6 +560,7 @@ export type Database = {
           urgent: boolean
         }
         Insert: {
+          link?: string | null
           assignee?: string | null
           created_at?: string
           done_at?: string | null
@@ -582,6 +595,7 @@ export type Database = {
       fin_wall_summary: { Args: Record<string, never>; Returns: Json }
       // Stufe 3: Monat, Verlauf, Wann, Wo, Budgets (eigene + Haushalt; Tablet nur Haushalt)
       fin_review_list: { Args: Record<string, never>; Returns: Json }
+      fin_import_status: { Args: Record<string, never>; Returns: Json }
       fin_review_assign: { Args: { p_id: string; p_category: string; p_always?: boolean }; Returns: number }
       fin_overview: { Args: { p_month?: string; p_household_only?: boolean }; Returns: Json }
     }

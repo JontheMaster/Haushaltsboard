@@ -1,4 +1,5 @@
 import { AlertCircle, BarChart3, Clock, LayoutList, LineChart, Store, Target } from 'lucide-react'
+import { ImportHint } from './FinanceBits'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from '../../components/Icon'
 import { BalanceView, BudgetRing, catForecast, catVar, monthName, pct, shopName, signed, totalForecast, unusual, type Overview } from './Analysis'
@@ -72,6 +73,7 @@ export function WallHome({ o, after }: { o: Overview; after?: ReactNode }) {
 
   return (
     <div className="hb-wf">
+      <ImportHint wall />
       <div className="hb-wf-kpis">
         <div className="hb-tile hb-wf-kpi">
           <span className="hb-wf-kpi-label">Ausgaben im {month}</span>

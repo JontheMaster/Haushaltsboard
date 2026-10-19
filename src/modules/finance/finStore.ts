@@ -143,14 +143,20 @@ export function useReviewQueue(memberId: string) {
 export function useLastImport(memberId: string) {
   const [last, setLast] = useState<Tables<'fin_imports'> | null | undefined>(undefined)
   useEffect(() => {
-    supabase
-      .from('fin_imports')
-      .select('*')
-      .eq('owner', memberId)
-      .order('at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => setLast(data ?? null))
+    const load = () =>
+      supabase
+        .from('fin_imports')
+        .select('*')
+        .eq('owner', memberId)
+        .order('at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => setLast(data ?? null))
+    load()
+    importListeners.add(load)
+    return () => {
+      importListeners.delete(load)
+    }
   }, [memberId])
   return last
 }
@@ -237,7 +243,10 @@ export async function runImport(file: File, joint: boolean): Promise<{ ok: boole
     body: file,
     headers: { 'Content-Type': 'text/csv' },
   })
-  if (data?.message) return data
+  if (data?.message) {
+    if (data.ok) importChanged()
+    return data
+  }
   const ctx = (error as { context?: Response } | null)?.context
   if (ctx) {
     try {
@@ -273,4 +282,65 @@ export function useFinNames() {
     return !error
   }
   return { nameOf, setName }
+}
+
+// ───────── Import-Erinnerung (smart, 20.10.2026) ─────────
+
+/** Frist (14 / 30 Tage) und Mitteilung statt Todo, pro Person */
+export async function setImportPrefs(memberId: string, patch: { import_every_days?: number; import_push?: boolean }): Promise<boolean> {
+  const { error } = await supabase.from('fin_profiles').update(patch).eq('member', memberId)
+  return !error
+}
+
+export type ImportStatus = { member: string; name: string; last: string; every: number; days: number; over: number }
+
+/** Ab so vielen Tagen über der Frist zeigen die Kacheln „Letzter Import vor X Tagen“ */
+export const IMPORT_HINT_OVER = 7
+
+const importListeners = new Set<() => void>()
+/** Nach einem Import: Hinweise und Status überall neu laden */
+export function importChanged() {
+  importListeners.forEach((l) => l())
+}
+
+/** Stand der Importe pro Person mit Finanzen (nur Tage, keine Beträge; auch am Tablet), alle 30 Min neu */
+export function useImportStatus(): ImportStatus[] | null {
+  const [list, setList] = useState<ImportStatus[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      supabase.rpc('fin_import_status').then(({ data }) => {
+        if (alive) setList(Array.isArray(data) ? (data as unknown as ImportStatus[]) : [])
+      })
+    load()
+    importListeners.add(load)
+    const t = setInterval(load, 30 * 60_000)
+    return () => {
+      alive = false
+      importListeners.delete(load)
+      clearInterval(t)
+    }
+  }, [])
+  return list
+}
+
+// Antippen des Todos „Umsätze hochladen“ oder der Mitteilung: Finanzen öffnet direkt den Import
+let importRequested = false
+const requestListeners = new Set<() => void>()
+
+export function requestImport() {
+  importRequested = true
+  requestListeners.forEach((l) => l())
+}
+
+/** Gibt einmal true zurück, wenn jemand den Import öffnen wollte (und setzt es zurück) */
+export function takeImportRequest(): boolean {
+  const was = importRequested
+  importRequested = false
+  return was
+}
+
+export function onImportRequest(l: () => void): () => void {
+  requestListeners.add(l)
+  return () => requestListeners.delete(l)
 }

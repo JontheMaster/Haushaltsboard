@@ -4,6 +4,8 @@
 //   POST {action:'test'}  → Test-Mitteilung an die eigenen Handys (nur Mitglieder)
 //   POST {action:'weekly'} + Header x-cron-key → Wochenrückblick sonntags 18:00 Berlin an alle, die ihn wollen
 //   POST {action:'weekly-test'} → Wochenrückblick-Mitteilung jetzt an die eigenen Handys (nur Mitglieder)
+//   POST {action:'fin-import', items:[{member, days}]} + Header x-cron-key → „Umsätze hochladen“ als Mitteilung (Finanzen, täglich 9 Uhr)
+//   POST {action:'fin-import-test'} → diese Mitteilung jetzt an die eigenen Handys (nur Mitglieder)
 // Die VAPID-Schlüssel erzeugt die Function beim ersten Aufruf selbst und legt sie in push_config ab.
 import * as webpush from 'jsr:@negrel/webpush@0.5.0'
 import { adminClient, corsHeaders, json, memberId } from '../_shared/http.ts'
@@ -143,6 +145,22 @@ async function weeklyFromCron(): Promise<unknown> {
   return { sent: await sendWeekly(push) }
 }
 
+/** Finanzen: Erinnerung an den Import als Mitteilung statt Todo (wer das in den Einstellungen gewählt hat) */
+async function sendFinImport(items: { member: string; days: number }[]): Promise<number> {
+  let sent = 0
+  for (const it of items) {
+    if (typeof it?.member !== 'string') continue
+    const { data: subs } = await db.from('push_subscriptions').select('id, member_id, endpoint, p256dh, auth').eq('member_id', it.member)
+    sent += await pushTo(subs ?? [], {
+      title: 'Umsätze hochladen',
+      body: `Letzter Import vor ${Number(it.days) || 0} Tagen. Tippe hier, dann lädst du den ING-Export hoch.`,
+      tag: 'finanzen-import',
+      url: `${APP_URL}?finanzen=import`,
+    })
+  }
+  return sent
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
   const url = new URL(req.url)
@@ -155,6 +173,7 @@ Deno.serve(async (req) => {
       if (!data || cronKey !== data.cron_key) return new Response('Nicht erlaubt', { status: 403 })
       const body = await req.json().catch(() => ({}))
       if (body.action === 'weekly') return Response.json(await weeklyFromCron())
+      if (body.action === 'fin-import') return Response.json({ sent: await sendFinImport(Array.isArray(body.items) ? body.items : []) })
       return Response.json(await sendDue())
     }
 
@@ -177,6 +196,11 @@ Deno.serve(async (req) => {
         return json(req, { sent })
       }
       if (body.action === 'weekly-test') return json(req, { sent: await sendWeekly([member]) })
+      if (body.action === 'fin-import-test') {
+        const { data: last } = await db.from('fin_imports').select('to').eq('owner', member).order('to', { ascending: false, nullsFirst: false }).limit(1).maybeSingle()
+        const days = last?.to ? Math.round((Date.now() - Date.parse(`${last.to}T12:00:00Z`)) / 86_400_000) : 0
+        return json(req, { sent: await sendFinImport([{ member, days }]) })
+      }
     }
     return json(req, { error: 'Unbekannte Aktion' }, 400)
   } catch (e) {

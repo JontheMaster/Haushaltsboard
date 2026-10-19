@@ -52,6 +52,7 @@ function fromChore(t: ChoreTask & { chore_rules: { title: string; icon?: string 
     created_at: t.occurs_on,
     remind_at: null,
     reminded_at: null,
+    link: null,
     chore: { ruleId: t.rule_id, weekStart: t.week_start, raw, icon: chore_rules?.icon ?? 'Sparkles' },
   }
 }

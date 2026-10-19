@@ -7,7 +7,7 @@ import { CoinButton } from '../modules/coin/CoinFlip'
 import { MealsTab } from '../modules/meals/MealsTab'
 import { Sheet } from '../components/Sheet'
 import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Toast } from '../components/Toast'
 import { VisitToggle } from '../components/VisitToggle'
@@ -30,7 +30,7 @@ import { PhoneLayoutEditor } from './PhoneLayoutEditor'
 import { useEnabledModules, useHiddenHeaders, useLayout } from '../modules/useModules'
 import { useTapFromUrl } from '../modules/nfc/nfcStore'
 import { FinanceTab } from '../modules/finance/FinanceTab'
-import { useFinProfile } from '../modules/finance/finStore'
+import { requestImport, useFinProfile } from '../modules/finance/finStore'
 import { useMembers } from '../lib/members'
 import { useSettings } from '../lib/settings'
 
@@ -54,6 +54,16 @@ function savedTab(): Tab {
   } catch {
     return 'start'
   }
+}
+
+/** Mitteilung „Umsätze hochladen“ angetippt: die App startet mit ?finanzen=import (wird aus der Adresse entfernt) */
+function takeImportLink(): boolean {
+  const params = new URLSearchParams(location.search)
+  if (params.get('finanzen') !== 'import') return false
+  params.delete('finanzen')
+  const rest = params.toString()
+  history.replaceState(null, '', `${location.pathname}${rest ? `?${rest}` : ''}${location.hash}`)
+  return true
 }
 
 /** Handy-Ansicht (unter 700 px): eintragen, planen, abhaken */
@@ -99,6 +109,27 @@ export function Phone({ weather }: { weather: Weather | null }) {
     }
   }
 
+  // Import der Finanzen öffnen (Todo „Umsätze hochladen“, Mitteilung mit ?finanzen=import); false, wenn es den Reiter nicht gibt
+  const finTab = tabs.some((t) => t.id === 'finanzen')
+  const openImport = useRef<() => boolean>(() => false)
+  openImport.current = () => {
+    if (!finTab) return false
+    requestImport()
+    go('finanzen')
+    return true
+  }
+  const [importLink, setImportLink] = useState(() => takeImportLink())
+  useEffect(() => {
+    if (importLink && finTab && openImport.current()) setImportLink(false)
+  }, [importLink, finTab])
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.data?.open === 'finanzen-import') setImportLink(true)
+    }
+    navigator.serviceWorker?.addEventListener('message', onMsg)
+    return () => navigator.serviceWorker?.removeEventListener('message', onMsg)
+  }, [])
+
   const removeTodo = useCallback(async (todo: Todo) => {
     if (!(await deleteTodo(todo.id))) return setToast({ id: Date.now(), message: 'Löschen hat nicht geklappt.' })
     setToast({
@@ -123,6 +154,8 @@ export function Phone({ weather }: { weather: Weather | null }) {
       return
     }
     const { data } = await supabase.from('todos').select('*').eq('id', id).maybeSingle()
+    // „Umsätze hochladen“: direkt zum Import, wenn es den Reiter Finanzen gibt
+    if (data?.link === 'finanzen-import' && openImport.current()) return
     if (data) setSheet({ todo: data })
   }, [])
 

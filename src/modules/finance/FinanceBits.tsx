@@ -1,11 +1,12 @@
-import { PiggyBank } from 'lucide-react'
+import { PiggyBank, Upload } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { Icon } from '../../components/Icon'
 import { useMembers } from '../../lib/members'
 import { useSettings } from '../../lib/settings'
 import { useEnabledModules } from '../useModules'
 import { monthName, useOverview, type Overview, type OverviewCategory } from './Analysis'
-import { useFinProfile } from './finStore'
+import { IMPORT_HINT_OVER, requestImport, useFinProfile, useImportStatus } from './finStore'
+import { useDevice } from '../../lib/device'
 
 const euro0 = (n: number) => `${Math.round(n).toLocaleString('de-DE')} €`
 const euro2 = (n: number) => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
@@ -77,6 +78,47 @@ export function BriefingBudgetCard({ style }: { style?: CSSProperties }) {
           ))}
         </ul>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Import-Erinnerung (20.10.2026): ab 7 Tagen über der Frist dezent „Letzter Import vor 37 Tagen“ (warning, ohne Betrag).
+ * Handy: nur der eigene Stand, Antippen öffnet den Import. Wand: alle Personen mit Finanzen, ohne Antippen.
+ */
+export function ImportHint({ wall = false }: { wall?: boolean }) {
+  const { me } = useMembers()
+  const { settings } = useSettings()
+  const enabled = useEnabledModules()
+  const { goTab } = useDevice()
+  const status = useImportStatus()
+  if (!enabled?.has('finanzen') || settings?.visit_mode || !status) return null
+  const late = status.filter((s) => s.over >= IMPORT_HINT_OVER && (wall || s.member === me.id))
+  if (!late.length) return null
+  if (!wall) {
+    const s = late[0]
+    return (
+      <button
+        type="button"
+        className="hb-fin-import-hint"
+        onClick={() => {
+          requestImport()
+          goTab?.('finanzen')
+        }}
+      >
+        <Icon icon={Upload} size={16} />
+        Letzter Import vor {s.days} Tagen
+      </button>
+    )
+  }
+  return (
+    <div className="hb-fin-import-hints">
+      {late.map((s) => (
+        <span key={s.member} className="hb-fin-import-hint">
+          <Icon icon={Upload} size={16} />
+          {status.length > 1 ? `${s.name}: letzter Import vor ${s.days} Tagen` : `Letzter Import vor ${s.days} Tagen`}
+        </span>
+      ))}
     </div>
   )
 }

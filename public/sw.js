@@ -21,7 +21,7 @@ self.addEventListener('push', (e) => {
 })
 
 // Antippen öffnet die App (oder holt das offene Fenster nach vorn).
-// Wochenrückblick (?rueckblick): das offene Fenster bekommt Bescheid und öffnet ihn.
+// Wochenrückblick (?rueckblick) und Import der Finanzen (?finanzen=import): das offene Fenster bekommt Bescheid.
 self.addEventListener('notificationclick', (e) => {
   e.notification.close()
   const url = (e.notification.data && e.notification.data.url) || './'
@@ -30,6 +30,7 @@ self.addEventListener('notificationclick', (e) => {
       for (const c of list) {
         if ('focus' in c) {
           if (url.includes('rueckblick')) c.postMessage({ open: 'rueckblick' })
+          if (url.includes('finanzen=import')) c.postMessage({ open: 'finanzen-import' })
           return c.focus()
         }
       }

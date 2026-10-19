@@ -1,5 +1,5 @@
 import { ChevronRight, CircleAlert, Copy, FileSpreadsheet, KeyRound, Lock, Plus, Share, ShieldCheck, Tag, Upload, Wallet } from 'lucide-react'
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { PageHeader } from '../../components/PageHeader'
@@ -27,6 +27,9 @@ import {
   type FinCategory,
   type FinTx,
   type ImportPreview,
+  onImportRequest,
+  takeImportRequest,
+  useImportStatus,
 } from './finStore'
 
 const day = (iso: string) =>
@@ -76,6 +79,19 @@ export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
       // nur Komfort
     }
   }
+  // Todo „Umsätze hochladen“ oder Mitteilung angetippt: gleich zum Import (Konto → Buchungen)
+  const [focusImport, setFocusImport] = useState(0)
+  useEffect(() => {
+    const open = () => {
+      if (!takeImportRequest()) return
+      setView('start')
+      setArea('konto')
+      setPart('list')
+      setFocusImport(Date.now())
+    }
+    open()
+    return onImportRequest(open)
+  }, [])
   if (view === 'review') return <ReviewView onBack={() => setView('start')} showToast={showToast} />
   if (view === 'guide') return <GuideView onBack={() => setView('start')} showToast={showToast} />
   const choose = (a: 'konto' | 'depot') => {
@@ -127,6 +143,7 @@ export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
             <StartView
               key={me.id}
               part={part}
+              focusImport={focusImport}
               onList={() => choosePart('list')}
               onReview={() => setView('review')}
               onGuide={() => setView('guide')}
@@ -141,12 +158,14 @@ export function FinanceTab({ showToast }: { showToast: (m: string) => void }) {
 
 function StartView({
   part,
+  focusImport,
   onList,
   onReview,
   onGuide,
   showToast,
 }: {
   part: 'overview' | 'list'
+  focusImport: number
   onList: () => void
   onReview: () => void
   onGuide: () => void
@@ -160,6 +179,17 @@ function StartView({
   const { queue } = useReviewQueue(me.id)
   const last = useLastImport(me.id)
   const input = useRef<HTMLInputElement>(null)
+  const importCard = useRef<HTMLElement>(null)
+  const status = useImportStatus()
+  const mine = status?.find((x) => x.member === me.id)
+  const [flash, setFlash] = useState(false)
+  useEffect(() => {
+    if (!focusImport || part !== 'list') return
+    importCard.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    setFlash(true)
+    const t = setTimeout(() => setFlash(false), 2400)
+    return () => clearTimeout(t)
+  }, [focusImport, part])
   const [preview, setPreview] = useState<{ file: File; data: ImportPreview } | null>(null)
   const [edit, setEdit] = useState<FinTx | null>(null)
   const catOf = (id: string) => cats?.find((c) => c.id === id)
@@ -180,9 +210,15 @@ function StartView({
   return (
     <div className="flex flex-col gap-4">
       {part === 'list' && (
-        <section className="hb-tile hb-tile-static gap-3">
+        <section ref={importCard} className={`hb-tile hb-tile-static gap-3 ${flash ? 'hb-fin-import-focus' : ''}`}>
           <div className="flex flex-col gap-1">
             <h3 className="font-semibold text-ink">Umsätze importieren</h3>
+            {mine && mine.days > mine.every && (
+              <span className="hb-fin-import-hint">
+                <Icon icon={Upload} size={16} />
+                Fällig: letzter Import vor {mine.days} Tagen
+              </span>
+            )}
             <p className="text-label text-ink-muted">
               {last
                 ? `Zuletzt ${day(last.at.slice(0, 10))}: ${last.rows_new} neu${last.to ? `, Buchungen bis ${day(last.to)}` : ''}.`
