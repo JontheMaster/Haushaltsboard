@@ -5,6 +5,7 @@ import { useNow } from '../../lib/time'
 import { ring, unlockAudio } from '../meals/alarm'
 import { iconOf } from './nfcStore'
 import { useTimers, type Timer } from './TimerHeader'
+import { useAlarmSound } from './useAlarmSound'
 
 /** Nur Timer melden, die gerade erst abgelaufen sind (nicht beim Neuladen Stunden später) */
 const FRESH_MS = 3 * 60_000
@@ -39,6 +40,7 @@ export function TimerDoneAlert() {
   const now = useNow(5_000).getTime()
   const [shown, setShown] = useState<Timer | null>(null)
   const alerted = useRef(new Set<string>(seen()))
+  useAlarmSound()
 
   // Ton freischalten: Tablets spielen Ton erst nach einer Berührung (beim nächsten Tippen irgendwo auf dem Board)
   useEffect(() => {

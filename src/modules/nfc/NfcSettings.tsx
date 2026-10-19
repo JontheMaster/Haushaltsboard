@@ -1,4 +1,4 @@
-import { CircleAlert, CircleCheck, Copy, House, KeyRound, Plus } from 'lucide-react'
+import { Check, CircleAlert, CircleCheck, Copy, House, KeyRound, Plus, Volume2 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase'
 import { NfcActionSheet } from './NfcActionSheet'
 import { searchAddress } from '../transit/api'
 import { setModuleConfig, useModuleConfig } from '../useModules'
+import { DEFAULT_SOUND, ring, SOUNDS, type SoundId } from '../meals/alarm'
 import { CATEGORIES, createToken, describe, iconOf, revokeToken, useMyTokens, useNfcActions, useNfcEvents, type NfcAction } from './nfcStore'
 import { useChoreRules } from './useChoreRules'
 
@@ -141,6 +142,7 @@ export function NfcSettings({ onBack }: { onBack: () => void }) {
         </Button>
       </Section>
 
+      <SoundSection />
       <HomeSection onMessage={setMessage} />
 
       <Section title="Zuletzt getippt">
@@ -231,5 +233,33 @@ function HomeSection({ onMessage }: { onMessage: (m: { ok: boolean; text: string
   )
 }
 
-const NFC_DEFAULTS: { home: { address: string; lat: number; lon: number } | null } = { home: null }
+/** Ton, den das Wand-Tablet (und der Kochmodus) bei fertigen Timern spielt; gilt für alle Geräte */
+function SoundSection() {
+  const { timer_sound } = useModuleConfig('nfc', NFC_DEFAULTS)
+  const chosen = SOUNDS.some((x) => x.id === timer_sound) ? (timer_sound as SoundId) : DEFAULT_SOUND
+  return (
+    <Section title="Ton für fertige Timer" hint="Spielt das Wand-Tablet, wenn z. B. die Spülmaschine fertig ist. Antippen spielt den Ton zur Probe.">
+      <div className="flex flex-col gap-2">
+        {SOUNDS.map((x) => (
+          <button
+            key={x.id}
+            type="button"
+            className={`hb-sound-option ${chosen === x.id ? 'is-on' : ''}`}
+            aria-pressed={chosen === x.id}
+            onClick={() => {
+              ring(x.id)
+              if (chosen !== x.id) setModuleConfig('nfc', { timer_sound: x.id })
+            }}
+          >
+            <Icon icon={chosen === x.id ? Check : Volume2} size={18} />
+            {x.label}
+          </button>
+        ))}
+      </div>
+      <span className="text-label text-ink-muted">Lautstärke = Medien-Lautstärke des Tablets.</span>
+    </Section>
+  )
+}
+
+const NFC_DEFAULTS: { home: { address: string; lat: number; lon: number } | null; timer_sound?: string } = { home: null }
 

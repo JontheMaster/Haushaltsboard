@@ -10,6 +10,7 @@ import { useModuleConfig } from '../useModules'
 import { ServingsStepper } from './RecipeDetail'
 import { ring, unlockAudio } from './alarm'
 import { ServeMoment } from './ServeMoment'
+import { useAlarmSound } from '../nfc/useAlarmSound'
 
 /** Bildschirm bleibt an, solange gekocht wird */
 function useWakeLock() {
@@ -45,6 +46,7 @@ function ingredientsIn(text: string, list: Ingredient[]): number[] {
 /** Kochmodus: Vollbild, Zutaten zum Abhaken, Schritt für Schritt, Timer aus dem Text */
 export function CookMode() {
   const { session } = useCook()
+  useAlarmSound()
   if (!session) return null
   return <CookScreen key={session.recipe.id} />
 }

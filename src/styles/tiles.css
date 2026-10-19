@@ -1226,3 +1226,27 @@
     animation: none;
   }
 }
+/* Timer-Ton wählen (NFC-Tags → Ton für fertige Timer) */
+.hb-sound-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  text-align: left;
+}
+.hb-sound-option svg {
+  color: var(--ink-muted);
+}
+.hb-sound-option.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.hb-sound-option.is-on svg {
+  color: var(--accent);
+}
