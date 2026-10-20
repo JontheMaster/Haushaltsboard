@@ -1,0 +1,372 @@
+/* Filme (docs/filme-modul.md): Poster-Raster, Stimmen-Punkte, Walze für den Zufall, Sterne */
+
+.hb-film-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--space-3);
+}
+.hb-film-grid.is-wall {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-4);
+}
+
+.hb-poster {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  -webkit-touch-callout: none;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.hb-poster:active {
+  transform: scale(0.97);
+}
+.hb-poster:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-poster-img {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  box-shadow: var(--shadow-tile);
+}
+.hb-poster-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hb-poster-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 19px;
+  font-weight: 650;
+  color: var(--ink-muted);
+}
+.hb-poster-title {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 650;
+}
+.hb-poster-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* Stimmen als kleine Punkte in Personenfarbe oben rechts auf dem Poster */
+.hb-poster-votes {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+.hb-vote-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--person-color, var(--ink-muted));
+  color: var(--surface-raised);
+  box-shadow: 0 0 0 2px var(--surface-raised);
+}
+.hb-vote-dot.is-egal {
+  background: var(--surface-raised);
+  color: var(--person-color);
+  box-shadow:
+    inset 0 0 0 2px var(--person-color),
+    0 0 0 2px var(--surface-raised);
+}
+.hb-vote-dot.is-no {
+  background: var(--surface-raised);
+  color: var(--ink-muted);
+  box-shadow:
+    inset 0 0 0 2px var(--ink-muted),
+    0 0 0 2px var(--surface-raised);
+}
+/* „Läuft bei uns“: Streifen unten auf dem Poster */
+.hb-poster-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  max-width: calc(100% - 12px);
+  overflow: hidden;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 650;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.hb-poster.is-dim .hb-poster-img {
+  opacity: 0.55;
+}
+
+/* Detailfenster */
+.hb-film-head {
+  display: flex;
+  gap: var(--space-4);
+}
+.hb-film-head .hb-poster-img {
+  width: 112px;
+  flex: none;
+}
+.hb-film-head.is-wall .hb-poster-img {
+  width: 180px;
+}
+.hb-film-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 650;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.hb-film-overview {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink);
+}
+.hb-provider-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.hb-provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.hb-provider img {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+.hb-provider.is-ours {
+  background: var(--success-soft);
+  color: var(--ink);
+}
+.hb-source-note {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-muted);
+}
+
+/* Abstimmen: pro Person eine Reihe Pillen */
+.hb-vote-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hb-vote-row-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.hb-vote-row .hb-choice.is-on {
+  background: var(--person-color, var(--accent));
+  border-color: var(--person-color, var(--accent));
+  color: var(--surface-raised);
+}
+
+/* Sterne (accent) */
+.hb-stars {
+  display: inline-flex;
+  gap: 2px;
+}
+.hb-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--line);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.hb-star.is-on {
+  color: var(--accent);
+}
+.hb-star.is-on svg {
+  fill: currentColor;
+}
+.hb-star:active {
+  transform: scale(1.2);
+}
+.hb-stars.is-small .hb-star {
+  width: 16px;
+  height: 16px;
+  cursor: default;
+}
+.hb-stars.is-wall .hb-star {
+  width: 52px;
+  height: 52px;
+}
+
+/* Zufall: Walze */
+.hb-reel {
+  position: relative;
+  height: 330px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+  mask-image: linear-gradient(to right, transparent, #000 18%, #000 82%, transparent);
+}
+.hb-reel-strip {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  display: flex;
+  gap: var(--space-3);
+  will-change: transform;
+}
+.hb-reel-strip .hb-poster-img {
+  width: 188px;
+  flex: none;
+}
+.hb-reel-strip.is-spinning {
+  transition: transform 2600ms var(--ease-spring);
+}
+.hb-reel-pick {
+  animation: hb-reel-pick var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes hb-reel-pick {
+  from {
+    transform: scale(0.96);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-reel-strip.is-spinning {
+    transition: none;
+  }
+  .hb-reel-pick {
+    animation: hb-fade-in var(--dur-slow) var(--ease-out) both;
+  }
+}
+@keyframes hb-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.hb-pick-three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+/* Jahresliste */
+.hb-year-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+}
+.hb-year-row .hb-poster-img {
+  width: 40px;
+  flex: none;
+  box-shadow: none;
+}
+.hb-year-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.hb-year-score span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* Handy-Kachel: drei neue Poster nebeneinander */
+.hb-film-tile-posters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+/* Personenfarbe für Punkte und Abstimm-Reihen */
+.hb-film-person.hb-person-a {
+  --person-color: var(--person-a);
+}
+.hb-film-person.hb-person-b {
+  --person-color: var(--person-b);
+}
+.hb-film-person.hb-person-open {
+  --person-color: var(--ink-muted);
+}
+
+/* Wochenrückblick: Poster statt Essensbild (hochkant, nicht beschnitten) */
+.hb-story-dish-img.hb-story-poster {
+  aspect-ratio: 2 / 3;
+  box-shadow: none;
+}
+
+/* Treffer der Suche / Vorschläge zum Antippen */
+.hb-cand {
+  width: 100%;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  text-align: left;
+}
+.hb-cand:disabled {
+  cursor: default;
+}

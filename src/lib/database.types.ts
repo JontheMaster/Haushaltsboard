@@ -580,9 +580,69 @@ export type Database = {
           Rel<'todos_done_by_fkey', 'done_by', 'members'>,
         ]
       }
+      // Filme (docs/filme-modul.md); Daten von TMDB, schreibt meist die Edge Function `movies`
+      movies: {
+        Row: {
+          id: string
+          tmdb_id: number | null
+          kind: string
+          title: string
+          original_title: string | null
+          year: number | null
+          runtime: number | null
+          genres: string[]
+          genre_ids: number[]
+          poster_path: string | null
+          backdrop_path: string | null
+          overview: string | null
+          rating_tmdb: number | null
+          providers: Json
+          providers_checked_at: string | null
+          details_at: string | null
+          source_url: string | null
+          added_by: string | null
+          added_at: string
+          status: string
+          candidates: Json | null
+        }
+        Insert: { title: string; status?: string; kind?: string }
+        Update: { status?: string }
+        Relationships: [Rel<'movies_added_by_fkey', 'added_by', 'members'>]
+      }
+      movie_votes: {
+        Row: { movie_id: string; member: string; want: string; updated_at: string }
+        Insert: { movie_id: string; member: string; want: string; updated_at?: string }
+        Update: { want?: string; updated_at?: string }
+        Relationships: [Rel<'movie_votes_member_fkey', 'member', 'members'>]
+      }
+      movie_watched: {
+        Row: {
+          id: string
+          movie_id: string
+          watched_on: string
+          started_at: string
+          ends_at: string
+          service: string | null
+          ratings: Json
+          note: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: { movie_id: string; ends_at: string; watched_on?: string; started_at?: string; service?: string | null; created_by?: string | null }
+        Update: { ends_at?: string; note?: string | null }
+        Relationships: [Rel<'movie_watched_created_by_fkey', 'created_by', 'members'>]
+      }
+      movie_hints: {
+        Row: { id: string; movie_id: string | null; text: string; created_at: string }
+        Insert: { text: string; movie_id?: string | null }
+        Update: { text?: string }
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: {
+      // Filme: Sterne eintragen, ohne die Bewertung der anderen Person zu überschreiben (0 = nicht mitgeschaut)
+      movie_rate: { Args: { p_watched: string; p_member: string; p_stars: number }; Returns: undefined }
       // Wochenrückblick (Mo–So), ohne Datum die laufende Woche
       week_recap: { Args: { p_week_start?: string }; Returns: Json }
       // Depot: Stand der Bank als Anker setzen, Wertpapierkäufe aus dem Giro-Export zuordnen

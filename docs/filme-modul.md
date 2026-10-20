@@ -86,3 +86,7 @@ Neues Secret, das Jonathan selbst anlegt: `TMDB_API_KEY`. Das ist der „API Rea
 - Bewerten: am nächsten Morgen Karte oben an Handy und Wand, bis beide bewertet haben (höchstens 3 Tage).
 - Leviona: Teilen am Android über die App „HTTP Shortcuts“, Suche in der App; Push an sie, sobald sie es in den Einstellungen selbst einschaltet.
 - TMDB-Bedingungen geprüft (20.10.2026): private Nutzung erlaubt, TMDB-Logo + Hinweis „nicht von TMDB empfohlen oder geprüft“, Daten höchstens 6 Monate zwischenspeichern, Streaming-Daten mit „Daten von JustWatch“.
+
+## Stand (20.10.2026)
+
+Gebaut: Stufe 1 und 2, aus Stufe 3 Wochenrückblick und Jahresliste. Details zur Technik in CLAUDE.md (Abschnitt Filme). Offen aus Stufe 3 (nur nach Rückfrage): Serien-Fortschritt, Smart-Home-Szene, Besuchsmodus „Gäste schauen mit“.

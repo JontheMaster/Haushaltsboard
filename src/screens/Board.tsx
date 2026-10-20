@@ -31,8 +31,10 @@ import { DeparturesBoard } from '../modules/transit/DeparturesBoard'
 import { useFinHints, useWallFinance, WallFinance } from '../modules/finance/WallFinance'
 import { useTapFromUrl } from '../modules/nfc/nfcStore'
 import { TimerDoneAlert } from '../modules/nfc/TimerDoneAlert'
+import { FilmsPage } from '../modules/movies/FilmsPage'
+import { useMovieHints } from '../modules/movies/movieStore'
 
-type View = 'heute' | 'woche' | 'abfahrten' | 'essen' | 'finanzen'
+type View = 'heute' | 'woche' | 'abfahrten' | 'essen' | 'finanzen' | 'filme'
 // So breit rechnet die Seite am Wand-Tablet (siehe unten): auf dem neuen 16:10-Tablet sind die Elemente damit
 // so groß wie früher am iPad (1180 × 820), mit mehr Platz (Entscheidung Jonathan 10.10.2026)
 const WALL_WIDTH = 1366
@@ -186,6 +188,8 @@ export function Board({ weather }: { weather: Weather | null }) {
   useTapFromUrl(showToast)
   // Apple Pay (Stufe 2): kurzer Hinweis bei Haushaltseinkäufen, nie im Besuchsmodus
   useFinHints(enabled?.has('finanzen') === true && !settings?.visit_mode, showToast)
+  // Filme: „Oppenheimer jetzt bei Prime“ (wöchentlicher Lauf)
+  useMovieHints(enabled?.has('filme') === true, showToast)
   const hideToast = useCallback(() => setToast(null), [])
 
   useEffect(() => {
@@ -246,6 +250,16 @@ export function Board({ weather }: { weather: Weather | null }) {
                   Abfahrten
                 </button>
               )}
+              {enabled?.has('filme') && (
+                <button
+                  type="button"
+                  className={`hb-choice ${view === 'filme' ? 'is-on' : ''}`}
+                  aria-pressed={view === 'filme'}
+                  onClick={() => setView('filme')}
+                >
+                  Filme
+                </button>
+              )}
               {finWall && (
                 <button
                   type="button"
@@ -295,6 +309,10 @@ export function Board({ weather }: { weather: Weather | null }) {
       ) : view === 'finanzen' && finWall ? (
         <main className="min-h-0 flex-1 overflow-y-auto hb-scroll-quiet">
           <WallFinance data={finWall} />
+        </main>
+      ) : view === 'filme' && enabled?.has('filme') ? (
+        <main className="flex min-h-0 flex-1 flex-col">
+          <FilmsPage variant="wall" showToast={showToast} />
         </main>
       ) : view === 'abfahrten' ? (
         <main className="min-h-0 flex-1 overflow-y-auto hb-scroll-quiet">

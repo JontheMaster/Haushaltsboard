@@ -1,5 +1,8 @@
-import { Target, TrendingUp, Wallet, Bell, CalendarDays, CalendarRange, Clock, CloudSun, Coins, Heart, Image, ListChecks, Mic, Moon, Music, Nfc, Quote, ShoppingCart, Smartphone, Sparkles, Sunrise, TrainFront, Trophy, UtensilsCrossed, Wifi, Zap } from 'lucide-react'
+import { Clapperboard, Target, TrendingUp, Wallet, Bell, CalendarDays, CalendarRange, Clock, CloudSun, Coins, Heart, Image, ListChecks, Mic, Moon, Music, Nfc, Quote, ShoppingCart, Smartphone, Sparkles, Sunrise, TrainFront, Trophy, UtensilsCrossed, Wifi, Zap } from 'lucide-react'
 import { WidgetSettings } from './widget/WidgetSettings'
+import { FilmHeader } from './movies/FilmHeader'
+import { FilmSettings } from './movies/FilmSettings'
+import { FilmsTile } from './movies/FilmsTile'
 import { FinanceSettings } from './finance/FinanceSettings'
 import { DepotTile } from './finance/DepotCharts'
 import { GoalsTile } from './finance/Goals'
@@ -70,6 +73,8 @@ export const MODULES: ModuleDef[] = [
   // Finanzen (docs/finanzen-modul.md): jede Person schaltet es in den Einstellungen für sich ein, dann Reiter am Handy.
   // Keine Kachel; an der Wand nie einzelne Buchungen, im Besuchsmodus ganz weg
   { id: 'finanzen', title: 'Finanzen', description: 'Ausgaben aus dem ING-Export, eigene privat, Haushalt gemeinsam', icon: Wallet, phase: 5, sizes: [], Settings: FinanceSettings, Header: FinanceHeader, phoneTiles: [{ id: 'depot', title: 'Depot', description: 'Depotwert, seit gestern, Linie 30 Tage', icon: TrendingUp, Tile: DepotTile }, { id: 'ziele', title: 'Sparziele', description: 'Ziel-Ringe, z. B. Urlaub 2027: 64 %', icon: Target, Tile: GoalsTile }, { id: 'monat', title: 'Haushalt diesen Monat', description: 'Ausgaben im Vergleich zum Schnitt', icon: CalendarRange, Tile: MonthTile }, { id: 'budget', title: 'Budget', description: 'Ringe der Haushaltsbudgets', icon: Target, Tile: BudgetTile }] },
+  // Filme (docs/filme-modul.md): Wand = Ansicht „Filme“ (Knopf), Handy = Seite (Kachel, Alle Funktionen); oben Filmabend und Bewerten
+  { id: 'filme', title: 'Filme', description: 'Gemeinsame Merkliste, Zufall für den Filmabend, Sterne danach', icon: Clapperboard, phase: 7, sizes: [], Header: FilmHeader, Settings: FilmSettings, phoneTiles: [{ id: 'merkliste', title: 'Filme', description: 'Zuletzt gesehen und neu auf der Merkliste', icon: Clapperboard, Tile: FilmsTile }] },
   // Handy-Widget (Scriptable am iPhone, KWGT an Android): nur Einrichtung, kein Schalter; Daten über Edge Function `widget`
   { id: 'widget', title: 'Handy-Widget', description: 'Termine, Todos und Essen auf dem Home-Bildschirm', icon: Smartphone, phase: 5, sizes: [], Settings: WidgetSettings, toggle: false },
   { id: 'bildschirmschoner', title: 'Bildschirmschoner', description: 'Eure Fotos, wenn niemand das Board benutzt', icon: Image, phase: 6, sizes: [], Settings: PhotoLibrary , phoneTiles: [{ id: 'foto', title: 'Foto des Tages', description: 'Jeden Tag ein Bild aus eurer Fotobibliothek', icon: Image, Tile: PhotoOfDayTile }] },

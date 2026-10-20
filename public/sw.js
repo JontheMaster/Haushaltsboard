@@ -31,6 +31,7 @@ self.addEventListener('notificationclick', (e) => {
         if ('focus' in c) {
           if (url.includes('rueckblick')) c.postMessage({ open: 'rueckblick' })
           if (url.includes('finanzen=import')) c.postMessage({ open: 'finanzen-import' })
+          if (url.includes('?filme')) c.postMessage({ open: 'filme' })
           return c.focus()
         }
       }

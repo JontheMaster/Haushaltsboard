@@ -37,6 +37,8 @@ import { isMealEvent, useMeals } from '../meals/mealStore'
 import { RecipeImage } from '../meals/RecipeLibrary'
 import { useRecipes } from '../meals/recipeStore'
 import { closeRecap, type Recap } from './recapStore'
+import { useMovieStore } from '../movies/movieStore'
+import { PosterImage } from '../movies/Poster'
 import { RecapContent } from './WeekRecap'
 
 /** So lange steht eine Karte, bevor die nächste kommt (antippen = sofort weiter, Finger halten = Pause) */
@@ -112,6 +114,9 @@ export function RecapStory({ recap, week, thisWeek, today, onWeek }: { recap: Re
   const { settings } = useSettings()
   // Finanzen nur, wenn das Modul an ist und kein Besuch da ist (nur die Haushaltssumme, nie Einzelnes)
   const fin = enabled?.has('finanzen') && !settings?.visit_mode ? recap.fin : null
+  // Filme: Filmabende dieser Woche
+  const { movies, watched } = useMovieStore()
+  const films = enabled?.has('filme') ? watched.filter((w) => w.watched_on >= week && w.watched_on <= addDays(week, 6)).reverse() : []
 
   const done = recap.todos.done + recap.chores.done
   const diff = done - recap.prev_done
@@ -322,6 +327,43 @@ export function RecapStory({ recap, week, thisWeek, today, onWeek }: { recap: Re
         </div>
       ),
     })
+
+  // Filme der Woche (Modul Filme): Poster, Sterne beider, Durchschnitt
+  if (films.length) {
+    const stars = films.flatMap((w) => Object.values(w.ratings).filter((n) => n > 0))
+    const avg = stars.length ? stars.reduce((a, b) => a + b, 0) / stars.length : null
+    slides.push({
+      id: 'films',
+      tone: 'person-b',
+      render: () => (
+        <div className="hb-story-stack">
+          <p className="hb-story-kicker hb-story-in">Filmabend</p>
+          <p className="hb-story-title hb-story-in" style={{ ['--i' as string]: 1 }}>
+            <span className="hb-story-num">
+              <CountUp value={films.length} delay={300} />
+            </span>{' '}
+            {films.length === 1 ? 'Film' : 'Filme'}
+            {avg !== null ? ` · Ø ${avg.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Sterne` : ''}
+          </p>
+          <div className="hb-story-collage">
+            {films.slice(0, 6).map((w, i) => {
+              const m = movies.find((x) => x.id === w.movie_id)
+              return (
+                <figure key={w.id} className="hb-story-dish hb-story-pop" style={{ ['--i' as string]: i + 2 }}>
+                  <PosterImage path={m?.poster_path ?? null} title={m?.title ?? ''} className="hb-story-dish-img hb-story-poster" />
+                  <figcaption>
+                    <span>{dayLabel(w.watched_on)}</span>
+                    {m?.title}
+                    {people.map((p) => ((w.ratings[p.id] ?? 0) > 0 ? ` · ${p.name.charAt(0)} ${'★'.repeat(w.ratings[p.id])}` : '')).join('')}
+                  </figcaption>
+                </figure>
+              )
+            })}
+          </div>
+        </div>
+      ),
+    })
+  }
 
   // Geld: Haushaltsausgaben der Woche (nur Summen, aus Finanzen; nicht im Besuchsmodus)
   const finCats = fin?.cats ?? []

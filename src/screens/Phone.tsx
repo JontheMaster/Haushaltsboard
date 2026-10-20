@@ -33,6 +33,8 @@ import { FinanceTab } from '../modules/finance/FinanceTab'
 import { requestImport, useFinProfile } from '../modules/finance/finStore'
 import { useMembers } from '../lib/members'
 import { useSettings } from '../lib/settings'
+import { FilmsPage } from '../modules/movies/FilmsPage'
+import { takeFilmsLink, useOpenFilms } from '../modules/movies/movieStore'
 
 type Tab = 'start' | 'woche' | 'todos' | 'einkauf' | 'essen' | 'finanzen'
 
@@ -72,13 +74,29 @@ export function Phone({ weather }: { weather: Weather | null }) {
   const [sheet, setSheet] = useState<{ todo?: Todo } | null>(null)
   // Eigene Seiten über den Reitern: Alle Funktionen (Kopfzeile), deren Einstellungen,
   // Putzplan auch direkt (Todo-Seite oder Antippen einer Putzaufgabe)
-  const [page, setPage] = useState<null | { kind: 'all' } | { kind: 'layout' } | { kind: 'module'; id: string } | { kind: 'spotify'; notice?: string | null } | { kind: 'putzplan'; ruleId?: string }>(
-    // Rückkehr von der Spotify-Anmeldung: gleich die Spotify-Seite mit Rückmeldung zeigen
+  const [page, setPage] = useState<
+    | null
+    | { kind: 'all' }
+    | { kind: 'layout' }
+    | { kind: 'module'; id: string }
+    | { kind: 'spotify'; notice?: string | null }
+    | { kind: 'putzplan'; ruleId?: string }
+    | { kind: 'filme'; id?: string | null; at: number }
+  >(
+    // Rückkehr von der Spotify-Anmeldung: gleich die Spotify-Seite mit Rückmeldung zeigen;
+    // Mitteilung „jetzt bei …“ (?filme): gleich die Filme
     () => {
       const notice = takeSpotifyResult()
-      return notice ? { kind: 'spotify', notice } : null
+      if (notice) return { kind: 'spotify', notice }
+      return takeFilmsLink() ? { kind: 'filme', at: Date.now() } : null
     },
   )
+  // Filme öffnen (Kachel, Karte oben, Alle Funktionen → Filme)
+  const showFilms = useCallback((id: string | null) => {
+    setPage({ kind: 'filme', id, at: Date.now() })
+    window.scrollTo({ top: 0 })
+  }, [])
+  useOpenFilms(showFilms)
   const [toast, setToast] = useState<{ id: number; message: string; action?: { label: string; run: () => void } } | null>(null)
   const showToast = useCallback((message: string) => setToast({ id: Date.now(), message }), [])
   // Sticker mit Link (?tap=<slug>): NFC-Tag mit der eigenen Anmeldung auslösen
@@ -125,10 +143,11 @@ export function Phone({ weather }: { weather: Weather | null }) {
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.data?.open === 'finanzen-import') setImportLink(true)
+      if (e.data?.open === 'filme') showFilms(null)
     }
     navigator.serviceWorker?.addEventListener('message', onMsg)
     return () => navigator.serviceWorker?.removeEventListener('message', onMsg)
-  }, [])
+  }, [showFilms])
 
   const removeTodo = useCallback(async (todo: Todo) => {
     if (!(await deleteTodo(todo.id))) return setToast({ id: Date.now(), message: 'Löschen hat nicht geklappt.' })
@@ -175,6 +194,8 @@ export function Phone({ weather }: { weather: Weather | null }) {
             <PhoneLayoutEditor onBack={() => setPage(null)} showToast={showToast} />
           ) : page?.kind === 'putzplan' ? (
             <PutzplanPage onBack={() => setPage(null)} openRuleId={page.ruleId} />
+          ) : page?.kind === 'filme' ? (
+            <FilmsPage key={page.at} variant="phone" onBack={() => setPage(null)} showToast={showToast} openId={page.id} />
           ) : (
             <>
           {tab === 'start' && (
