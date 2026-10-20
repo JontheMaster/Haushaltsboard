@@ -72,3 +72,17 @@ Neues Secret, das Jonathan selbst anlegt: `TMDB_API_KEY`. Das ist der „API Rea
 
 - Kein Abspielen und keine Links zu illegalen Quellen.
 - Bei den Streaming-Anbietern nur der Name. Optional öffnet ein Tipp den Anbieter.
+
+---
+
+## Entscheidungen Jonathan (20.10.2026)
+
+- Umfang: Stufe 1 + 2 komplett, aus Stufe 3 nur Wochenrückblick und Jahresliste.
+- Serien gleich mit auf die Merkliste (`kind = tv`), ohne Staffel-/Folgen-Fortschritt; Zufall wählt aus Filmen und Serien.
+- Abstimmen in 4 Stufen (unbedingt / gerne / egal / lieber nicht).
+- Eigene Dienste: Netflix, Prime Video, Disney+, Joyn, ARD Mediathek, ZDF Mediathek. „Läuft bei uns“ = nur im Abo (flatrate); Leihen/Kaufen nur als Hinweis ohne Preis.
+- Wand: nur ein Knopf „Filme“ (eigene Ansicht), keine Kachel, keine Abend-Karte. Handy: eigener Bereich plus Kachel für die Startseite (wählbar im Startseiten-Editor).
+- „Was schauen wir?“ nur in der Filme-Ansicht, kein Hinweis von selbst.
+- Bewerten: am nächsten Morgen Karte oben an Handy und Wand, bis beide bewertet haben (höchstens 3 Tage).
+- Leviona: Teilen am Android über die App „HTTP Shortcuts“, Suche in der App; Push an sie, sobald sie es in den Einstellungen selbst einschaltet.
+- TMDB-Bedingungen geprüft (20.10.2026): private Nutzung erlaubt, TMDB-Logo + Hinweis „nicht von TMDB empfohlen oder geprüft“, Daten höchstens 6 Monate zwischenspeichern, Streaming-Daten mit „Daten von JustWatch“.
