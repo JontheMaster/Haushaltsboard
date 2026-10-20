@@ -343,15 +343,16 @@ async function bestTrip(stops: Stop[], place: Place, start: string): Promise<{ t
   // gleiche Fahrt von verschiedenen Haltestellen: die mit dem spätesten Losgehen behalten
   const seen = new Set<string>()
   const unique = candidates.filter((t) => {
-    const key = t.legs.filter((l) => !l.walk).map((l) => `${l.line}@${l.dep}`).join('|')
+    const key = t.legs
+      .filter((l) => !l.walk)
+      .map((l) => `${l.line}@${l.dep}`)
+      .join('|')
     if (seen.has(key)) return false
     seen.add(key)
     return true
   })
   const rated = await Promise.all(unique.slice(0, 4).map(withRealtime))
-  const safe = rated.filter(
-    (t) => (t.minTransfer === null || t.minTransfer >= TIGHT_TRANSFER_MIN) && Date.parse(t.arrivalRt) <= Date.parse(arriveBy),
-  )
+  const safe = rated.filter((t) => (t.minTransfer === null || t.minTransfer >= TIGHT_TRANSFER_MIN) && Date.parse(t.arrivalRt) <= Date.parse(arriveBy))
   const trip = safe[0] ?? rated[0] ?? null
   const earlier = trip ? (rated.find((t) => Date.parse(t.leaveAt) < Date.parse(trip.leaveAt) - 60_000) ?? null) : null
   return { trip, earlier }
@@ -376,6 +377,11 @@ function matchPlace(places: Place[], ev: { title: string; location?: string }, w
 /** Adresse aus dem Feld „Ort“ suchen (OpenStreetMap, zwischengespeichert) */
 async function geocode(query: string): Promise<{ lat: number; lon: number; label: string } | null> {
   const q = query.trim().toLowerCase()
+  // im Speicher 6 Std gemerkt (sonst jede Minute eine Datenbank-Abfrage pro Termin mit Ort)
+  return cached(`geo:${q}`, 6 * 60 * 60_000, () => geocodeDb(query, q))
+}
+
+async function geocodeDb(query: string, q: string): Promise<{ lat: number; lon: number; label: string } | null> {
   const { data: hit } = await db.from('transit_geocache').select('*').eq('query', q).maybeSingle()
   if (hit) return hit.lat === null ? null : { lat: hit.lat, lon: hit.lon, label: hit.label }
   const results = await searchAddress(query, 1).catch(() => null)
@@ -435,9 +441,7 @@ async function candidatesFor(member: string, events: CalendarEvent[], unknown: U
   const out: Candidate[] = []
 
   // Kalender: eigene Termine mit Uhrzeit
-  const mine = events
-    .filter((e) => !e.allDay && s.ownerOf.get(e.calendar) === member)
-    .sort((a, b) => a.start.localeCompare(b.start))
+  const mine = events.filter((e) => !e.allDay && s.ownerOf.get(e.calendar) === member).sort((a, b) => a.start.localeCompare(b.start))
   let prevPlace: { id: string; end: number } | null = null
   for (const e of mine) {
     const start = Date.parse(e.start)
@@ -446,7 +450,18 @@ async function candidatesFor(member: string, events: CalendarEvent[], unknown: U
     let place = matchPlace(places, e, day.weekday)
     if (!place && e.location && !ONLINE.test(e.location)) {
       const g = await geocode(e.location)
-      if (g) place = { id: `geo:${e.location}`, member_id: member, name: e.location.split(',')[0], lat: g.lat, lon: g.lon, keywords: [], weekdays: [], buffer_min: 10, transit: true }
+      if (g)
+        place = {
+          id: `geo:${e.location}`,
+          member_id: member,
+          name: e.location.split(',')[0],
+          lat: g.lat,
+          lon: g.lon,
+          keywords: [],
+          weekdays: [],
+          buffer_min: 10,
+          transit: true,
+        }
     }
     const relevant = start > now && start < now + LOOKAHEAD_MS && !ignore.has(e.title.toLowerCase()) && !ONLINE.test(e.title)
     if (relevant && !place && e.location && !ONLINE.test(e.location) && unknown) {
@@ -460,7 +475,13 @@ async function candidatesFor(member: string, events: CalendarEvent[], unknown: U
       const awayBefore = !!prevPlace && prevPlace.id !== place.id && start - prevPlace.end < homeGapMs
       if (relevant) {
         out.push({
-          target: { key: `cal:${e.id}`, title: e.title, start: e.start, place: { id: place.id, name: place.name, buffer: place.buffer_min }, source: 'calendar' },
+          target: {
+            key: `cal:${e.id}`,
+            title: e.title,
+            start: e.start,
+            place: { id: place.id, name: place.name, buffer: place.buffer_min },
+            source: 'calendar',
+          },
           place,
           sameAsBefore: sameAsBefore || awayBefore,
         })
@@ -528,7 +549,10 @@ async function notifyOnce(member: string, key: string, kind: string, title: stri
 async function watch(): Promise<unknown> {
   const s = await settings()
   if (!s.enabled) return { skipped: true }
-  await db.from('transit_notified').delete().lt('created_at', new Date(Date.now() - 2 * 86400000).toISOString())
+  await db
+    .from('transit_notified')
+    .delete()
+    .lt('created_at', new Date(Date.now() - 2 * 86400000).toISOString())
   const { events } = await cached('events', 4 * 60_000, () => loadEvents({ all: true }))
   let sent = 0
   // für alle vorrechnen (füllt die Zwischenspeicher), Mitteilungen nur für die, die sie eingeschaltet haben
@@ -542,7 +566,13 @@ async function watch(): Promise<unknown> {
     const where = plan.target.place.name
     if (prefs.push_leave && toLeave <= prefs.push_leave_min * 60_000 && toLeave > -60_000) {
       // Losgehzeit zuerst (Jonathan 8.10.2026: nur die Abfahrt an der Haltestelle reicht nicht)
-      await notifyOnce(m.id, plan.target.key, 'leave', `Los um ${berlinParts(plan.trip.leaveAt).hhmm} (in ${Math.max(0, minutes(toLeave))} Min)`, `${lineText(plan.trip)} → ${where}, an ${berlinParts(plan.trip.arrivalRt).hhmm}`)
+      await notifyOnce(
+        m.id,
+        plan.target.key,
+        'leave',
+        `Los um ${berlinParts(plan.trip.leaveAt).hhmm} (in ${Math.max(0, minutes(toLeave))} Min)`,
+        `${lineText(plan.trip)} → ${where}, an ${berlinParts(plan.trip.arrivalRt).hhmm}`,
+      )
       sent++
     }
     if (prefs.push_delay && toLeave < 90 * 60_000) {
@@ -550,10 +580,22 @@ async function watch(): Promise<unknown> {
       if (worst >= DELAY_ALERT_MIN) {
         const leg = plan.trip.legs.find((l) => (l.delay ?? 0) === worst)!
         const bucket = worst >= 10 ? 10 : worst >= 6 ? 6 : 3
-        await notifyOnce(m.id, plan.target.key, `delay${bucket}`, `${leg.line} hat ${worst} Min Verspätung`, `Ankunft ${where} ca. ${berlinParts(plan.trip.arrivalRt).hhmm}${plan.status === 'late' ? ' – das wird zu spät' : ''}`)
+        await notifyOnce(
+          m.id,
+          plan.target.key,
+          `delay${bucket}`,
+          `${leg.line} hat ${worst} Min Verspätung`,
+          `Ankunft ${where} ca. ${berlinParts(plan.trip.arrivalRt).hhmm}${plan.status === 'late' ? ' – das wird zu spät' : ''}`,
+        )
       }
       if (plan.trip.minTransfer !== null && plan.trip.minTransfer < 1) {
-        await notifyOnce(m.id, plan.target.key, 'transfer', 'Umstieg klappt wohl nicht', plan.earlier ? `Früher los: ${lineText(plan.earlier)}` : 'Schau in der App nach einer anderen Verbindung.')
+        await notifyOnce(
+          m.id,
+          plan.target.key,
+          'transfer',
+          'Umstieg klappt wohl nicht',
+          plan.earlier ? `Früher los: ${lineText(plan.earlier)}` : 'Schau in der App nach einer anderen Verbindung.',
+        )
       }
     }
   }
@@ -579,9 +621,7 @@ Deno.serve(async (req) => {
     const s = await settings()
 
     if (action === 'board') {
-      const boards = await Promise.all(
-        s.stops.map(async (stop) => ({ stop, departures: await vagDepartures(stop.vgn).catch(() => [] as Departure[]) })),
-      )
+      const boards = await Promise.all(s.stops.map(async (stop) => ({ stop, departures: await vagDepartures(stop.vgn).catch(() => [] as Departure[]) })))
       return json(req, { stops: boards })
     }
     if (action === 'plans') {

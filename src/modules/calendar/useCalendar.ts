@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { createPoller } from '../../lib/sharedPoll'
 import { useSettings } from '../../lib/settings'
 import { supabase } from '../../lib/supabase'
 
@@ -49,50 +50,44 @@ function writeCache(events: CalendarEvent[]) {
   }
 }
 
+// Eine Abfrage pro Gerät (sharedPoll), auch wenn Kachel, Woche und Briefing gleichzeitig Termine zeigen
+const poller = createPoller<{ data: Response | null; error: boolean }>(
+  async () => {
+    const { data, error } = await supabase.functions.invoke<Response>('calendar', { method: 'GET' })
+    if (data && !error) writeCache(data.events)
+    return { data: error ? null : data, error: !!error || !data }
+  },
+  () => POLL_MS,
+)
+
 /** Termine der nächsten 8 Tage, alle 5 Minuten neu. Im Besuchsmodus sofort ohne versteckte Kalender. */
 export function useCalendar() {
   const { settings } = useSettings()
   const visitMode = settings?.visit_mode ?? false
-  const [events, setEvents] = useState<CalendarEvent[] | null>(readCache)
-  const [failed, setFailed] = useState<string[]>([])
-  const [error, setError] = useState(false)
-
-  const load = useCallback(async () => {
-    const { data, error } = await supabase.functions.invoke<Response>('calendar', { method: 'GET' })
-    if (error || !data) return setError(true)
-    setError(false)
-    setFailed(data.errors)
-    setEvents(data.events)
-    writeCache(data.events)
-  }, [])
+  const polled = poller.use()
+  const events = polled?.data?.events ?? readCache()
 
   useEffect(() => {
-    load()
-    const t = setInterval(() => document.visibilityState === 'visible' && load(), POLL_MS)
-    const onWake = () => document.visibilityState === 'visible' && load()
-    document.addEventListener('visibilitychange', onWake)
     // Farbe oder „Bei Besuch ausblenden“ geändert (Alle Funktionen → Kalender): gleich neu laden
     const channel = supabase
       .channel(`calendars-${crypto.randomUUID()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendars' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendars' }, () => poller.refresh())
       .subscribe()
     return () => {
-      clearInterval(t)
-      document.removeEventListener('visibilitychange', onWake)
       supabase.removeChannel(channel)
     }
-  }, [load])
+  }, [])
 
   // Besuchsmodus umgeschaltet → neu laden (Server lässt versteckte Kalender dann ganz weg)
   const lastVisit = useRef<boolean | null>(null)
   useEffect(() => {
     if (!settings) return
-    if (lastVisit.current !== null && lastVisit.current !== visitMode) load()
+    if (lastVisit.current !== null && lastVisit.current !== visitMode) poller.refresh()
     lastVisit.current = visitMode
-  }, [visitMode, settings, load])
+  }, [visitMode, settings])
 
   // Bis die neue Antwort da ist, versteckte Termine schon hier ausblenden
   const visible = events && (visitMode ? events.filter((e) => !e.hideInVisit) : events)
 
-  return { events: visible, failed, error }
+  return { events: visible, failed: polled?.data?.errors ?? [], error: polled?.error ?? false }
 }

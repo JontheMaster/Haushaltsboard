@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPoller } from '../../lib/sharedPoll'
 import { supabase } from '../../lib/supabase'
 
 export type BringItem = { name: string; specification: string }
@@ -31,6 +32,15 @@ function writeCache(items: BringItem[]) {
   }
 }
 
+// Alle 30 s neu (nur sichtbar, nicht im Nachtmodus); Ergebnis samt Fehler, damit jede Kachel ihn anzeigen kann
+const bringPoller = createPoller<{ data: BringResponse | null; error: unknown }>(
+  async () => {
+    const { data, error } = await supabase.functions.invoke<BringResponse>('bring', { method: 'GET' })
+    return { data, error }
+  },
+  () => POLL_MS,
+)
+
 /**
  * Bring!-Liste „Zuhause“ über die Edge Function. Sofort aus dem Zwischenspeicher, alle 30 s neu laden.
  * Abhaken zeigt den Artikel 5 s durchgestrichen mit „Rückgängig“, dann verschwindet er.
@@ -56,32 +66,20 @@ export function useBring() {
     if (doneRef.current.size === 0) setItems(data.items)
   }, [])
 
-  const load = useCallback(async () => {
-    const { data, error } = await supabase.functions.invoke<BringResponse>('bring', { method: 'GET' })
-    apply(data, error)
-  }, [apply])
-
+  // gemeinsame Abfrage (eine pro Gerät, auch wenn Kachel und Einkauf-Fenster gleichzeitig offen sind)
+  const polled = bringPoller.use()
   useEffect(() => {
-    load()
-    const t = setInterval(() => document.visibilityState === 'visible' && load(), POLL_MS)
-    const onWake = () => document.visibilityState === 'visible' && load()
-    document.addEventListener('visibilitychange', onWake)
-    return () => {
-      clearInterval(t)
-      document.removeEventListener('visibilitychange', onWake)
-    }
-  }, [load])
+    if (polled) apply(polled.data, polled.error)
+  }, [polled, apply])
+  const load = useCallback(() => bringPoller.refresh(), [])
 
-  const send = useCallback(
-    async (action: 'complete' | 'add', item: BringItem) => {
-      const { error } = await supabase.functions.invoke<BringResponse>('bring', {
-        method: 'POST',
-        body: { action, name: item.name, specification: item.specification },
-      })
-      if (error) setError(true)
-    },
-    [],
-  )
+  const send = useCallback(async (action: 'complete' | 'add', item: BringItem) => {
+    const { error } = await supabase.functions.invoke<BringResponse>('bring', {
+      method: 'POST',
+      body: { action, name: item.name, specification: item.specification },
+    })
+    if (error) setError(true)
+  }, [])
 
   const toggle = useCallback(
     (item: BringItem, nowDone: boolean) => {
@@ -109,17 +107,20 @@ export function useBring() {
   )
 
   /** Freier Text aufs Handy-Eingabefeld: „Milch“, „Milch, 2 Liter“ oder „Milch und Eier“. Sofort sichtbar, dann aus Bring! neu. */
-  const add = useCallback(async (text: string): Promise<boolean> => {
-    const names = text
-      .split(/\s+und\s+|\s*;\s*/i)
-      .map((p) => p.split(',')[0].trim())
-      .filter(Boolean)
-      .map((n) => n.charAt(0).toUpperCase() + n.slice(1))
-    setItems((list) => [...names.filter((n) => !list?.some((i) => i.name === n)).map((name) => ({ name, specification: '' })), ...(list ?? [])])
-    const { data, error } = await supabase.functions.invoke<BringResponse>('bring', { method: 'POST', body: { action: 'addText', text } })
-    apply(data, error)
-    return !error
-  }, [apply])
+  const add = useCallback(
+    async (text: string): Promise<boolean> => {
+      const names = text
+        .split(/\s+und\s+|\s*;\s*/i)
+        .map((p) => p.split(',')[0].trim())
+        .filter(Boolean)
+        .map((n) => n.charAt(0).toUpperCase() + n.slice(1))
+      setItems((list) => [...names.filter((n) => !list?.some((i) => i.name === n)).map((name) => ({ name, specification: '' })), ...(list ?? [])])
+      const { data, error } = await supabase.functions.invoke<BringResponse>('bring', { method: 'POST', body: { action: 'addText', text } })
+      apply(data, error)
+      return !error
+    },
+    [apply],
+  )
 
   /** Mehrere Artikel auf einmal, z. B. Zutaten eines eingeplanten Essens */
   const addMany = useCallback(

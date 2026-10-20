@@ -1,37 +1,62 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useMembers } from '../lib/members'
 import { supabase } from '../lib/supabase'
 import { DEFAULT_PHONE_LAYOUT, DEFAULT_WALL_LAYOUT, MODULE_BY_ID, PHONE_TILE_BY_KEY } from './registry'
 import type { LayoutTile } from './types'
 
-// Letzter bekannter Stand: neue Ansichten starten damit statt mit „alles aus“ (sonst springen Schalter sichtbar um)
-let lastEnabled: Set<string> | null = null
+// Ein gemeinsamer Stand pro Gerät (einmal laden, eine Realtime-Verbindung), statt pro Kachel neu abzufragen.
+// Zeilen, die nur das Wand-Tablet über sich selbst schreibt (Größe, letzte Bewegung), lösen kein Neuladen aus.
+const DEVICE_ROWS = new Set(['wand-geraet', 'wand-bewegung'])
+let enabledState: Set<string> | null = null
+const enabledListeners = new Set<() => void>()
+let enabledStarted = false
+
+function loadEnabled() {
+  supabase
+    .from('modules')
+    .select('id, enabled')
+    .then(({ data }) => {
+      if (!data) return
+      enabledState = new Set(data.filter((m) => m.enabled).map((m) => m.id))
+      enabledListeners.forEach((l) => l())
+    })
+}
+
+function startEnabled() {
+  if (enabledStarted) return
+  enabledStarted = true
+  loadEnabled()
+  supabase
+    .channel('modules-enabled')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'modules' }, (p) => {
+      const id = ((p.new as { id?: string }) ?? {}).id ?? ((p.old as { id?: string }) ?? {}).id
+      if (id && DEVICE_ROWS.has(id)) return
+      // An/Aus steht in der Nachricht: direkt übernehmen statt neu zu laden
+      const row = p.new as { id?: string; enabled?: boolean }
+      if (p.eventType !== 'DELETE' && row?.id && typeof row.enabled === 'boolean' && enabledState) {
+        if (enabledState.has(row.id) === row.enabled) return
+        const next = new Set(enabledState)
+        if (row.enabled) next.add(row.id)
+        else next.delete(row.id)
+        enabledState = next
+        enabledListeners.forEach((l) => l())
+        return
+      }
+      loadEnabled()
+    })
+    .subscribe()
+}
 
 /** Welche Module eingeschaltet sind (Tabelle modules), live */
 export function useEnabledModules(): Set<string> | null {
-  const [enabled, setEnabledState] = useState<Set<string> | null>(lastEnabled)
-  const setEnabled = (s: Set<string>) => {
-    lastEnabled = s
-    setEnabledState(s)
-  }
-
-  useEffect(() => {
-    const load = () =>
-      supabase
-        .from('modules')
-        .select('id, enabled')
-        .then(({ data }) => data && setEnabled(new Set(data.filter((m) => m.enabled).map((m) => m.id))))
-    load()
-    const channel = supabase
-      .channel(`modules-${crypto.randomUUID()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'modules' }, load)
-      .subscribe()
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
-
-  return enabled
+  startEnabled()
+  return useSyncExternalStore(
+    (cb) => {
+      enabledListeners.add(cb)
+      return () => enabledListeners.delete(cb)
+    },
+    () => enabledState,
+  )
 }
 
 /** Einstellungen eines Moduls (modules.config), mit Standardwerten; live auf allen Geräten */

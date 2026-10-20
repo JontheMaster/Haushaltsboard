@@ -34,7 +34,9 @@ async function login(): Promise<Session> {
     data = JSON.parse(text)
   } catch {
     // Diagnose ohne den Inhalt preiszugeben
-    throw new Error(`Bring!-Login fehlgeschlagen (${resp.status}): ${text.slice(0, 80)} · BRING_EMAIL hat ${email.length} Zeichen, enthält @: ${email.includes('@')}`)
+    throw new Error(
+      `Bring!-Login fehlgeschlagen (${resp.status}): ${text.slice(0, 80)} · BRING_EMAIL hat ${email.length} Zeichen, enthält @: ${email.includes('@')}`,
+    )
   }
   if (!resp.ok || data.error) throw new Error(`Bring!-Login fehlgeschlagen: ${data.message ?? resp.status}`)
 
@@ -47,13 +49,18 @@ async function login(): Promise<Session> {
     list_name: null,
   }
   await db.from('bring_session').upsert({ id: 1, ...session })
+  memSession = session
   return session
 }
 
+// Sitzung im Speicher der Function-Instanz (spart bei jedem Abruf die Abfrage von bring_session)
+let memSession: Session | null = null
+
 async function getSession(forceLogin = false): Promise<Session> {
   if (!forceLogin) {
+    if (memSession && new Date(memSession.expires_at) > new Date()) return memSession
     const { data } = await db.from('bring_session').select('*').eq('id', 1).maybeSingle()
-    if (data && new Date(data.expires_at) > new Date()) return data
+    if (data && new Date(data.expires_at) > new Date()) return (memSession = data)
   }
   return login()
 }
@@ -80,9 +87,15 @@ async function call(build: (s: Session) => Promise<Response>): Promise<{ s: Sess
 }
 
 // Listen-UUID zur konfigurierten Liste („Zuhause“) finden und merken
+// Name der Liste aus den Einstellungen, 5 Min gemerkt
+let listName: { at: number; name: string } | null = null
+
 async function listUuid(): Promise<{ s: Session; uuid: string }> {
-  const { data: mod } = await db.from('modules').select('config').eq('id', 'einkauf').maybeSingle()
-  const wanted = (mod?.config as { list_name?: string } | null)?.list_name ?? 'Zuhause'
+  if (!listName || Date.now() - listName.at > 5 * 60_000) {
+    const { data: mod } = await db.from('modules').select('config').eq('id', 'einkauf').maybeSingle()
+    listName = { at: Date.now(), name: (mod?.config as { list_name?: string } | null)?.list_name ?? 'Zuhause' }
+  }
+  const wanted = listName.name
 
   const s = await getSession()
   if (s.list_uuid && s.list_name === wanted) return { s, uuid: s.list_uuid }
@@ -93,6 +106,7 @@ async function listUuid(): Promise<{ s: Session; uuid: string }> {
   if (!list) throw new Error(`Liste „${wanted}“ gibt es in Bring! nicht`)
 
   await db.from('bring_session').update({ list_uuid: list.listUuid, list_name: wanted }).eq('id', 1)
+  memSession = { ...s2, list_uuid: list.listUuid, list_name: wanted }
   return { s: s2, uuid: list.listUuid }
 }
 

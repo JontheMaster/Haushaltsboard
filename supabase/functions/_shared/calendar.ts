@@ -64,10 +64,7 @@ function tidy(events: CalendarEvent[], fromDay: string, toDay: string): Calendar
         const from = berlinMidnight(d)
         const to = berlinMidnight(addDays(d, 1))
         const covered = timed.some(
-          (t) =>
-            Date.parse(t.start) < to &&
-            Date.parse(t.end) > from &&
-            (t.calendar === e.calendar || (!!prefix && t.title.toLowerCase().startsWith(prefix))),
+          (t) => Date.parse(t.start) < to && Date.parse(t.end) > from && (t.calendar === e.calendar || (!!prefix && t.title.toLowerCase().startsWith(prefix))),
         )
         if (covered) skipDays.push(d)
       }
@@ -119,11 +116,17 @@ async function loadIcs(id: string): Promise<string> {
 
   const url = Deno.env.get(`ICAL_${id.toUpperCase()}`)
   if (!url) throw new Error(`Secret ICAL_${id.toUpperCase()} fehlt`)
-  const resp = await fetch(url.replace(/^webcal:/, 'https:'))
-  if (!resp.ok) throw new Error(`${id}: HTTP ${resp.status}`)
-  const text = await resp.text()
-  cache.set(id, { at: Date.now(), text })
-  return text
+  try {
+    const resp = await fetch(url.replace(/^webcal:/, 'https:'))
+    if (!resp.ok) throw new Error(`${id}: HTTP ${resp.status}`)
+    const text = await resp.text()
+    cache.set(id, { at: Date.now(), text })
+    return text
+  } catch (e) {
+    // Google antwortet manchmal kurz mit 404: dann den letzten guten Stand nehmen (bis 6 Std alt)
+    if (hit && Date.now() - hit.at < 6 * 60 * 60 * 1000) return hit.text
+    throw e
+  }
 }
 
 /** Ort des Termins, ohne Leerraum; leer = weglassen */
@@ -156,7 +159,16 @@ function expand(ics: string, calendar: string, person: string | null, fromDay: s
       const s = start.toString().slice(0, 10)
       const e = end.toString().slice(0, 10)
       if (s >= toDay || (e > s ? e : addDays(s, 1)) <= fromDay) return
-      out.push({ id: `${item.uid}_${s}`, calendar, person, title: (item.summary ?? '').trim(), start: s, end: e > s ? e : addDays(s, 1), allDay, ...where(item) })
+      out.push({
+        id: `${item.uid}_${s}`,
+        calendar,
+        person,
+        title: (item.summary ?? '').trim(),
+        start: s,
+        end: e > s ? e : addDays(s, 1),
+        allDay,
+        ...where(item),
+      })
     } else {
       const s = start.toJSDate().getTime()
       const e = end.toJSDate().getTime()
@@ -244,8 +256,6 @@ export function eventsOnDay(events: CalendarEvent[], day: string): CalendarEvent
   const from = berlinMidnight(day)
   const to = berlinMidnight(addDays(day, 1))
   return events
-    .filter((e) =>
-      e.allDay ? e.start <= day && e.end > day && !e.skipDays?.includes(day) : Date.parse(e.start) < to && Date.parse(e.end) > from,
-    )
+    .filter((e) => (e.allDay ? e.start <= day && e.end > day && !e.skipDays?.includes(day) : Date.parse(e.start) < to && Date.parse(e.end) > from))
     .sort((a, b) => Number(b.allDay) - Number(a.allDay) || a.start.localeCompare(b.start))
 }

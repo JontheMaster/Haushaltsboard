@@ -33,6 +33,7 @@ import { useTapFromUrl } from '../modules/nfc/nfcStore'
 import { TimerDoneAlert } from '../modules/nfc/TimerDoneAlert'
 import { FilmsPage } from '../modules/movies/FilmsPage'
 import { useMovieHints } from '../modules/movies/movieStore'
+import { setQuietMode } from '../lib/sharedPoll'
 
 type View = 'heute' | 'woche' | 'abfahrten' | 'essen' | 'finanzen' | 'filme'
 // So breit rechnet die Seite am Wand-Tablet (siehe unten): auf dem neuen 16:10-Tablet sind die Elemente damit
@@ -142,6 +143,8 @@ export function Board({ weather }: { weather: Weather | null }) {
   const night = useIsNight(settings) && me.is_board && enabled?.has('nachtmodus') !== false && !cooking && !briefing
   const [wakeUntil, setWakeUntil] = useState(0)
   const nightActive = night && now.getTime() > wakeUntil
+  // Nachtmodus: Spotify, Bring! und Abfahrten fragen nicht nach (Supabase-Anfragen sparen)
+  useEffect(() => setQuietMode(nightActive), [nightActive])
 
   // Bildschirmschoner: am Wand-Tablet von selbst nach x Minuten ohne Berührung, überall per Knopf
   const saverConfig = useModuleConfig('bildschirmschoner', SCREENSAVER_DEFAULTS)
@@ -382,10 +385,10 @@ export function Board({ weather }: { weather: Weather | null }) {
   )
 }
 
-// Zuletzt erkannte Bewegung merken (modules „wand-bewegung“), höchstens alle 20 s: zum Prüfen, ob Fully sie meldet
+// Zuletzt erkannte Bewegung merken (modules „wand-bewegung“), höchstens alle 5 Min (vorher 20 s, zu viele Anfragen): zum Prüfen, ob Fully sie meldet
 let lastNoted = 0
 function noteMotion() {
-  if (Date.now() - lastNoted < 20_000) return
+  if (Date.now() - lastNoted < 5 * 60_000) return
   lastNoted = Date.now()
   supabase
     .from('modules')

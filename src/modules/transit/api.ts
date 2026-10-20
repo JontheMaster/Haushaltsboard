@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { createPoller } from '../../lib/sharedPoll'
 import { supabase } from '../../lib/supabase'
 import { useModuleConfig } from '../useModules'
 
@@ -40,60 +40,30 @@ export function useTransitConfig() {
   return useModuleConfig('abfahrten', TRANSIT_DEFAULTS)
 }
 
-// Letzte Antworten im Speicher: Seitenwechsel zeigen sofort den letzten Stand
-let lastPlans: PlansResponse | null = null
-let lastBoard: { stop: Stop; departures: Departure[] }[] | null = null
+// Eine Abfrage pro Gerät (sharedPoll), egal wie viele Stellen Wege oder Tafel zeigen; behält den letzten Stand
+const plansPoller = createPoller<PlansResponse>(
+  async () => {
+    const { data } = await supabase.functions.invoke<PlansResponse>('transit?action=plans', { method: 'GET' })
+    return data ?? null
+  },
+  () => 60_000,
+)
+const boardPoller = createPoller<{ stop: Stop; departures: Departure[] }[]>(
+  async () => {
+    const { data } = await supabase.functions.invoke<{ stops: { stop: Stop; departures: Departure[] }[] }>('transit?action=board', { method: 'GET' })
+    return data?.stops ?? null
+  },
+  () => 30_000,
+)
 
 /** Nächste Wege aller Personen (minütlich neu, nur solange die Seite sichtbar ist) */
 export function usePlans(active = true): PlansResponse | null {
-  const [data, setData] = useState<PlansResponse | null>(lastPlans)
-  useEffect(() => {
-    if (!active) return
-    return poll(60_000, async () => {
-      const { data } = await supabase.functions.invoke<PlansResponse>('transit?action=plans', { method: 'GET' })
-      if (data) {
-        lastPlans = data
-        setData(data)
-      }
-    })
-  }, [active])
-  return active ? data : null
+  return plansPoller.use(active)
 }
 
 /** Abfahrtstafel der Haltestellen zuhause (alle 30 Sekunden neu) */
 export function useBoard(active = true) {
-  const [data, setData] = useState(lastBoard)
-  useEffect(() => {
-    if (!active) return
-    return poll(30_000, async () => {
-      const { data } = await supabase.functions.invoke<{ stops: { stop: Stop; departures: Departure[] }[] }>('transit?action=board', {
-        method: 'GET',
-      })
-      if (data) {
-        lastBoard = data.stops
-        setData(data.stops)
-      }
-    })
-  }, [active])
-  return data
-}
-
-function poll(ms: number, load: () => Promise<void>): () => void {
-  let stop = false
-  let timer: ReturnType<typeof setTimeout>
-  const run = async () => {
-    clearTimeout(timer)
-    if (document.visibilityState === 'visible') await load().catch(() => {})
-    if (!stop) timer = setTimeout(run, ms)
-  }
-  run()
-  const onWake = () => document.visibilityState === 'visible' && run()
-  document.addEventListener('visibilitychange', onWake)
-  return () => {
-    stop = true
-    clearTimeout(timer)
-    document.removeEventListener('visibilitychange', onWake)
-  }
+  return boardPoller.use(active)
 }
 
 /** Adresse suchen (für neue Ziele) */
