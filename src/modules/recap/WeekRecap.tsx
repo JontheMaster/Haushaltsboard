@@ -166,6 +166,11 @@ export function RecapContent({ recap }: { recap: Recap }) {
                 <li key={c.title} className="hb-recap-line">
                   <span className="min-w-0 flex-1 truncate">{c.title}</span>
                   {c.n > 1 && <span className="text-label text-ink-muted tabular-nums">{c.n}×</span>}
+                  {(c.by ?? [])
+                    .filter((id) => byId.get(id))
+                    .map((id) => (
+                      <span key={id} className={`hb-recap-dot hb-person-${personKey(id)}`} title={byId.get(id)!.name} />
+                    ))}
                 </li>
               ))}
             </ul>

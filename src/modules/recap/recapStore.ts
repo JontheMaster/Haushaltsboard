@@ -68,7 +68,7 @@ export type Recap = {
   week_start: string
   week_end: string
   todos: { done: number; items: { title: string; done_by: string | null; day: string }[] }
-  chores: { done: number; items: { title: string; n: number }[] }
+  chores: { done: number; items: { title: string; n: number; by?: string[] }[] }
   /** erledigt pro Mitglied (Todos + Putzplan), „open“ = ohne Namen */
   by: Record<string, number>
   /** pro Mitglied getrennt nach Todos und Putzplan */
