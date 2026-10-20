@@ -83,7 +83,8 @@ async function providersOf(kind: Kind, id: number): Promise<Providers> {
 
 /** Alle Daten eines Films/einer Serie für die Tabelle movies */
 async function details(kind: Kind, id: number) {
-  const d = await tmdb(`/${kind}/${id}`, {})
+  // Videos gleich mitladen (Trailer), deutsche zuerst
+  const d = await tmdb(`/${kind}/${id}`, { append_to_response: 'videos', include_video_language: 'de,en,null' })
   let overview: string = d.overview ?? ''
   if (!overview) {
     // keine deutsche Beschreibung: englische nehmen
@@ -109,9 +110,61 @@ async function details(kind: Kind, id: number) {
     overview: overview.slice(0, 600),
     rating_tmdb: d.vote_count >= 20 ? Math.round(d.vote_average * 10) / 10 : null,
     providers: await providersOf(kind, id).catch(() => ({})),
+    trailer_key: trailerOf(d.videos?.results ?? []),
+    rent_prices: await rentPrices(kind, id, ((kind === 'tv' ? d.name : d.title) ?? '') as string, kind === 'tv' ? d.original_name : d.original_title).catch(
+      () => [],
+    ),
+    prices_checked_at: new Date().toISOString(),
     providers_checked_at: new Date().toISOString(),
     details_at: new Date().toISOString(),
   }
+}
+
+/** Trailer von YouTube: offizieller deutscher zuerst, sonst englischer, sonst irgendein Trailer/Teaser */
+function trailerOf(videos: { site: string; type: string; key: string; iso_639_1?: string; official?: boolean }[]): string | null {
+  const yt = videos.filter((v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
+  const score = (v: (typeof yt)[number]) => (v.type === 'Trailer' ? 4 : 0) + (v.iso_639_1 === 'de' ? 2 : 0) + (v.official ? 1 : 0)
+  return yt.sort((a, b) => score(b) - score(a))[0]?.key ?? null
+}
+
+// ───────── Leihpreise (inoffiziell, JustWatch) ─────────
+// Wunsch Jonathan 20.10.2026: nur Anbieter, die in den Einstellungen als „Zum Leihen“ gewählt sind (Filter in der App).
+// Gespeichert wird pro Anbieter der günstigste Leihpreis (ohne DVD/Blu-ray-Versand). Fällt die Schnittstelle aus: keine Preise.
+type RentPrice = { name: string; price: number; url: string | null }
+
+async function rentPrices(kind: Kind, tmdbId: number, title: string, original?: string | null): Promise<RentPrice[]> {
+  const first = title ? await rentPricesFor(kind, tmdbId, title) : null
+  if (first !== null || !original || original === title) return first ?? []
+  // deutscher Titel nicht gefunden: mit dem Originaltitel nochmal
+  return (await rentPricesFor(kind, tmdbId, original)) ?? []
+}
+
+/** null = Titel bei JustWatch nicht gefunden */
+async function rentPricesFor(kind: Kind, tmdbId: number, title: string): Promise<RentPrice[] | null> {
+  const query = `query($q:String!){popularTitles(country:DE,first:6,filter:{searchQuery:$q}){edges{node{objectType content(country:DE,language:"de"){externalIds{tmdbId}} offers(country:DE,platform:WEB,filter:{monetizationTypes:[RENT]}){retailPriceValue presentationType standardWebURL package{clearName}}}}}}`
+  const resp = await fetch('https://apis.justwatch.com/graphql', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...UA },
+    body: JSON.stringify({ query, variables: { q: title } }),
+    signal: AbortSignal.timeout(8_000),
+  })
+  if (!resp.ok) return null
+  const data = await resp.json()
+  const type = kind === 'tv' ? 'SHOW' : 'MOVIE'
+  const node = (data?.data?.popularTitles?.edges ?? [])
+    .map((e: any) => e.node)
+    .find((n: any) => n?.objectType === type && String(n?.content?.externalIds?.tmdbId) === String(tmdbId))
+  if (!node) return null
+  const best = new Map<string, RentPrice>()
+  for (const o of node.offers ?? []) {
+    const price = Number(o.retailPriceValue)
+    if (!price || ['DVD', 'BLURAY'].includes(o.presentationType)) continue
+    const name = o.package?.clearName as string
+    if (!name) continue
+    const cur = best.get(name)
+    if (!cur || price < cur.price) best.set(name, { name, price, url: o.standardWebURL ?? null })
+  }
+  return [...best.values()].sort((a, b) => a.price - b.price)
 }
 
 // ───────── Merken ─────────
@@ -353,7 +406,10 @@ async function weekly() {
     .delete()
     .lt('created_at', new Date(Date.now() - 7 * 86400000).toISOString())
 
-  const { data: movies } = await db.from('movies').select('id, kind, tmdb_id, title, year, status, providers, details_at').not('tmdb_id', 'is', null)
+  const { data: movies } = await db
+    .from('movies')
+    .select('id, kind, tmdb_id, title, original_title, year, status, providers, details_at')
+    .not('tmdb_id', 'is', null)
   let checked = 0
   let refreshed = 0
   const news: { id: string; text: string }[] = []
@@ -370,7 +426,15 @@ async function weekly() {
       }
       if (m.status !== 'merkliste') continue
       const p = await providersOf(m.kind as Kind, m.tmdb_id!)
-      await db.from('movies').update({ providers: p, providers_checked_at: new Date().toISOString() }).eq('id', m.id)
+      const prices = await rentPrices(m.kind as Kind, m.tmdb_id!, m.title, m.original_title).catch(() => null)
+      await db
+        .from('movies')
+        .update({
+          providers: p,
+          providers_checked_at: new Date().toISOString(),
+          ...(prices ? { rent_prices: prices, prices_checked_at: new Date().toISOString() } : {}),
+        })
+        .eq('id', m.id)
       checked++
       collect(m, m.providers as Providers, p)
     } catch (e) {

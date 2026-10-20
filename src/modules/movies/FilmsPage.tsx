@@ -7,7 +7,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { useMembers } from '../../lib/members'
 import { AddSheet } from './AddSheet'
 import { MovieSheet } from './MovieSheet'
-import { ourServices, useFilmConfig, useMovieStore, type Movie } from './movieStore'
+import { euro, ourRent, ourServices, useFilmConfig, useMovieStore, type Movie } from './movieStore'
 import { PosterCard } from './Poster'
 import { Roulette } from './Roulette'
 import { YearList } from './YearList'
@@ -39,7 +39,14 @@ export function FilmsPage({
   const wall = variant === 'wall'
   const { movies, votes, loaded } = useMovieStore()
   const { people } = useMembers()
-  const { services } = useFilmConfig()
+  const { services, rent_services } = useFilmConfig()
+  // Streifen auf dem Poster: euer Abo-Dienst, sonst der günstigste Leihpreis bei den gewählten Anbietern
+  const badgeOf = (m: Movie) => {
+    const flat = ourServices(m, services)[0]
+    if (flat) return flat
+    const rent = ourRent(m, rent_services)[0]
+    return rent ? `leihen ${euro(rent.price)}` : null
+  }
   const [part, setPartState] = useState<Part>(savedPart)
   const [filters, setFilters] = useState<Set<Filter>>(new Set())
   const [genre, setGenre] = useState<string | null>(null)
@@ -154,7 +161,7 @@ export function FilmsPage({
             {!loaded ? null : shown.length ? (
               <div className={`hb-film-grid ${wall ? 'is-wall' : ''}`}>
                 {shown.map((m) => (
-                  <PosterCard key={m.id} movie={m} votes={votes} badge={ourServices(m, services)[0] ?? null} onOpen={() => setOpen(m.id)} />
+                  <PosterCard key={m.id} movie={m} votes={votes} badge={badgeOf(m)} onOpen={() => setOpen(m.id)} />
                 ))}
               </div>
             ) : (

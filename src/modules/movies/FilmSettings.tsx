@@ -36,7 +36,8 @@ export function FilmSettings({ onBack }: { onBack: () => void }) {
         Merkliste öffnen
       </Button>
 
-      <Services selected={config.services} />
+      <Services selected={config.services} field="services" />
+      <Services selected={config.rent_services} field="rent_services" />
 
       <section className="hb-tile hb-tile-static gap-3">
         <h3 className="font-semibold text-ink">Mitteilung</h3>
@@ -101,20 +102,33 @@ export function FilmSettings({ onBack }: { onBack: () => void }) {
   )
 }
 
-/** Eure Streamingdienste: was hier an ist, zählt als „Läuft bei uns“ */
-function Services({ selected }: { selected: string[] }) {
+// Übliche Leih-Shops in Deutschland (Namen wie bei JustWatch)
+const RENT_SHOPS = ['Amazon Video', 'YouTube', 'Apple TV Store', 'Google Play Movies', 'MagentaTV', 'Rakuten TV', 'Sky Store', 'Videobuster', 'Microsoft Store']
+
+/**
+ * Eure Dienste: im Abo (zählt als „Läuft bei uns“) oder zum Leihen (Preise am Film nur von diesen Anbietern).
+ * Beide Listen in modules.config von „filme“ (services, rent_services).
+ */
+function Services({ selected, field }: { selected: string[]; field: 'services' | 'rent_services' }) {
+  const rent = field === 'rent_services'
   const [list, setList] = useState<{ id: number; name: string; logo: string | null }[] | null>(null)
   useEffect(() => {
     streamingServices().then(setList)
   }, [])
-  // gewählte zuerst, dann die beliebtesten aus der Liste von TMDB (ohne „with Ads“-Doppel)
-  const names = [...new Set([...selected, ...(list ?? []).map((p) => p.name).filter((n) => !/with ads|amazon channel|apple tv channel/i.test(n))])].slice(0, 30)
+  // gewählte zuerst, dann die beliebtesten aus der Liste von TMDB (ohne „with Ads“-Doppel) bzw. die üblichen Leih-Shops
+  const names = [
+    ...new Set([...selected, ...(rent ? RENT_SHOPS : (list ?? []).map((p) => p.name).filter((n) => !/with ads|amazon channel|apple tv channel/i.test(n)))]),
+  ].slice(0, 30)
   const logoOf = (n: string) => list?.find((p) => p.name === n)?.logo ?? null
-  const toggle = (n: string) => setModuleConfig('filme', { services: selected.includes(n) ? selected.filter((x) => x !== n) : [...selected, n] })
+  const toggle = (n: string) => setModuleConfig('filme', { [field]: selected.includes(n) ? selected.filter((x) => x !== n) : [...selected, n] })
   return (
     <section className="hb-tile hb-tile-static gap-3">
-      <h3 className="font-semibold text-ink">Eure Streamingdienste</h3>
-      <p className="text-label text-ink-muted">Was hier an ist, zählt als „Läuft bei uns“ (nur im Abo, Leihen und Kaufen nicht).</p>
+      <h3 className="font-semibold text-ink">{rent ? 'Zum Leihen' : 'Eure Streamingdienste'}</h3>
+      <p className="text-label text-ink-muted">
+        {rent
+          ? 'Bei diesen Anbietern zeigt das Board den Leihpreis am Film (günstigster zuerst). Preise kommen von JustWatch, einmal pro Woche neu.'
+          : 'Was hier an ist, zählt als „Läuft bei uns“ (nur im Abo, Leihen und Kaufen nicht).'}
+      </p>
       <div className="hb-provider-list">
         {names.map((n) => {
           const on = selected.includes(n)
@@ -127,7 +141,7 @@ function Services({ selected }: { selected: string[] }) {
           )
         })}
       </div>
-      {!list && <p className="text-label text-ink-muted">Lade die Liste von TMDB …</p>}
+      {!list && !rent && <p className="text-label text-ink-muted">Lade die Liste von TMDB …</p>}
     </section>
   )
 }

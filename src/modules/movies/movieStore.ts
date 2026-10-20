@@ -34,7 +34,12 @@ export type Movie = {
   added_at: string
   status: Status
   candidates: Candidate[] | null
+  /** YouTube-Schlüssel des Trailers (TMDB) */
+  trailer_key: string | null
+  /** günstigster Leihpreis pro Anbieter (inoffiziell von JustWatch) */
+  rent_prices: RentPrice[]
 }
+export type RentPrice = { name: string; price: number; url: string | null }
 export type Vote = { movie_id: string; member: string; want: Want }
 export type Watched = {
   id: string
@@ -68,7 +73,13 @@ async function loadAll() {
   ])
   state = {
     movies: (m.data ?? []).map(
-      (r) => ({ ...r, providers: (r.providers ?? {}) as Providers, candidates: (r.candidates ?? null) as Candidate[] | null }) as Movie,
+      (r) =>
+        ({
+          ...r,
+          providers: (r.providers ?? {}) as Providers,
+          candidates: (r.candidates ?? null) as Candidate[] | null,
+          rent_prices: (r.rent_prices ?? []) as RentPrice[],
+        }) as Movie,
     ),
     votes: (v.data ?? []) as Vote[],
     watched: (w.data ?? []).map((r) => ({ ...r, ratings: (r.ratings ?? {}) as Record<string, number> })) as Watched[],
@@ -112,10 +123,12 @@ export const reloadMovies = () => loadAll()
 // ───────── Einstellungen ─────────
 
 export const DEFAULT_SERVICES = ['Netflix', 'Amazon Prime Video', 'Disney Plus', 'Joyn', 'ARD Mediathek', 'ZDF']
-export type FilmConfig = { services: string[]; push: string[] }
+export type FilmConfig = { services: string[]; push: string[]; rent_services: string[] }
+/** Zum Leihen (Wunsch Jonathan 20.10.2026: nur gewählte Anbieter, Standard Amazon und YouTube) */
+export const DEFAULT_RENT = ['Amazon Video', 'YouTube']
 
 export function useFilmConfig(): FilmConfig {
-  return useModuleConfig<FilmConfig>('filme', { services: DEFAULT_SERVICES, push: [] })
+  return useModuleConfig<FilmConfig>('filme', { services: DEFAULT_SERVICES, push: [], rent_services: DEFAULT_RENT })
 }
 
 // ───────── Edge Function ─────────
@@ -262,6 +275,13 @@ export function ourServices(m: Movie, services: string[]): string[] {
   // Name des eigenen Dienstes, nicht der Variante („Netflix Standard with Ads“ → „Netflix“)
   return services.filter((s) => (m.providers.flatrate ?? []).some((p) => norm(p.name).startsWith(norm(s))))
 }
+
+/** Leihpreise nur bei den gewählten Anbietern, günstigster zuerst */
+export function ourRent(m: Movie, rentServices: string[]): RentPrice[] {
+  return (m.rent_prices ?? []).filter((p) => isOurProvider(p.name, rentServices)).sort((a, b) => a.price - b.price)
+}
+export const euro = (n: number) => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+export const trailerUrl = (key: string) => `https://www.youtube.com/watch?v=${key}`
 
 /** Gehört ein Anbieter (auch eine Variante wie „… with Ads“) zu euren Diensten? */
 export const isOurProvider = (name: string, services: string[]) => services.some((s) => norm(name).startsWith(norm(s)))

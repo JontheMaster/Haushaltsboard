@@ -604,6 +604,9 @@ export type Database = {
           added_at: string
           status: string
           candidates: Json | null
+          trailer_key: string | null
+          rent_prices: Json
+          prices_checked_at: string | null
         }
         Insert: { title: string; status?: string; kind?: string }
         Update: { status?: string }

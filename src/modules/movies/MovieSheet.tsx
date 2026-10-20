@@ -1,4 +1,4 @@
-import { Archive, Check, ExternalLink, Popcorn, RefreshCw, RotateCcw, Star, Trash2 } from 'lucide-react'
+import { Archive, Check, ExternalLink, Play, Popcorn, RefreshCw, RotateCcw, Star, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
@@ -8,8 +8,11 @@ import { useMembers } from '../../lib/members'
 import { dayLabel } from '../../lib/time'
 import {
   deleteMovie,
+  euro,
   isOurProvider,
   logoUrl,
+  ourRent,
+  trailerUrl,
   ourServices,
   refreshMovie,
   resolveMovie,
@@ -79,6 +82,13 @@ function MovieInfo({ movie, wall }: { movie: Movie; wall: boolean }) {
           )}
         </div>
       </div>
+      {movie.trailer_key && !wall && (
+        // nur am Handy: öffnet YouTube (an der Wand würde Fully den Board-Bildschirm verlassen)
+        <a href={trailerUrl(movie.trailer_key)} target="_blank" rel="noreferrer" className="hb-btn self-start">
+          <Icon icon={Play} size={18} />
+          Trailer ansehen
+        </a>
+      )}
       {movie.overview && (
         // lange Beschreibung am Handy gekürzt, Antippen zeigt alles
         <p className={`hb-film-overview ${wall || more ? '' : 'line-clamp-5'}`} onClick={() => setMore(true)}>
@@ -90,8 +100,9 @@ function MovieInfo({ movie, wall }: { movie: Movie; wall: boolean }) {
 }
 
 function Streaming({ movie }: { movie: Movie }) {
-  const { services } = useFilmConfig()
+  const { services, rent_services } = useFilmConfig()
   const ours = { has: (name: string) => isOurProvider(name, services) }
+  const rent = ourRent(movie, rent_services)
   // Varianten („… with Ads“, „… Amazon Channel“) nur zeigen, wenn es sonst nichts gibt
   const all = movie.providers.flatrate ?? []
   const plain = all.filter((p) => !/with ads|amazon channel|apple tv channel/i.test(p.name))
@@ -115,7 +126,27 @@ function Streaming({ movie }: { movie: Movie }) {
       ) : (
         <p className="text-label text-ink-muted">Gerade in keinem Abo.</p>
       )}
-      {rentOrBuy.length > 0 && (
+      {rent.length > 0 && (
+        // Leihpreise nur bei den gewählten Anbietern (Alle Funktionen → Filme → Zum Leihen), antippen öffnet den Anbieter
+        <div className="flex flex-col gap-1">
+          <span className="text-label font-semibold text-ink">Leihen</span>
+          <div className="hb-provider-list">
+            {rent.map((r) =>
+              r.url ? (
+                <a key={r.name} href={r.url} target="_blank" rel="noreferrer" className="hb-provider pl-3">
+                  {r.name} · {euro(r.price)}
+                  <Icon icon={ExternalLink} size={12} />
+                </a>
+              ) : (
+                <span key={r.name} className="hb-provider pl-3">
+                  {r.name} · {euro(r.price)}
+                </span>
+              ),
+            )}
+          </div>
+        </div>
+      )}
+      {!rent.length && rentOrBuy.length > 0 && (
         <p className="text-label text-ink-muted">
           Leihen oder kaufen geht auch, z. B. bei {[...new Set(rentOrBuy.map((p) => p.name))].slice(0, 3).join(', ')}.
         </p>

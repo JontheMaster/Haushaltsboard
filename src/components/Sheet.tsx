@@ -8,10 +8,12 @@ type Props = {
   children: ReactNode
   /** breit (Wand), z. B. Rezept zweispaltig */
   wide?: boolean
+  /** gleich fast bildschirmhoch: Suchfelder stehen oben und die Handy-Tastatur verdeckt sie nicht */
+  tall?: boolean
 }
 
 // Fenster, das am Handy von unten hereinkommt
-export function Sheet({ title, onClose, children, wide }: Props) {
+export function Sheet({ title, onClose, children, wide, tall }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -29,7 +31,7 @@ export function Sheet({ title, onClose, children, wide }: Props) {
       {/* Außen gleitet herein, innen wird gescrollt: dasselbe Element animieren und scrollen zeichnet Android
           bei der skalierten Wand-Seite unscharf (10.10.2026) */}
       <div
-        className={`hb-sheet relative flex max-h-[calc(92dvh/var(--zoom,1))] w-full flex-col overflow-hidden rounded-t-lg bg-surface-raised shadow-lift ${wide ? 'max-w-[1200px]' : 'max-w-[560px]'}`}
+        className={`hb-sheet relative flex max-h-[calc(92dvh/var(--zoom,1))] w-full flex-col overflow-hidden rounded-t-lg bg-surface-raised shadow-lift ${wide ? 'max-w-[1200px]' : 'max-w-[560px]'} ${tall ? 'h-[calc(92dvh/var(--zoom,1))]' : ''}`}
       >
         <div className="flex min-h-0 flex-col gap-4 overflow-y-auto p-4 pb-[calc(var(--space-5)+env(safe-area-inset-bottom))]">
           <header className="flex items-center gap-2">

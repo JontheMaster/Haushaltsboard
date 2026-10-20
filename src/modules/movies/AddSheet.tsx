@@ -58,7 +58,7 @@ export function AddSheet({ onClose, showToast, onAdded }: { onClose: () => void;
   }
 
   return (
-    <Sheet title="Film merken" onClose={onClose}>
+    <Sheet title="Film merken" onClose={onClose} tall>
       <label className="hb-search">
         <Icon icon={isLink ? Link : Search} size={20} />
         <input
