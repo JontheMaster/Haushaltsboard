@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '../../components/Button'
 import { PageHeader } from '../../components/PageHeader'
 import { useNow } from '../../lib/time'
@@ -10,7 +10,7 @@ import { setModuleConfig, useEnabledModules, useModuleConfig } from '../useModul
 
 type AstConfig = { on: boolean; at: string | null }
 /** Wurde er wohl ohne Alexa ausgeschaltet? Nach so vielen Stunden blendet das Board ihn sicherheitshalber aus */
-const MAX_ON_HOURS = 14
+const MAX_ON_HOURS = 4
 
 export function useAstOn(): boolean {
   const enabled = useEnabledModules()
@@ -19,6 +19,15 @@ export function useAstOn(): boolean {
   if (!enabled?.has('ast') || !on) return false
   return !at || now - Date.parse(at) < MAX_ON_HOURS * 3600_000
 }
+
+// Hauptzweig als weiches S von unten links nach oben rechts, dazu Seitentriebe mit kleinem Kringel am Ende
+const MAIN = 'M2 118 C 18 114, 24 98, 38 88 S 60 80, 62 64 S 72 40, 92 36 S 110 24, 110 8'
+const TWIGS = [
+  'M38 88 C 28 84, 20 74, 22 62 C 23 54, 30 50, 33 54',
+  'M62 64 C 74 66, 86 74, 90 84 C 92 89, 89 93, 85 91',
+  'M92 36 C 88 28, 92 20, 99 18',
+  'M48 83 C 50 76, 54 72, 56 70',
+]
 
 /** Kleiner gezeichneter Ast mit Lichtern unten links in der Ecke, nur solange er an ist; wächst herein, verschwindet sanft */
 export function AstCorner({ variant }: { variant: 'wall' | 'phone' }) {
@@ -30,37 +39,54 @@ export function AstCorner({ variant }: { variant: 'wall' | 'phone' }) {
     const t = setTimeout(() => setShown(false), 600)
     return () => clearTimeout(t)
   }, [on])
+  // Lichter genau auf die Linien setzen (gleichmäßig entlang jedes Zweigs)
+  const wood = useRef<SVGGElement>(null)
+  const [lights, setLights] = useState<[number, number][]>([])
+  useLayoutEffect(() => {
+    if (!shown || !wood.current) return
+    const pts: [number, number][] = []
+    wood.current.querySelectorAll('path').forEach((p, i) => {
+      const len = p.getTotalLength()
+      const n = i === 0 ? 6 : i < 3 ? 1 : 0
+      for (let k = 1; k <= n; k++) {
+        const at = p.getPointAtLength((len * k) / (n + 0.6))
+        pts.push([Math.round(at.x * 10) / 10, Math.round(at.y * 10) / 10])
+      }
+    })
+    setLights(pts)
+  }, [shown])
+  // Handy: erst über der Reiterleiste anfangen, nichts davon verdecken
+  const [bottom, setBottom] = useState<number | undefined>(undefined)
+  useLayoutEffect(() => {
+    if (variant !== 'phone' || !shown) return
+    const bar = document.querySelector('.hb-tabbar')
+    const measure = () => setBottom(bar ? bar.getBoundingClientRect().height : undefined)
+    measure()
+    addEventListener('resize', measure)
+    return () => removeEventListener('resize', measure)
+  }, [variant, shown])
   if (!shown) return null
   return (
-    <div className={`hb-ast is-${variant} ${on ? '' : 'is-leaving'}`} aria-hidden="true">
+    <div className={`hb-ast is-${variant} ${on ? '' : 'is-leaving'}`} style={bottom !== undefined ? { bottom } : undefined} aria-hidden="true">
       <svg viewBox="0 0 120 120">
-        {/* Zweig aus der Ecke nach oben rechts, zwei Seitentriebe */}
-        <g className="hb-ast-wood" fill="none" strokeLinecap="round">
-          <path d="M-4 124 C 18 100, 34 82, 52 66 S 86 34, 104 14" strokeWidth="4.5" />
-          <path d="M40 76 C 34 62, 30 52, 28 40" strokeWidth="2.6" />
-          <path d="M66 54 C 78 54, 90 58, 100 66" strokeWidth="2.4" />
-          <path d="M84 32 C 82 24, 84 16, 90 8" strokeWidth="2" />
+        {/* geschwungener Zweig aus der Ecke nach oben rechts, Seitentriebe rollen sich leicht ein */}
+        <g className="hb-ast-wood" fill="none" strokeLinecap="round" ref={wood}>
+          <path d={MAIN} strokeWidth="4.2" />
+          {TWIGS.map((d, i) => (
+            <path key={i} d={d} strokeWidth={i < 2 ? 2.4 : 1.8} />
+          ))}
         </g>
-        {/* ein paar Blättchen */}
+        {/* ein paar Blättchen an den Enden */}
         <g className="hb-ast-leaf">
-          <path d="M28 40 c -6 -4 -8 -12 -4 -16 c 5 3 7 10 4 16 z" />
-          <path d="M100 66 c 4 -6 12 -7 15 -3 c -4 5 -11 6 -15 3 z" />
-          <path d="M58 60 c -2 -7 2 -13 7 -13 c 1 6 -2 11 -7 13 z" />
+          <path d="M31 51 c -7 -1 -11 -7 -9 -12 c 6 1 10 6 9 12 z" />
+          <path d="M87 91 c 2 -7 9 -10 13 -7 c -2 6 -8 9 -13 7 z" />
+          <path d="M101 17 c -1 -7 4 -12 9 -11 c 0 6 -4 10 -9 11 z" />
+          <path d="M55 71 c -5 -4 -5 -11 -1 -14 c 4 4 5 10 1 14 z" />
         </g>
-        {/* kleine warme Lichter */}
+        {/* kleine warme Lichter, entlang der Zweige verteilt */}
         <g className="hb-ast-lights">
-          {[
-            [16, 104],
-            [33, 88],
-            [48, 70],
-            [30, 52],
-            [62, 52],
-            [76, 44],
-            [92, 60],
-            [88, 26],
-            [102, 16],
-          ].map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r="4" style={{ animationDelay: `${(i * 0.37) % 2.4}s` }} />
+          {lights.map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r="3.2" style={{ animationDelay: `${(i * 0.37) % 2.4}s` }} />
           ))}
         </g>
       </svg>
