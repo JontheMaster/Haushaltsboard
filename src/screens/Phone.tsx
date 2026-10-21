@@ -35,6 +35,7 @@ import { useMembers } from '../lib/members'
 import { useSettings } from '../lib/settings'
 import { FilmsPage } from '../modules/movies/FilmsPage'
 import { takeFilmsLink, useOpenFilms } from '../modules/movies/movieStore'
+import { AstCorner } from '../modules/ast/Ast'
 
 type Tab = 'start' | 'woche' | 'todos' | 'einkauf' | 'essen' | 'finanzen'
 
@@ -247,6 +248,7 @@ export function Phone({ weather }: { weather: Weather | null }) {
 
         {sheet && <TodoSheet todo={sheet.todo} onClose={() => setSheet(null)} onSaved={showToast} />}
         {toast && <Toast key={toast.id} message={toast.message} action={toast.action} onDone={hideToast} />}
+        <AstCorner variant="phone" />
         <CookMode />
         <Celebration />
         <WeekRecap />

@@ -1,0 +1,72 @@
+/* Ast im Wohnzimmer: kleiner Zweig mit Lichtern unten links, nur solange er an ist (src/modules/ast/Ast.tsx) */
+.hb-ast {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 30;
+  width: 112px;
+  height: 112px;
+  pointer-events: none;
+  transform-origin: 0 100%;
+  animation: hb-ast-grow var(--dur-calm) var(--ease-spring) both;
+}
+/* Handy: sitzt auf der Reiterleiste */
+.hb-ast.is-phone {
+  width: 68px;
+  height: 68px;
+  bottom: calc(66px + env(safe-area-inset-bottom));
+}
+.hb-ast.is-leaving {
+  animation: hb-ast-leave 600ms var(--ease-out) both;
+}
+.hb-ast svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.hb-ast-wood path {
+  stroke: var(--highlight-ink);
+}
+.hb-ast-leaf path {
+  fill: var(--sage-400);
+}
+.hb-ast-lights circle {
+  fill: var(--honey-400);
+  stroke: var(--honey-600);
+  stroke-width: 0.6;
+  filter: drop-shadow(0 0 4px var(--honey-400)) drop-shadow(0 0 2px var(--accent));
+  animation: hb-ast-twinkle 2.4s ease-in-out infinite;
+}
+@keyframes hb-ast-grow {
+  from {
+    transform: scale(0.2) rotate(-12deg);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes hb-ast-leave {
+  to {
+    transform: scale(0.6) rotate(-8deg);
+    opacity: 0;
+  }
+}
+/* ganz leises Funkeln (erlaubte Dauerschleife: kaum sichtbar) */
+@keyframes hb-ast-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-ast,
+  .hb-ast.is-leaving,
+  .hb-ast-lights circle {
+    animation: none;
+  }
+}

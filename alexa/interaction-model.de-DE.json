@@ -185,6 +185,28 @@
           ]
         },
         {
+          "name": "AstSchalten",
+          "slots": [
+            {
+              "name": "zustand",
+              "type": "AST_ZUSTAND"
+            }
+          ],
+          "samples": [
+            "der ast ist {zustand}",
+            "der ast ist jetzt {zustand}",
+            "ast ist {zustand}",
+            "ast ist jetzt {zustand}",
+            "ast {zustand}",
+            "der ast wurde {zustand}",
+            "ast wurde {zustand}",
+            "der zweig ist {zustand}",
+            "zweig {zustand}",
+            "das licht am ast ist {zustand}",
+            "der leuchtast ist {zustand}"
+          ]
+        },
+        {
           "name": "AMAZON.HelpIntent",
           "samples": [
             "was kann ich sagen",
@@ -233,6 +255,36 @@
                   "nass",
                   "Wäsche zum Aufhängen",
                   "normale Wäsche"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AST_ZUSTAND",
+          "values": [
+            {
+              "name": {
+                "value": "an",
+                "synonyms": [
+                  "ein",
+                  "eingeschaltet",
+                  "angeschaltet",
+                  "angemacht",
+                  "an gemacht",
+                  "angegangen"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "aus",
+                "synonyms": [
+                  "ausgeschaltet",
+                  "ausgemacht",
+                  "aus gemacht",
+                  "ausgegangen",
+                  "abgeschaltet"
                 ]
               }
             }

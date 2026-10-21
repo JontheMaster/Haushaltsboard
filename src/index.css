@@ -8,6 +8,7 @@
 @import './styles/tiles.css';
 @import './styles/radar.css';
 @import './styles/movies.css';
+@import './styles/ast.css';
 
 @utility shadow-tile {
   box-shadow: var(--shadow-tile);

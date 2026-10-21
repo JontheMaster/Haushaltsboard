@@ -34,6 +34,7 @@ import { TimerDoneAlert } from '../modules/nfc/TimerDoneAlert'
 import { FilmsPage } from '../modules/movies/FilmsPage'
 import { useMovieHints } from '../modules/movies/movieStore'
 import { setQuietMode } from '../lib/sharedPoll'
+import { AstCorner } from '../modules/ast/Ast'
 
 type View = 'heute' | 'woche' | 'abfahrten' | 'essen' | 'finanzen' | 'filme'
 // So breit rechnet die Seite am Wand-Tablet (siehe unten): auf dem neuen 16:10-Tablet sind die Elemente damit
@@ -354,6 +355,7 @@ export function Board({ weather }: { weather: Weather | null }) {
           })}
         </main>
       )}
+      <AstCorner variant="wall" />
       <CookMode />
       <Celebration />
       {/* Timer (z. B. Waschmaschine) fertig: das Wand-Tablet meldet sich laut */}

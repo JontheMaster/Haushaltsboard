@@ -217,9 +217,7 @@ async function whatsUp(): Promise<Response> {
     const rule = c.chore_rules as unknown as { title: string } | null
     dueToday.push({ title: rule?.title ?? 'Putzplan', assignee: c.assignee })
   }
-  const weekCount =
-    (todos ?? []).filter((t) => !t.due_date && t.this_week).length +
-    (chores ?? []).filter((c) => !c.due_date && c.week_start <= monday).length
+  const weekCount = (todos ?? []).filter((t) => !t.due_date && t.this_week).length + (chores ?? []).filter((c) => !c.due_date && c.week_start <= monday).length
 
   const parts: string[] = []
 
@@ -292,6 +290,22 @@ async function startTimerBySpeech(slots: Record<string, Slot> | undefined): Prom
   return speak(`Okay, ${hit.label} läuft. Fertig um ${berlinHHMM(t.ends)} Uhr, dann meldet sich das Board.`)
 }
 
+// ───────── Ast (Tapo-Steckdose im Wohnzimmer) ─────────
+
+/**
+ * „Der Ast ist an/aus“: kommt aus einer Alexa-Routine, die zugleich die Tapo-Steckdose schaltet (Tapo selbst kann das
+ * Board nicht fragen, Entscheidung Jonathan 21.10.2026). Merkt sich den Zustand in modules „ast“, Wand und Handy zeichnen dann den Ast.
+ */
+async function setAst(slots: Record<string, Slot> | undefined): Promise<Response> {
+  const said = slotText(slots?.zustand).toLowerCase()
+  const on = /^(an|ein)/.test(said) ? true : /^(aus|ab)/.test(said) ? false : null
+  if (on === null) return speak('Ist der Ast an oder aus?', { end: false, reprompt: 'Sag: der Ast ist an, oder: der Ast ist aus.' })
+  const { data } = await db.from('modules').select('config').eq('id', 'ast').maybeSingle()
+  const config = { ...((data?.config as Record<string, unknown>) ?? {}), on, at: new Date().toISOString() }
+  await db.from('modules').upsert({ id: 'ast', config })
+  return speak('Okay.')
+}
+
 // ───────── Handler ─────────
 
 Deno.serve(async (req) => {
@@ -332,6 +346,8 @@ Deno.serve(async (req) => {
         return await whatsUp()
       case 'TimerStarten':
         return await startTimerBySpeech(r.intent.slots)
+      case 'AstSchalten':
+        return await setAst(r.intent.slots)
       case 'EinkaufHinzufuegen':
         return await addShopping(r.intent.slots?.artikel?.value)
       case 'AMAZON.HelpIntent':
