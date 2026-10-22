@@ -30,20 +30,26 @@ const dismissKey = (day: string, time: string) => `hb-briefing-${day}-${time}`
  * Pro Tag und Uhrzeit nur einmal: Antippen merkt sich das im Gerät.
  */
 export function useBriefingSlot(enabled: boolean): { time: string; dismiss: () => void } | null {
-  const { times } = useModuleConfig('morgen', BRIEFING_DEFAULTS)
+  const { times, forced_at, forced_until } = useModuleConfig<typeof BRIEFING_DEFAULTS & { forced_at?: string; forced_until?: string }>(
+    'morgen',
+    BRIEFING_DEFAULTS,
+  )
   const today = useToday()
   const now = useNow(30_000)
   const [, force] = useState(0)
   const { hh, mm } = berlinTime(now)
   const cur = Number(hh) * 60 + Number(mm)
-  // die späteste Uhrzeit, die schon begonnen hat und noch keine Stunde her ist
-  const time = enabled
-    ? [...times]
+  // per NFC-Baustein / iPhone-Automation gestartet („Fokus Schlafen endet“): gilt bis forced_until, eigener Schlüssel zum Schließen
+  const forced = forced_at && forced_until && Date.parse(forced_until) > now.getTime() ? `jetzt-${forced_at}` : undefined
+  // sonst die späteste Uhrzeit, die schon begonnen hat und noch keine Stunde her ist
+  const time = !enabled
+    ? undefined
+    : (forced ??
+      [...times]
         .filter((t) => /^\d{2}:\d{2}$/.test(t))
         .sort()
         .reverse()
-        .find((t) => cur >= toMin(t) && cur < toMin(t) + SHOW_MINUTES)
-    : undefined
+        .find((t) => cur >= toMin(t) && cur < toMin(t) + SHOW_MINUTES))
   let dismissed = false
   try {
     dismissed = !!time && localStorage.getItem(dismissKey(today, time)) === '1'
@@ -82,7 +88,6 @@ export function weatherSentence(w: Weather, today: string, nowHour: number): { t
   return { text, rain: !!wet }
 }
 
-
 // ───────── Screen ─────────
 
 /** Morgen-Briefing an der Wand: groß das Wetter, dazu wenig, aber das Wichtige. Antippen schließt es. */
@@ -112,9 +117,7 @@ export function MorningBriefing({ weather, onClose }: { weather: Weather | null;
     .filter((e) => !e.hideInVisit && (e.allDay || e.end > nowIso))
     .slice(0, 4)
   // Dringend: als dringend markierte Todos (heute, überfällig oder ohne Tag) und liegengebliebene Putzaufgaben (Entscheidung Jonathan 11.10.2026)
-  const urgent = (todos ?? []).filter(
-    (t) => !t.done_at && (t.chore ? !!t.moved_since : t.urgent && (!t.due_date || t.due_date <= today)),
-  )
+  const urgent = (todos ?? []).filter((t) => !t.done_at && (t.chore ? !!t.moved_since : t.urgent && (!t.due_date || t.due_date <= today)))
   const trips = (plans?.plans ?? [])
     .filter((p) => p.trip && p.trip.leaveAt > nowIso && p.trip.leaveAt.slice(0, 10) === nowIso.slice(0, 10))
     .sort((a, b) => a.trip!.leaveAt.localeCompare(b.trip!.leaveAt))
@@ -129,7 +132,8 @@ export function MorningBriefing({ weather, onClose }: { weather: Weather | null;
     return () => document.removeEventListener('visibilitychange', wake)
   }, [])
   // Vorschau anderer Wetterlagen: ?morgen=regen | schnee | wolken | nebel | sonne
-  const preview = { sonne: 0, hitze: 0, wolken: 3, nebel: 45, regen: 63, schnee: 73 }[new URLSearchParams(location.search).get('morgen') ?? ''] as number | undefined
+  const preview = { sonne: 0, hitze: 0, wolken: 3, nebel: 45, regen: 63, schnee: 73 }[new URLSearchParams(location.search).get('morgen') ?? ''] as
+    number | undefined
   const code = preview ?? weather?.now.code ?? 0
   // Vorschau: &jahreszeit=fruehling|sommer|herbst|winter, &figur=f|m
   const params = new URLSearchParams(location.search)

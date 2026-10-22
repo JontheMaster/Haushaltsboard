@@ -31,7 +31,8 @@ import { supabase } from '../../lib/supabase'
 export const NFC_URL = 'https://cdfjglisfkhbkrklkxek.supabase.co/functions/v1/nfc'
 export const APP_URL = 'https://jonthemaster.github.io/Haushaltsboard/'
 
-export type NfcType = 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode' | 'drive_home'
+export type NfcType =
+  'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode' | 'drive_home' | 'briefing'
 export type NfcCategory = 'haushalt' | 'persoenlich' | 'vorrat' | 'wartung' | 'spass'
 
 export type NfcAction = {
@@ -47,7 +48,16 @@ export type NfcAction = {
   private: boolean
   owner: string | null
 }
-export type NfcEvent = { id: string; action: string; action_id: string | null; member: string | null; at: string; ok: boolean; message: string; private: boolean }
+export type NfcEvent = {
+  id: string
+  action: string
+  action_id: string | null
+  member: string | null
+  at: string
+  ok: boolean
+  message: string
+  private: boolean
+}
 export type MemberToken = { id: string; label: string; created_at: string; last_used_at: string | null; revoked: boolean }
 
 /** Bausteine, aus denen man einen Tag zusammensetzt (die Edge Function kennt genau diese) */
@@ -64,7 +74,16 @@ export const TYPES: { value: NfcType; label: string; hint: string }[] = [
     label: 'Heimweg (Auto)',
     hint: 'Schickt deinen Standort mit: Fahrzeit nach Hause mit Verkehr, Mitteilung an die andere Person, Auto-Karte an der Wand.',
   },
-  { value: 'night_mode', label: 'Nachtmodus an', hint: 'Schaltet die Wand gleich in den Nachtmodus (bis zum Ende der Nacht). Nochmal tippen schaltet ihn wieder aus.' },
+  {
+    value: 'briefing',
+    label: 'Morgen-Briefing zeigen',
+    hint: 'Zeigt das Morgen-Briefing gleich an der Wand, eine Stunde lang (z. B. per iPhone-Automation, wenn der Fokus „Schlafen“ endet). Antippen an der Wand schließt es.',
+  },
+  {
+    value: 'night_mode',
+    label: 'Nachtmodus an',
+    hint: 'Schaltet die Wand gleich in den Nachtmodus (bis zum Ende der Nacht). Nochmal tippen schaltet ihn wieder aus.',
+  },
   {
     value: 'timer',
     label: 'Timer starten',

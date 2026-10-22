@@ -90,21 +90,24 @@ export function Board({ weather }: { weather: Weather | null }) {
   useEffect(() => {
     if (!me.is_board) return
     const save = () =>
-      supabase.from('modules').upsert({
-        id: 'wand-geraet',
-        enabled: true,
-        config: {
-          width: innerWidth,
-          height: innerHeight,
-          zoom: document.documentElement.style.zoom || '1',
-          dpr: devicePixelRatio,
-          screen: `${screen.width}x${screen.height}`,
-          ua: navigator.userAgent,
-          // läuft die Seite in Fully Kiosk mit eingeschalteter JavaScript-Schnittstelle?
-          fully: typeof (window as unknown as { fully?: { bind?: unknown } }).fully?.bind === 'function',
-          at: new Date().toISOString(),
-        },
-      }).then(() => {})
+      supabase
+        .from('modules')
+        .upsert({
+          id: 'wand-geraet',
+          enabled: true,
+          config: {
+            width: innerWidth,
+            height: innerHeight,
+            zoom: document.documentElement.style.zoom || '1',
+            dpr: devicePixelRatio,
+            screen: `${screen.width}x${screen.height}`,
+            ua: navigator.userAgent,
+            // läuft die Seite in Fully Kiosk mit eingeschalteter JavaScript-Schnittstelle?
+            fully: typeof (window as unknown as { fully?: { bind?: unknown } }).fully?.bind === 'function',
+            at: new Date().toISOString(),
+          },
+        })
+        .then(() => {})
     save()
     let t: ReturnType<typeof setTimeout>
     const onResize = () => {
@@ -152,7 +155,8 @@ export function Board({ weather }: { weather: Weather | null }) {
   const saverEnabled = enabled?.has('bildschirmschoner') ?? false
   const [idle, resetIdle] = useIdle(saverConfig.idle_minutes * 60_000, me.is_board && saverEnabled && !nightActive && !cooking && !briefing)
   const [manualSaver, setManualSaver] = useState(false)
-  const saverOn = !nightActive && (manualSaver || idle)
+  // das Morgen-Briefing (auch per iPhone-Automation gestartet) geht vor dem Bildschirmschoner
+  const saverOn = !nightActive && !briefing && (manualSaver || idle)
   // Nach dem Schließen (Bildschirmschoner, Nachtmodus) fängt kurz eine unsichtbare Fläche alle Berührungen ab,
   // damit ein nachlaufender Tipp kein Todo abhakt
   const [shield, setShield] = useState(false)
@@ -218,20 +222,10 @@ export function Board({ weather }: { weather: Weather | null }) {
           <div className="shrink-0">{enabled?.has('uhr-wetter') !== false && <ClockWeather weather={weather} />}</div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="flex gap-2" role="group" aria-label="Ansicht">
-              <button
-                type="button"
-                className={`hb-choice ${view === 'heute' ? 'is-on' : ''}`}
-                aria-pressed={view === 'heute'}
-                onClick={() => setView('heute')}
-              >
+              <button type="button" className={`hb-choice ${view === 'heute' ? 'is-on' : ''}`} aria-pressed={view === 'heute'} onClick={() => setView('heute')}>
                 Heute
               </button>
-              <button
-                type="button"
-                className={`hb-choice ${view === 'woche' ? 'is-on' : ''}`}
-                aria-pressed={view === 'woche'}
-                onClick={() => setView('woche')}
-              >
+              <button type="button" className={`hb-choice ${view === 'woche' ? 'is-on' : ''}`} aria-pressed={view === 'woche'} onClick={() => setView('woche')}>
                 Woche
               </button>
               {enabled?.has('essensplan') && (
@@ -277,13 +271,7 @@ export function Board({ weather }: { weather: Weather | null }) {
             </div>
             <VisitToggle />
             <WifiButton variant="wall" />
-            <button
-              type="button"
-              className="hb-choice"
-              aria-label="Bildschirmschoner starten"
-              title="Bildschirmschoner"
-              onClick={() => setManualSaver(true)}
-            >
+            <button type="button" className="hb-choice" aria-label="Bildschirmschoner starten" title="Bildschirmschoner" onClick={() => setManualSaver(true)}>
               <Icon icon={Image} size={20} />
             </button>
             <CoinButton variant="wall" />

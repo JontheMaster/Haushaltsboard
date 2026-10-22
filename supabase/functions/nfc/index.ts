@@ -20,7 +20,7 @@ type Action = {
   id: string
   slug: string
   label: string
-  type: 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode' | 'drive_home'
+  type: 'log' | 'chore_done' | 'todo_done' | 'todo_create' | 'bring_add' | 'visit_toggle' | 'notify' | 'timer' | 'night_mode' | 'drive_home' | 'briefing'
   icon: string
   params: Record<string, unknown>
   enabled: boolean
@@ -39,7 +39,8 @@ const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 /** Zeitpunkt „Tag + HH:MM“ in Berlin (Sommer- und Winterzeit) */
 function berlinAt(day: string, hhmm: string): Date {
   const guess = new Date(`${day}T${hhmm}:00Z`)
-  const name = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'longOffset' }).formatToParts(guess).find((p) => p.type === 'timeZoneName')?.value ?? ''
+  const name =
+    new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'longOffset' }).formatToParts(guess).find((p) => p.type === 'timeZoneName')?.value ?? ''
   const m = name.match(/([+-])(\d{2}):(\d{2})/)
   const offset = m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0
   return new Date(guess.getTime() - offset * 60_000)
@@ -94,7 +95,12 @@ async function caller(req: Request): Promise<string | null> {
   const auth = req.headers.get('Authorization') ?? ''
   const token = auth.replace(/^Bearer\s+/i, '').trim()
   if (/^nfc_[0-9a-f]{48}$/.test(token)) {
-    const { data } = await db.from('member_tokens').select('id, member').eq('token_hash', await sha256(token)).eq('revoked', false).maybeSingle()
+    const { data } = await db
+      .from('member_tokens')
+      .select('id, member')
+      .eq('token_hash', await sha256(token))
+      .eq('revoked', false)
+      .maybeSingle()
     if (!data) return null
     await db.from('member_tokens').update({ last_used_at: new Date().toISOString() }).eq('id', data.id)
     return data.member
@@ -178,7 +184,9 @@ async function run(a: Action, me: Member, members: Member[], extra: Extra): Prom
       const { data: s } = await db.from('settings').select('visit_mode').eq('id', 1).single()
       const next = !s?.visit_mode
       const { error } = await db.from('settings').update({ visit_mode: next }).eq('id', 1)
-      return error ? { ok: false, message: 'Besuchsmodus umschalten hat nicht geklappt.' } : { ok: true, message: next ? 'Besuchsmodus an' : 'Besuchsmodus aus' }
+      return error
+        ? { ok: false, message: 'Besuchsmodus umschalten hat nicht geklappt.' }
+        : { ok: true, message: next ? 'Besuchsmodus an' : 'Besuchsmodus aus' }
     }
 
     case 'notify': {
@@ -203,6 +211,22 @@ async function run(a: Action, me: Member, members: Member[], extra: Extra): Prom
       if (until.getTime() <= Date.now()) until = berlinAt(berlinDay(new Date(Date.now() + 86400_000)), to)
       const { error } = await db.from('settings').update({ night_forced_until: until.toISOString() }).eq('id', 1)
       return error ? { ok: false, message: 'Nachtmodus einschalten hat nicht geklappt.' } : { ok: true, message: `Nachtmodus an bis ${to}. Gute Nacht` }
+    }
+
+    case 'briefing': {
+      // Morgen-Briefing jetzt an der Wand zeigen (z. B. iPhone-Automation „Fokus Schlafen endet“, Wunsch Jonathan 22.10.2026)
+      const { data: mod } = await db.from('modules').select('enabled, config').eq('id', 'morgen').maybeSingle()
+      if (mod && !mod.enabled) return { ok: false, message: 'Das Morgen-Briefing ist ausgeschaltet.' }
+      const minutes = Math.max(5, Math.min(180, Number(p.minutes) || 60))
+      const now = new Date()
+      const until = new Date(now.getTime() + minutes * 60_000)
+      const config = { ...((mod?.config as Record<string, unknown>) ?? {}), forced_at: now.toISOString(), forced_until: until.toISOString() }
+      const { error } = await db.from('modules').upsert({ id: 'morgen', config })
+      // ein per Tag vorgezogener Nachtmodus endet damit
+      await db.from('settings').update({ night_forced_until: null }).eq('id', 1).not('night_forced_until', 'is', null)
+      return error
+        ? { ok: false, message: 'Briefing starten hat nicht geklappt.' }
+        : { ok: true, message: `Guten Morgen! Das Briefing läuft an der Wand bis ${berlinHHMM(until)}` }
     }
 
     case 'drive_home': {
@@ -283,7 +307,9 @@ Deno.serve(async (req) => {
     const { action: sent, extra } = await readBody(req)
     const slug = slugify(sent)
     const log = async (r: Result, a: Action | null) => {
-      await db.from('nfc_events').insert({ action: slug || '(leer)', action_id: a?.id ?? null, member, ok: r.ok, message: r.message, private: a?.private ?? false })
+      await db
+        .from('nfc_events')
+        .insert({ action: slug || '(leer)', action_id: a?.id ?? null, member, ok: r.ok, message: r.message, private: a?.private ?? false })
       return r
     }
     // auch Fehler im Kurzbefehl landen in „Zuletzt getippt“, damit man sieht, was ankam
@@ -300,7 +326,8 @@ Deno.serve(async (req) => {
     const list = (actions ?? []) as Action[]
     const a = list.find((x) => x.slug === slug) ?? list.find((x) => slugify(x.label) === slug) ?? null
     // private Aktion einer anderen Person: wie unbekannt behandeln (nichts verraten)
-    if (!a || (a.private && a.owner !== member)) return json(req, await log({ ok: false, message: `Unbekannter Tag „${sent.slice(0, 60)}“. Prüf im Kurzbefehl den Wert bei action.` }, null), 404)
+    if (!a || (a.private && a.owner !== member))
+      return json(req, await log({ ok: false, message: `Unbekannter Tag „${sent.slice(0, 60)}“. Prüf im Kurzbefehl den Wert bei action.` }, null), 404)
     if (!a.enabled) return json(req, await log({ ok: false, message: `${a.label} ist gerade ausgeschaltet.` }, a))
 
     // doppeltes Tippen: letzter erfolgreicher Aufruf derselben Person für diese Aktion
