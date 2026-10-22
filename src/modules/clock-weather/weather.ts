@@ -1,15 +1,4 @@
-import {
-  Cloud,
-  CloudDrizzle,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  CloudSun,
-  Moon,
-  Sun,
-  type LucideIcon,
-} from 'lucide-react'
+import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, CloudSun, Moon, Sun, type LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 // Open-Meteo, Nürnberg. Kein Schlüssel nötig, direkt aus dem Browser.
@@ -70,10 +59,24 @@ async function fetchWeather(): Promise<Weather> {
 export function useWeather(): Weather | null {
   const [weather, setWeather] = useState<Weather | null>(null)
   useEffect(() => {
-    const load = () => fetchWeather().then(setWeather).catch(() => {})
+    // stündlich neu; klappt es nicht (z. B. WLAN nach dem nächtlichen Neuladen noch nicht da), nach 2 Min nochmal
+    let t: ReturnType<typeof setTimeout>
+    let stop = false
+    const load = () =>
+      fetchWeather()
+        .then((w) => {
+          if (stop) return
+          setWeather(w)
+          t = setTimeout(load, 60 * 60 * 1000)
+        })
+        .catch(() => {
+          if (!stop) t = setTimeout(load, 2 * 60 * 1000)
+        })
     load()
-    const t = setInterval(load, 60 * 60 * 1000)
-    return () => clearInterval(t)
+    return () => {
+      stop = true
+      clearTimeout(t)
+    }
   }, [])
   return weather
 }
