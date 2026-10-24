@@ -36,6 +36,9 @@ const berlinDay = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, 
 const berlinHHMM = (d: Date) => new Intl.DateTimeFormat('de-DE', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d)
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 
+/** Nachtmodus per Tag nur einschalten, wenn die Nacht in höchstens 12 Std endet (also abends) */
+const NIGHT_ON_MAX_MS = 12 * 3600_000
+
 /** Zeitpunkt „Tag + HH:MM“ in Berlin (Sommer- und Winterzeit) */
 function berlinAt(day: string, hhmm: string): Date {
   const guess = new Date(`${day}T${hhmm}:00Z`)
@@ -209,6 +212,8 @@ async function run(a: Action, me: Member, members: Member[], extra: Extra): Prom
       const to = String(s?.night_to ?? '06:30').slice(0, 5)
       let until = berlinAt(berlinDay(new Date()), to)
       if (until.getTime() <= Date.now()) until = berlinAt(berlinDay(new Date(Date.now() + 86400_000)), to)
+      // tagsüber nie einschalten: sonst bleibt die Wand bis zur nächsten Nacht dunkel (am Morgen getippt, 24.10.2026)
+      if (until.getTime() - Date.now() > NIGHT_ON_MAX_MS) return { ok: false, message: 'Tagsüber bleibt der Nachtmodus aus.' }
       const { error } = await db.from('settings').update({ night_forced_until: until.toISOString() }).eq('id', 1)
       return error ? { ok: false, message: 'Nachtmodus einschalten hat nicht geklappt.' } : { ok: true, message: `Nachtmodus an bis ${to}. Gute Nacht` }
     }

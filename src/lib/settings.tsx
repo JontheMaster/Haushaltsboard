@@ -31,7 +31,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         else load()
       })
       .subscribe((status) => status === 'SUBSCRIBED' && load())
+    // Sicherheitsnetz: verpasst das Tablet ein Live-Update (Verbindung kurz weg), stimmt es spätestens nach 5 Min wieder
+    // (sonst blieb z. B. ein per Tag beendeter Nachtmodus an der Wand dunkel, 24.10.2026)
+    const timer = setInterval(load, 5 * 60_000)
+    const onVisible = () => document.visibilityState === 'visible' && load()
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
       supabase.removeChannel(channel)
     }
   }, [])

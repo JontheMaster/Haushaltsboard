@@ -82,7 +82,7 @@ export const TYPES: { value: NfcType; label: string; hint: string }[] = [
   {
     value: 'night_mode',
     label: 'Nachtmodus an',
-    hint: 'Schaltet die Wand gleich in den Nachtmodus (bis zum Ende der Nacht). Nochmal tippen schaltet ihn wieder aus.',
+    hint: 'Schaltet die Wand abends gleich in den Nachtmodus (bis zum Ende der Nacht), tagsüber nie. Nochmal tippen schaltet ihn wieder aus. Für morgens: „Morgen-Briefing zeigen“, das beendet den Nachtmodus.',
   },
   {
     value: 'timer',

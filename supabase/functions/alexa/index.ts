@@ -329,6 +329,8 @@ Deno.serve(async (req) => {
   }
 
   const r = body.request
+  // Protokoll zur Fehlersuche (nur Art und erkannte Absicht, keine Inhalte außer dem Ast-Zustand), 24.10.2026
+  console.log('alexa', r.type, r.intent?.name ?? '', r.intent?.name === 'AstSchalten' ? JSON.stringify(r.intent.slots?.zustand ?? null) : '')
   try {
     if (r.type === 'LaunchRequest') {
       return speak('Hallo! Was steht an? Oder frag mich, was heute los ist.', {
