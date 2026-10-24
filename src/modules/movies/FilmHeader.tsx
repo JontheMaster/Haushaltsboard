@@ -10,7 +10,7 @@ import { PosterImage, Stars } from './Poster'
 
 /**
  * Karte oben (Wand-Kopfzeile, Handy-Start), zählt im Kopfzeilen-Platz wie Essen:
- * - Filmabend läuft: Poster, Titel, „fertig um 22:14“ (antippen = Doch nicht / Film öffnen)
+ * - Filmabend läuft: Poster, Titel, „fertig in 1 Std 35 Min“ (antippen = Doch nicht / Film öffnen)
  * - ab dem nächsten Morgen: „Wie war …?“ mit Sternen, bis beide bewertet haben (höchstens 3 Tage).
  *   Am Handy nur die eigene Bewertung, an der Wand alle, die noch fehlen.
  */
@@ -20,7 +20,7 @@ export function FilmHeader({ variant }: { variant: 'wall' | 'phone' }) {
   const now = useNow(30_000).getTime()
   const night = currentNight(watched, now)
   const byId = (id: string) => movies.find((m) => m.id === id)
-  if (night && byId(night.movie_id)) return <NightCard w={night} movie={byId(night.movie_id)!} variant={variant} />
+  if (night && byId(night.movie_id)) return <NightCard w={night} movie={byId(night.movie_id)!} variant={variant} now={now} />
   const due = ratingsDue(
     watched,
     people.map((p) => p.id),
@@ -30,9 +30,17 @@ export function FilmHeader({ variant }: { variant: 'wall' | 'phone' }) {
   return <RateCard w={due.w} movie={byId(due.w.movie_id)!} missing={variant === 'wall' || me.is_board ? due.missing : [me.id]} variant={variant} />
 }
 
-function NightCard({ w, movie, variant }: { w: Watched; movie: Movie; variant: 'wall' | 'phone' }) {
+/** Restzeit „95 Min“ bzw. „1 Std 35 Min“ (Wunsch Jonathan 24.10.2026: in der Karte „fertig in …“ statt Uhrzeit) */
+function leftText(ms: number): string {
+  const min = Math.max(1, Math.ceil(ms / 60_000))
+  if (min < 60) return `${min} Min`
+  const h = Math.floor(min / 60)
+  return min % 60 ? `${h} Std ${min % 60} Min` : `${h} Std`
+}
+
+function NightCard({ w, movie, variant, now }: { w: Watched; movie: Movie; variant: 'wall' | 'phone'; now: number }) {
   const [open, setOpen] = useState(false)
-  const done = Date.now() > Date.parse(w.ends_at)
+  const done = now > Date.parse(w.ends_at)
   return (
     <>
       <button type="button" className="hb-meal-card hb-slot-item" data-kind="meal" onClick={() => setOpen(true)} aria-label={`Filmabend: ${movie.title}`}>
@@ -40,7 +48,7 @@ function NightCard({ w, movie, variant }: { w: Watched; movie: Movie; variant: '
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="hb-meal-card-when">
             <Icon icon={Popcorn} size={14} />
-            {done ? 'Filmabend vorbei' : `Filmabend · fertig um ${berlinHHMM(w.ends_at)}`}
+            {done ? 'Filmabend vorbei' : `Filmabend · fertig in ${leftText(Date.parse(w.ends_at) - now)}`}
           </span>
           <span className="hb-meal-card-title">{movie.title}</span>
         </span>
