@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "unserem haushalt",
+      "invocationName": "unserer pinnwand",
       "intents": [
         {
           "name": "TodoAnlegen",

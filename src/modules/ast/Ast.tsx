@@ -125,8 +125,8 @@ export function AstSettings({ onBack }: { onBack: () => void }) {
           <li>Alexa-App → Mehr → Routinen → +. Name „Ast an“.</li>
           <li>Wenn: Sprache → „Ast an“ (oder was ihr sagen wollt).</li>
           <li>Aktion 1: Smart Home → Steckdose „Ast“ → Einschalten.</li>
-          <li>Aktion 2: „Benutzerdefiniert“ → Text: „sag unserem Haushalt der Ast ist an“.</li>
-          <li>Genauso eine zweite Routine „Ast aus“: Steckdose ausschalten und „sag unserem Haushalt der Ast ist aus“.</li>
+          <li>Aktion 2: „Benutzerdefiniert“ → Text: „sag unserer Pinnwand der Ast ist an“.</li>
+          <li>Genauso eine zweite Routine „Ast aus“: Steckdose ausschalten und „sag unserer Pinnwand der Ast ist aus“.</li>
         </ol>
         <p className="text-label text-ink-muted">
           Tipp: Habt ihr in der Alexa-App schon eine Routine mit Uhrzeit für den Ast (z. B. abends an), dort einfach Aktion 2 dazunehmen.

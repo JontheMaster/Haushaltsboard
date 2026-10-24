@@ -13,7 +13,7 @@ const lm = model.interactionModel.languageModel as { invocationName: string; int
 const samplesOf = (intent: string) => lm.intents.find((i) => i.name === intent)?.samples ?? []
 const timerTypes = lm.types?.find((t) => t.name === 'TIMER_ART')?.values ?? []
 
-// Immer „Alexa, sag unserem Haushalt, …“ davor (Aufrufname des Skills, Entscheidung Jonathan 7.10.2026); danach geht fast jede natürliche Formulierung
+// Immer „Alexa, sag unserer Pinnwand, …“ davor (Aufrufname des Skills, Entscheidung Jonathan 24.10.2026: „unserem Haushalt“ hielt Alexa+ für eine Ankündigung an alle Echos); danach geht fast jede natürliche Formulierung
 const GROUPS: { title: string; intent: string; hint?: string; examples: Example[] }[] = [
   {
     title: 'Todo eintragen',
