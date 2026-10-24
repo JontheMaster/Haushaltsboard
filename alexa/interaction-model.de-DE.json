@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "unserer hausmaus",
+      "invocationName": "unserem haushalt",
       "intents": [
         {
           "name": "TodoAnlegen",
