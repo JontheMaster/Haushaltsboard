@@ -6,6 +6,7 @@
 //   POST { action: 'resolve', id, tmdb_id, kind } → Eintrag „prüfen“ auf einen der Vorschläge festlegen
 //   POST { action: 'refresh', id }       → Daten und Streaming eines Films neu holen
 //   POST { action: 'providers' }         → Streamingdienste in Deutschland (für die Einstellungen)
+//   POST { action: 'tonight' }           → laufender Filmabend mit Angeboten (Fernseh-Launcher, immer JSON)
 //   POST { action: 'weekly' } + x-cron-key → einmal pro Woche: Streaming prüfen, „jetzt bei …“ melden, alte Daten auffrischen
 // Authorization: Bearer nfc_<Token> (Kurzbefehl) oder die Anmeldung der App. Mit Token kommt die Antwort als Text.
 // Secret TMDB_API_KEY = „API Read Access Token“ von themoviedb.org.
@@ -470,6 +471,147 @@ async function weekly() {
   return { checked, refreshed, news: news.length }
 }
 
+// ───────── Heute Abend (Fernseh-Launcher, 24.10.2026) ─────────
+// Der Launcher fragt höchstens einmal pro Minute { action: 'tonight' } und zeigt den laufenden Filmabend mit Knopf zur App.
+// Angebote mit direkten Anbieter-Links kommen (inoffiziell) von JustWatch, 6 Std in movies.offers gemerkt.
+type Offer = { provider: string; service: string; kind: 'flatrate' | 'rent' | 'buy'; price?: number; url: string | null }
+const OFFERS_MAX_AGE_MS = 6 * 3600_000
+const PROVIDERS: [RegExp, string][] = [
+  [/^netflix/, 'netflix'],
+  [/^amazonprime/, 'prime'],
+  [/^disneyplus/, 'disney'],
+  [/^joynde/, 'joyn'],
+  [/^(daserstemediathek|ardplus|ardmediathek)$/, 'ard'],
+  [/^zdf$/, 'zdf'],
+  [/^youtube/, 'youtube'],
+  [/^amazon$/, 'amazon'],
+]
+
+function providerKey(technical: string, kind: Offer['kind']): string {
+  const key = PROVIDERS.find(([re]) => re.test(technical))?.[1] ?? technical
+  return key === 'amazon' ? `amazon_${kind}` : key
+}
+
+/** Tracking-Zusätze aus Anbieter-Links entfernen (der Link selbst bleibt direkt beim Anbieter) */
+function cleanUrl(url: string | null): string | null {
+  if (!url) return null
+  try {
+    const u = new URL(url)
+    // Prime Video / Amazon: Format, das die Fernseh-App versteht (Wunsch Launcher 24.10.2026)
+    const gti = u.searchParams.get('gti') ?? url.match(/amzn1\.dv\.gti\.[0-9a-f-]+/i)?.[0]
+    if (/amazon\.|primevideo\./.test(u.hostname) && gti) return `https://app.primevideo.com/detail?gti=${gti}`
+    for (const k of [...u.searchParams.keys()]) if (/^(at|ct|itscg|itsct|tag|ref|utm_.*)$/i.test(k)) u.searchParams.delete(k)
+    return u.toString()
+  } catch {
+    return url
+  }
+}
+
+/** Alle Angebote in Deutschland (ohne DVD/Blu-ray), pro Anbieter und Art das günstigste; null = bei JustWatch nicht gefunden */
+async function offersFor(kind: Kind, tmdbId: number, title: string): Promise<Offer[] | null> {
+  const query = `query($q:String!){popularTitles(country:DE,first:6,filter:{searchQuery:$q}){edges{node{objectType content(country:DE,language:"de"){externalIds{tmdbId}} offers(country:DE,platform:WEB,filter:{monetizationTypes:[FLATRATE,FREE,ADS,RENT,BUY]}){monetizationType retailPriceValue presentationType standardWebURL package{clearName technicalName}}}}}}`
+  const resp = await fetch('https://apis.justwatch.com/graphql', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...UA },
+    body: JSON.stringify({ query, variables: { q: title } }),
+    signal: AbortSignal.timeout(8_000),
+  })
+  if (!resp.ok) return null
+  const data = await resp.json()
+  const type = kind === 'tv' ? 'SHOW' : 'MOVIE'
+  const node = (data?.data?.popularTitles?.edges ?? [])
+    .map((e: any) => e.node)
+    .find((n: any) => n?.objectType === type && String(n?.content?.externalIds?.tmdbId) === String(tmdbId))
+  if (!node) return null
+  const best = new Map<string, Offer>()
+  for (const o of node.offers ?? []) {
+    if (['DVD', 'BLURAY'].includes(o.presentationType) || !o.package?.technicalName) continue
+    const k: Offer['kind'] = o.monetizationType === 'RENT' ? 'rent' : o.monetizationType === 'BUY' ? 'buy' : 'flatrate'
+    const price = Number(o.retailPriceValue) || undefined
+    const offer: Offer = { provider: providerKey(o.package.technicalName, k), service: o.package.clearName, kind: k, url: cleanUrl(o.standardWebURL ?? null) }
+    if (k !== 'flatrate') offer.price = price
+    const id = `${offer.provider}|${k}`
+    const cur = best.get(id)
+    if (!cur || (k !== 'flatrate' && (offer.price ?? Infinity) < (cur.price ?? Infinity))) best.set(id, offer)
+  }
+  return [...best.values()]
+}
+
+async function tonight() {
+  const now = Date.now()
+  const { data: w } = await db
+    .from('movie_watched')
+    .select('id, movie_id, started_at, ends_at, service')
+    .gt('ends_at', new Date(now).toISOString())
+    .gt('started_at', new Date(now - 12 * 3600_000).toISOString())
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (!w) return { movie: null }
+  const { data: m } = await db
+    .from('movies')
+    .select('id, kind, tmdb_id, title, original_title, year, poster_path, providers, offers, offers_checked_at')
+    .eq('id', w.movie_id)
+    .maybeSingle()
+  if (!m) return { movie: null }
+
+  let offers = (m.offers ?? null) as Offer[] | null
+  const stale = !m.offers_checked_at || now - Date.parse(m.offers_checked_at) > OFFERS_MAX_AGE_MS
+  if (stale && m.tmdb_id) {
+    const fresh = await offersFor(m.kind as Kind, m.tmdb_id, m.title)
+      .then((r) => (r === null && m.original_title && m.original_title !== m.title ? offersFor(m.kind as Kind, m.tmdb_id!, m.original_title) : r))
+      .catch(() => null)
+    if (fresh) offers = fresh
+    await db.from('movies').update({ offers, offers_checked_at: new Date().toISOString() }).eq('id', m.id)
+  }
+  // JustWatch nicht erreichbar: Abo-Dienste aus TMDB, ohne Link (der Launcher öffnet dann nur die App)
+  if (!offers?.length) {
+    offers = ((m.providers as Providers)?.flatrate ?? []).map((p) => ({
+      provider: providerKey(serviceKey(p.name), 'flatrate'),
+      service: p.name,
+      kind: 'flatrate' as const,
+      url: null,
+    }))
+  }
+
+  const { data: mod } = await db.from('modules').select('config').eq('id', 'filme').maybeSingle()
+  const config = (mod?.config ?? {}) as { services?: string[]; rent_services?: string[] }
+  const services = config.services ?? ['Netflix', 'Amazon Prime Video', 'Disney Plus', 'Joyn', 'ARD Mediathek', 'ZDF']
+  const rentServices = config.rent_services ?? ['Amazon Video', 'YouTube']
+  // Abos, die wir haben: der beim Filmabend gewählte Dienst zuerst, dann wie in den Einstellungen
+  const order = [...(w.service ? [w.service] : []), ...services.filter((s) => s !== w.service)]
+  const result: Offer[] = []
+  const seen = new Set<string>()
+  const push = (o: Offer, service: string) => {
+    if (seen.has(`${o.provider}|${o.kind}`)) return
+    seen.add(`${o.provider}|${o.kind}`)
+    result.push({ ...o, service })
+  }
+  for (const s of order) {
+    for (const o of offers.filter((x) => x.kind === 'flatrate' && serviceKey(x.service).startsWith(serviceKey(s)))) push(o, s)
+  }
+  for (const kind of ['rent', 'buy'] as const) {
+    offers
+      .filter((x) => x.kind === kind && rentServices.some((s) => norm(x.service) === norm(s)))
+      .sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
+      .forEach((o) => push(o, o.service))
+  }
+
+  return {
+    id: w.id,
+    starts_at: w.started_at,
+    ends_at: w.ends_at,
+    movie: {
+      title: m.title,
+      year: m.year,
+      type: m.kind === 'tv' ? 'show' : 'movie',
+      tmdb_id: m.tmdb_id,
+      poster: m.poster_path ? `https://image.tmdb.org/t/p/w342${m.poster_path}` : null,
+    },
+    offers: result,
+  }
+}
+
 // ───────── Anfrage ─────────
 
 async function caller(req: Request): Promise<{ member: string; token: boolean } | null> {
@@ -524,12 +666,14 @@ Deno.serve(async (req) => {
 
     const who = await caller(req)
     if (!who) return json(req, { ok: false, message: 'Token ungültig oder nicht angemeldet.' }, 401)
-    asText = who.token
-    const { data: mod } = await db.from('modules').select('enabled').eq('id', 'filme').maybeSingle()
-    if (mod && !mod.enabled) return reply({ ok: false, message: 'Filme ist ausgeschaltet.' }, 403)
-
     const body = await readBody(req)
     const action = typeof body.action === 'string' ? body.action : 'share'
+    // Fernseh-Launcher: immer JSON, auch mit Token
+    asText = who.token && action !== 'tonight'
+    const { data: mod } = await db.from('modules').select('enabled').eq('id', 'filme').maybeSingle()
+    if (mod && !mod.enabled) return action === 'tonight' ? reply({ ok: true, movie: null }) : reply({ ok: false, message: 'Filme ist ausgeschaltet.' }, 403)
+    if (action === 'tonight') return reply({ ok: true, ...(await tonight()) })
+
     const str = (v: unknown) => (typeof v === 'string' ? v.trim() : typeof v === 'number' ? String(v) : '')
     const kindOf = (v: unknown): Kind => (v === 'tv' ? 'tv' : 'movie')
 
