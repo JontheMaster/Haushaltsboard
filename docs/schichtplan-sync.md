@@ -28,6 +28,8 @@ Claude Code baut einen davon nur nach Rückfrage.
 
 ## Umsetzung
 
+Stand 26.10.2026 (Entscheidung Jonathan): zuerst nur Schicht-Arten (`shift_types`) und die Schicht-Zeile. Die Kachel „Wer ist wann da“ und die Punkte unter „Andere Module“ sind vorgemerkt und kommen erst nach erneutem Go.
+
 - **Tabelle `calendars`** bekommt `kind` mit den Werten `termine` (Standard) und `schicht`.
 - **Neue Tabelle `shift_types`:**
   - Felder: `match` (Text oder Regex auf den Termintitel), `label`, `short` (F, S, N, Frei, Urlaub, …), `icon` (Lucide: sunrise, sunset, moon, palm-tree, …), `color` (Token aus dem Design System), `sort`.

@@ -71,7 +71,7 @@ Jede Funktion ist ein Modul mit Kachel (Größen s/m/l), Detailseite, Einstellun
 | --- | --- |
 | Uhr und Wetter, Todos, Einkauf (Bring!), Handy-Ansicht | 1 |
 | Kalender + Besuchsmodus, Putzplan, Wochenansicht mit Drag and Drop, Startseite bearbeiten, Alle Funktionen, Nachtmodus | 2 |
-| Erweiterung Kalender: Levionas Schichten aus Supershift (`docs/schichtplan-sync.md`). Stufe 0 erledigt 25./26.10.2026: Kalender `leviona_arbeit` „Arbeit, Schichten“ (Secret `ICAL_LEVIONA_ARBEIT`, Farbe `cal-coral`, im Besuchsmodus sichtbar) lädt als normaler Kalender, im Wochenrückblick-Ausblick ausgeblendet. Schicht-Zeile, `shift_types`, „Wer ist wann da“ noch offen | 2 (Erweiterung, offen) |
+| Erweiterung Kalender: Levionas Schichten aus Supershift (`docs/schichtplan-sync.md`). Stufe 0 erledigt 25./26.10.2026: Kalender `leviona_arbeit` „Arbeit, Schichten“ (Secret `ICAL_LEVIONA_ARBEIT`, Farbe `cal-coral`, im Besuchsmodus sichtbar) lädt als normaler Kalender, im Wochenrückblick-Ausblick ausgeblendet. Schicht-Zeile + `shift_types` (Teil 1–2): Go 26.10.2026. Vorgemerkt für später (Entscheidung Jonathan 26.10.2026, erst nach erneutem Go): Kachel „Wer ist wann da“, Essensplan bei Spät/Nacht, Feierabend-Hinweis (nur mit Levionas Zustimmung), Wochenrückblick-Zeile | 2 (Erweiterung, offen) |
 | Alexa-Skill für Todos | 3 |
 | Essensplan mit Zutaten → Bring! | 4 |
 | Abfahrten (VAG `start.vag.de/dm`), Countdown (`#countdown` im Kalendertitel), Wochenrückblick, WLAN-QR im Besuchsmodus, Erinnerungen per Push (Todo mit Uhrzeit, Web Push, Details in der Doku) | 5 |
