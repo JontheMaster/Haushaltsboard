@@ -16,10 +16,16 @@ export type Database = {
   public: {
     Tables: {
       calendars: {
-        Row: { color: string; hide_in_visit: boolean; id: string; label: string; owner: string | null }
-        Insert: { hide_in_visit?: boolean; id: string; label: string; owner?: string | null }
-        Update: { color?: string; hide_in_visit?: boolean; id?: string; label?: string; owner?: string | null }
+        Row: { color: string; hide_in_visit: boolean; id: string; label: string; owner: string | null; kind: 'termine' | 'schicht' }
+        Insert: { hide_in_visit?: boolean; id: string; label: string; owner?: string | null; kind?: 'termine' | 'schicht' }
+        Update: { color?: string; hide_in_visit?: boolean; id?: string; label?: string; owner?: string | null; kind?: 'termine' | 'schicht' }
         Relationships: [Rel<'calendars_owner_fkey', 'owner', 'members'>]
+      }
+      shift_types: {
+        Row: { id: string; match: string; label: string; icon: string; is_free: boolean; sort: number; created_at: string }
+        Insert: { match: string; label: string; icon?: string; is_free?: boolean; sort?: number }
+        Update: { match?: string; label?: string; icon?: string; is_free?: boolean; sort?: number }
+        Relationships: []
       }
       chore_rules: {
         Row: {

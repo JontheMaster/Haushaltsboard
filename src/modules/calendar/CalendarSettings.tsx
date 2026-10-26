@@ -1,11 +1,12 @@
 import { Check } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { PageHeader } from '../../components/PageHeader'
 import { Toggle } from '../../components/Toggle'
 import type { Tables } from '../../lib/database.types'
 import { useMembers } from '../../lib/members'
 import { supabase } from '../../lib/supabase'
+import { ShiftTypesSection } from './ShiftTypes'
 
 type Calendar = Tables<'calendars'>
 
@@ -39,7 +40,9 @@ export function CalendarSettings({ onBack }: { onBack: () => void }) {
       })
   }, [])
 
-  async function patch(c: Calendar, change: Partial<Pick<Calendar, 'color' | 'hide_in_visit'>>) {
+  const onError = useCallback(() => setError(true), [])
+
+  async function patch(c: Calendar, change: Partial<Pick<Calendar, 'color' | 'hide_in_visit' | 'kind'>>) {
     setCalendars((list) => list?.map((x) => (x.id === c.id ? { ...x, ...change } : x)) ?? null)
     const { error } = await supabase.from('calendars').update(change).eq('id', c.id)
     if (error) {
@@ -65,7 +68,7 @@ export function CalendarSettings({ onBack }: { onBack: () => void }) {
             <h3 className="flex-1 font-display text-[18px] font-semibold text-ink">{c.label}</h3>
             {c.owner && <span className="text-label text-ink-muted">{byId.get(c.owner)?.name}</span>}
           </div>
-          <div className="grid grid-cols-8 gap-1" role="radiogroup" aria-label={`Farbe für ${c.label}`}>
+          <div className="grid grid-cols-9 gap-1" role="radiogroup" aria-label={`Farbe für ${c.label}`}>
             {CALENDAR_COLORS.map((col) => (
               <button
                 key={col.id}
@@ -83,8 +86,14 @@ export function CalendarSettings({ onBack }: { onBack: () => void }) {
             ))}
           </div>
           <Toggle label="Bei Besuch ausblenden" checked={c.hide_in_visit} onChange={(on) => patch(c, { hide_in_visit: on })} />
+          <Toggle
+            label="Als Schichten zeigen (schmale Zeile statt Termin)"
+            checked={c.kind === 'schicht'}
+            onChange={(on) => patch(c, { kind: on ? 'schicht' : 'termine' })}
+          />
         </section>
       ))}
+      {calendars?.some((c) => c.kind === 'schicht') && <ShiftTypesSection onError={onError} />}
     </div>
   )
 }

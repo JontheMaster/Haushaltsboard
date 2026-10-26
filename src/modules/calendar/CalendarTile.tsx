@@ -7,6 +7,7 @@ import { useDevice } from '../../lib/device'
 import type { PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
 import { eventsOnDay } from './rules'
+import { isTopRow, ShiftLine, splitShifts, withoutFree } from './shifts'
 import { liveInfo, soonLabel } from './live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from './Timeline'
 import type { TileProps } from '../types'
@@ -42,8 +43,11 @@ export function CalendarTile({ size, delay }: TileProps) {
   const mealsOn = useMealsByDay()
   const [mode, setMode] = useCalendarMode(phone ? 'phone' : 'wall')
 
-  const todays = events ? eventsOnDay(events, today) : []
-  const tomorrows = events ? eventsOnDay(events, tomorrow) : []
+  // Schichten als eigene Zeile oben, „frei“ lässt die Kachel weg (Entscheidung Jonathan 26.10.2026)
+  const today_ = splitShifts(events ? eventsOnDay(events, today) : [], { free: false })
+  const tomorrow_ = splitShifts(events ? eventsOnDay(events, tomorrow) : [], { free: false })
+  const todays = today_.rest
+  const tomorrows = tomorrow_.rest
   // „bald“ nur für den nächsten Termin, der noch nicht läuft
   const nextId = todays.find((e) => !e.allDay && e.start > now)?.id
   // Die Farbe zeigt den Kalender; als Text reicht die Person (Farbe steht nie allein)
@@ -73,7 +77,12 @@ export function CalendarTile({ size, delay }: TileProps) {
         <div className={wide ? 'grid min-h-0 flex-1 grid-cols-2 gap-5' : `flex flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
           <div className={`flex min-w-0 flex-col gap-2 ${phone ? '' : 'min-h-0 flex-1'}`}>
             {wide && <h3 className="text-label text-ink-muted">Heute</h3>}
-            {todays.length === 0 && mealsOn(today).length === 0 ? (
+            {today_.shifts.map((e) => (
+              <ShiftLine key={e.id} e={e} day={today} wall={!phone} />
+            ))}
+            {todays.length === 0 && mealsOn(today).length === 0 && today_.shifts.length > 0 ? (
+              <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>Sonst keine Termine.</p>
+            ) : todays.length === 0 && mealsOn(today).length === 0 ? (
               <EmptyFigure wall={!phone}>
                 <p className={phone ? 'text-body text-ink-muted' : 'text-body-wall text-ink-muted'}>Heute keine Termine. Ein freier Tag.</p>
               </EmptyFigure>
@@ -102,11 +111,14 @@ export function CalendarTile({ size, delay }: TileProps) {
           </div>
 
           {/* Vorschau auf morgen nur an der Wand, am Handy bleibt die Startseite kurz */}
-          {!phone && (wide || tomorrows.length > 0) && (
+          {!phone && (wide || tomorrows.length > 0 || tomorrow_.shifts.length > 0) && (
             <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${wide ? '' : 'mt-4'}`}>
               <h3 className="text-label text-ink-muted">Morgen</h3>
+              {tomorrow_.shifts.map((e) => (
+                <ShiftLine key={e.id} e={e} day={tomorrow} wall />
+              ))}
               {tomorrows.length === 0 && mealsOn(tomorrow).length === 0 ? (
-                <p className="text-body text-ink-muted">Morgen keine Termine.</p>
+                <p className="text-body text-ink-muted">{tomorrow_.shifts.length ? 'Sonst keine Termine.' : 'Morgen keine Termine.'}</p>
               ) : (
                 <ScrollList fit className="flex min-h-0 flex-1 flex-col gap-2">
                   {byTime(tomorrows, mealsOn(tomorrow), tomorrow).map((s) => {
@@ -146,9 +158,9 @@ function Plan({
   mealsOn: (day: string) => Meal[]
   hourPx?: number
 }) {
-  const perDay = days.map((day) => ({ day, events: eventsOnDay(events, day), bands: mealBands(mealsOn(day)) }))
+  const perDay = days.map((day) => ({ day, events: withoutFree(eventsOnDay(events, day)), bands: mealBands(mealsOn(day)) }))
   const range = hourRange(perDay.map((d) => ({ day: d.day, events: [...d.events, ...d.bands] })))
-  const slots = Math.max(...perDay.map((d) => d.events.filter((e) => e.allDay).length))
+  const slots = Math.max(...perDay.map((d) => d.events.filter(isTopRow).length))
   const two = days.length > 1
   return (
     <div className={`flex flex-col gap-2 ${hourPx ? '' : 'min-h-0 flex-1'}`}>

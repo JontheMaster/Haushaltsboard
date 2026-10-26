@@ -2,9 +2,10 @@
 // Alle Positionen in Prozent der Höhe – so füllt der Plan jede Kachel- oder Spaltenhöhe aus.
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { addDays, berlinMidnightISO, berlinTime, useNow, useToday } from '../../lib/time'
-import { CalendarClock, List, UtensilsCrossed } from 'lucide-react'
+import { CalendarClock, List, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 import { Icon } from '../../components/Icon'
 import { titleVariants, useFitLevel, VariantText } from './shorten'
+import { isTopRow, shiftIcon, shiftName, shiftTime } from './shifts'
 import type { CalendarEvent } from './useCalendar'
 
 export type HourRange = { from: number; to: number }
@@ -24,7 +25,8 @@ export function hourRange(days: { day: string; events: CalendarEvent[] }[]): Hou
   let { from, to } = DEFAULT_RANGE
   for (const { day, events } of days) {
     for (const e of events) {
-      if (e.allDay) continue
+      // Schichten stehen oben als Zeile, nicht im Stundenraster
+      if (e.allDay || e.shift) continue
       from = Math.min(from, Math.floor(minutesOn(e.start, day) / 60))
       to = Math.max(to, Math.ceil(minutesOn(e.end, day) / 60))
     }
@@ -119,8 +121,12 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEven
   const now = useNow(60_000)
   const span = (range.to - range.from) * 60
   const pct = (min: number) => ((min - range.from * 60) / span) * 100
-  const allDay = events.filter((e) => e.allDay)
-  const placed = layout(events, day)
+  // Schichten oben bei den ganztägigen Einträgen, nicht als Block über dem ganzen Dienst
+  const allDay = events.filter(isTopRow)
+  const placed = layout(
+    events.filter((e) => !e.shift),
+    day,
+  )
   const nowMin = day === today ? minutesOn(now.toISOString(), day) : null
   // Antippen nur bei Einträgen, die etwas öffnen können (z. B. geplante Essen)
   const tapFor = (e: CalendarEvent) => (onTapEvent && e.calendar === 'essen' ? () => onTapEvent(e.id) : undefined)
@@ -129,9 +135,18 @@ export function DayTimeline({ day, events, range, allDaySlots, hourPx, onTapEven
     <div className={`flex flex-col gap-1 ${hourPx ? '' : 'min-h-0 flex-1'}`}>
       {(allDaySlots ?? allDay.length) > 0 && (
         <div className="flex flex-col gap-1" style={{ height: `${(allDaySlots ?? allDay.length) * ALLDAY_SLOT_PX - 4}px` }}>
-          {allDay.map((e) => (
-            <AllDay key={e.id} title={e.title} className={`hb-tl-allday ${tone(e)}`} onTap={tapFor(e)} />
-          ))}
+          {allDay.map((e) =>
+            e.shift ? (
+              <AllDay
+                key={e.id}
+                title={[e.shift.free ? 'frei' : shiftName(e), shiftTime(e, day)].filter(Boolean).join(' ')}
+                icon={shiftIcon(e.shift.icon)}
+                className={`hb-tl-allday is-shift ${tone(e)}`}
+              />
+            ) : (
+              <AllDay key={e.id} title={e.title} className={`hb-tl-allday ${tone(e)}`} onTap={tapFor(e)} />
+            ),
+          )}
         </div>
       )}
       <div
@@ -273,7 +288,7 @@ function Block({ title, time, className, style, onTap }: { title: string; time: 
 }
 
 /** Ganztägiger Termin oben im Zeitplan: eine Zeile, knappere Fassung statt „…“ */
-function AllDay({ title, className, onTap }: { title: string; className: string; onTap?: () => void }) {
+function AllDay({ title, className, onTap, icon }: { title: string; className: string; onTap?: () => void; icon?: LucideIcon }) {
   const ref = useRef<HTMLDivElement>(null)
   const variants = titleVariants(title)
   const v = variants[useFitLevel(ref, variants.length, title)]
@@ -287,7 +302,8 @@ function AllDay({ title, className, onTap }: { title: string; className: string;
       tabIndex={onTap ? 0 : undefined}
       onClick={onTap}
     >
-      <span aria-hidden="true">
+      {icon && <Icon icon={icon} size={13} />}
+      <span aria-hidden="true" className="min-w-0 truncate">
         <VariantText v={v} size={14} />
       </span>
     </div>

@@ -21,6 +21,8 @@ export type CalendarEvent = {
   color?: string
   /** Tage, an denen dieser Ganztags-Eintrag ausgeblendet wird (vom Server berechnet) */
   skipDays?: string[]
+  /** Eintrag aus einem Schichtkalender: Art laut shift_types (label null = unbekannter Titel) */
+  shift?: { label: string | null; icon: string; free: boolean }
 }
 
 type Response = { events: CalendarEvent[]; errors: string[]; visitMode: boolean }
@@ -72,6 +74,8 @@ export function useCalendar() {
     const channel = supabase
       .channel(`calendars-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'calendars' }, () => poller.refresh())
+      // Schicht-Arten geändert: der Server ordnet neu zu
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_types' }, () => poller.refresh())
       .subscribe()
     return () => {
       supabase.removeChannel(channel)

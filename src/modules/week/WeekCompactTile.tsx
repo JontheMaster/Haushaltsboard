@@ -4,6 +4,7 @@ import { Tile } from '../../components/Tile'
 import { useDevice } from '../../lib/device'
 import { addDays, berlinHHMM, useToday, weekdayShort } from '../../lib/time'
 import { eventsOnDay } from '../calendar/rules'
+import { shiftIcon, shiftName, shiftTime, splitShifts } from '../calendar/shifts'
 import { useCalendar } from '../calendar/useCalendar'
 import { useMealsByDay } from '../meals/MealLine'
 import { hm } from '../meals/mealStore'
@@ -30,11 +31,20 @@ export function WeekCompactTile({ delay }: TileProps) {
     <Tile title="Die nächsten Tage" icon={CalendarRange} delay={delay}>
       <button type="button" className="hb-compact-week" onClick={() => goTab?.('woche')} aria-label="Woche öffnen">
         {days.map((day, i) => {
-          const evs = eventsOnDay(events ?? [], day).slice(0, 3)
+          // Schichten zuerst als kurze Zeile mit Symbol, „frei“ nur als Wort (26.10.2026)
+          const { shifts, rest } = splitShifts(eventsOnDay(events ?? [], day), { free: true })
+          const evs = rest.slice(0, 3)
           const open = (todos ?? []).filter((t) => !t.done_at && dueOn(t, day, today)).length
           return (
             <div key={day} className="hb-compact-day">
               <span className="hb-compact-head">{i === 0 ? 'Heute' : i === 1 ? 'Morgen' : `${weekdayShort(day)} ${Number(day.slice(8))}.`}</span>
+              {shifts.map((e) => (
+                <span key={e.id} className="hb-compact-line">
+                  <Icon icon={shiftIcon(e.shift?.icon)} size={13} />
+                  <span className="hb-compact-time">{e.shift?.free ? '' : shiftTime(e, day).replace(/–.*/, '')}</span>
+                  <span className="min-w-0 truncate">{e.who ? `${e.who}: ` : ''}{e.shift?.free ? 'frei' : shiftName(e)}</span>
+                </span>
+              ))}
               {evs.map((e) => (
                 <span key={e.id} className="hb-compact-line">
                   <i style={{ background: dot(e.color) }} />
@@ -49,7 +59,7 @@ export function WeekCompactTile({ delay }: TileProps) {
                   <span className="min-w-0 truncate">{m.title}</span>
                 </span>
               ))}
-              {!evs.length && !mealsOn(day).length && <span className="hb-compact-empty">Frei</span>}
+              {!evs.length && !shifts.length && !mealsOn(day).length && <span className="hb-compact-empty">Frei</span>}
               {open > 0 && <span className="hb-compact-todos">{open === 1 ? '1 Todo' : `${open} Todos`}</span>}
             </div>
           )

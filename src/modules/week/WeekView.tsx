@@ -22,6 +22,7 @@ import { useDevice, useMedia } from '../../lib/device'
 import { useMembers, type PersonKey } from '../../lib/members'
 import { addDays, berlinMidnightISO, berlinTime, dayLabel, mondayOf, useToday, weekdayShort } from '../../lib/time'
 import { eventsOnDay } from '../calendar/rules'
+import { isTopRow, ShiftLine, splitShifts } from '../calendar/shifts'
 import { liveInfo } from '../calendar/live'
 import { DayTimeline, hourRange, ModeSwitch, TimeLabels, useCalendarMode } from '../calendar/Timeline'
 import { useCalendar, type CalendarEvent } from '../calendar/useCalendar'
@@ -102,7 +103,7 @@ export function WeekView({ variant }: Props) {
   const weekEvents = days.map((day) => ({ day, events: events ? eventsOnDay(events, day) : [] }))
   // Essen liegen als Band im Zeitplan; der Stundenbereich muss sie mit abdecken
   const range = hourRange(weekEvents.map((d) => ({ day: d.day, events: [...d.events, ...mealBands(mealsOn(d.day))] })))
-  const allDaySlots = Math.max(0, ...weekEvents.map((d) => d.events.filter((e) => e.allDay).length))
+  const allDaySlots = Math.max(0, ...weekEvents.map((d) => d.events.filter(isTopRow).length))
 
   // Wand: Ziehen startet nach 8 px Bewegung (Stillhalten bleibt frei fürs lange Drücken).
   // Handy: kurz halten, dann ziehen – so bleibt normales Scrollen möglich.
@@ -167,8 +168,16 @@ export function WeekView({ variant }: Props) {
   )
 
   // Liste: Termine und Essen nach Uhrzeit gemischt
-  const eventList = (day: string) =>
-    byTime(events ? eventsOnDay(events, day) : [], mealsOn(day), day).map((s) => {
+  // Schichten oben als schmale Zeile, freie Tage als kleines „frei“ (Entscheidung Jonathan 26.10.2026)
+  const eventList = (day: string) => {
+    const { shifts, rest } = splitShifts(events ? eventsOnDay(events, day) : [], { free: true })
+    return [
+      ...shifts.map((e) => <ShiftLine key={e.id} e={e} day={day} wall={wall} compact={wall} />),
+      ...eventListOf(rest, day),
+    ]
+  }
+  const eventListOf = (dayEvents: CalendarEvent[], day: string) =>
+    byTime(dayEvents, mealsOn(day), day).map((s) => {
       if (s.kind === 'meal') return <MealLine key={s.meal.id} meals={[s.meal]} wall={wall} />
       const e = s.event
       return (
@@ -196,7 +205,7 @@ export function WeekView({ variant }: Props) {
         {!layers.events && <MealLine meals={mealsOn(day)} />}
         {!layers.events ? null : plan ? (
           <div className="grid grid-cols-[44px_minmax(0,1fr)] gap-2">
-            <TimeLabels range={range} hourPx={36} allDaySlots={eventsOnDay(events ?? [], day).filter((e) => e.allDay).length} />
+            <TimeLabels range={range} hourPx={36} allDaySlots={eventsOnDay(events ?? [], day).filter(isTopRow).length} />
             <DayTimeline
               day={day}
               events={events ? eventsOnDay(events, day) : []}

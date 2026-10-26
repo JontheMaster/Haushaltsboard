@@ -221,9 +221,11 @@ async function whatsUp(): Promise<Response> {
 
   const parts: string[] = []
 
-  const events = calendar ? eventsOnDay(calendar.events, today) : []
+  // freie Tage aus dem Schichtkalender sind keine Termine; Schichten mit Namen der Art und Person
+  const events = calendar ? eventsOnDay(calendar.events, today).filter((e) => !e.shift?.free) : []
   if (events.length) {
-    const said = events.map((e) => (e.allDay ? e.title : `um ${timeText(e.start)} ${e.title}`))
+    const name = (e: (typeof events)[number]) => (e.shift ? `${e.who ? `${e.who} ` : ''}${e.shift.label ?? e.title}` : e.title)
+    const said = events.map((e) => (e.allDay ? name(e) : `um ${timeText(e.start)} ${name(e)}`))
     parts.push(`Termine heute: ${listText(said)}.`)
   } else if (calendar) {
     parts.push('Heute stehen keine Termine im Kalender.')

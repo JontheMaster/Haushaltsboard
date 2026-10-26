@@ -2042,3 +2042,69 @@ input[type='date']::-webkit-date-and-time-value,
 input[type='time']::-webkit-date-and-time-value {
   text-align: left;
 }
+
+/* Schichten (Kalender der Art „schicht“): schmale Zeile oben im Tag statt Terminkarte (26.10.2026) */
+.hb-shift-line {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--sh-bar);
+  background: var(--sh-soft);
+  color: var(--sh-ink);
+  font-size: 13px;
+  line-height: 18px;
+}
+.hb-shift-line.is-wall {
+  font-size: 14px;
+  line-height: 20px;
+}
+.hb-shift-line b {
+  font-weight: 700;
+}
+.hb-shift-who {
+  font-weight: 600;
+  opacity: 0.85;
+}
+.hb-shift-time {
+  font-variant-numeric: tabular-nums;
+}
+.hb-shift-free {
+  flex-shrink: 0;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--sh-soft);
+  color: var(--sh-ink);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+/* Zeitplan: Schicht oben bei den ganztägigen Einträgen */
+.hb-tl-allday.is-shift {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.hb-shift-type {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+.hb-shift-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.hb-shift-icons .hb-icon-btn.is-on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}

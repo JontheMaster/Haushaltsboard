@@ -28,6 +28,34 @@ export type CalendarEvent = {
   skipDays?: string[]
   /** Feld „Ort“ aus dem Kalender (für Abfahrten), falls gesetzt */
   location?: string
+  /** Eintrag aus einem Schichtkalender (calendars.kind = 'schicht'): Art laut shift_types, sonst „Schicht“ */
+  shift?: Shift
+}
+
+/** Schicht-Art eines Eintrags; `label` null = unbekannter Titel (die App zeigt dann den Originaltext) */
+export type Shift = { label: string | null; icon: string; free: boolean }
+
+type ShiftType = { match: string; label: string; icon: string; is_free: boolean; sort: number }
+
+/** Passt die Schicht-Art auf den Titel? Text (ohne Groß/klein, ganzer Titel oder Teil) oder /Regex/ */
+function shiftMatches(t: ShiftType, title: string): boolean {
+  const re = t.match.match(/^\/(.+)\/([a-z]*)$/)
+  if (re) {
+    try {
+      return new RegExp(re[1], re[2].includes('i') ? re[2] : `${re[2]}i`).test(title)
+    } catch {
+      return false
+    }
+  }
+  return title.toLowerCase().includes(t.match.trim().toLowerCase())
+}
+
+/** Erste passende Art (nach sort, genauer Titel vor Teiltreffer); unbekannt = „Schicht“ mit Aktentasche */
+export function shiftOf(title: string, types: ShiftType[]): Shift {
+  const sorted = [...types].sort((a, b) => a.sort - b.sort)
+  const exact = sorted.find((t) => t.match.trim().toLowerCase() === title.trim().toLowerCase())
+  const hit = exact ?? sorted.find((t) => shiftMatches(t, title))
+  return hit ? { label: hit.label, icon: hit.icon, free: hit.is_free } : { label: null, icon: 'briefcase', free: false }
 }
 
 // ───────── Aufräumen ─────────
@@ -211,10 +239,11 @@ function expand(ics: string, calendar: string, person: string | null, fromDay: s
  * `all`: nichts weglassen, auch nicht im Besuchsmodus (nur für Auswertungen auf dem Server, z. B. Abfahrten).
  */
 export async function loadEvents({ hideAlways = false, all = false } = {}) {
-  const [{ data: settings }, { data: calendars }, { data: members }] = await Promise.all([
+  const [{ data: settings }, { data: calendars }, { data: members }, { data: shiftTypes }] = await Promise.all([
     db.from('settings').select('visit_mode').eq('id', 1).single(),
-    db.from('calendars').select('id, owner, label, hide_in_visit, color'),
+    db.from('calendars').select('id, owner, label, hide_in_visit, color, kind'),
     db.from('members').select('id, name, color'),
+    db.from('shift_types').select('match, label, icon, is_free, sort'),
   ])
   const visitMode = settings?.visit_mode ?? false
   const memberOf = new Map((members ?? []).map((m) => [m.id, m]))
@@ -236,6 +265,7 @@ export async function loadEvents({ hideAlways = false, all = false } = {}) {
           who: owner?.name ?? null,
           hideInVisit: c.hide_in_visit,
           color: c.color,
+          ...(c.kind === 'schicht' ? { shift: shiftOf(e.title, (shiftTypes ?? []) as ShiftType[]) } : {}),
         }))
       } catch (e) {
         console.error(c.id, e)

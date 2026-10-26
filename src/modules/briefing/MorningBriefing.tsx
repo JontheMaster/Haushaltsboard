@@ -5,6 +5,7 @@ import { useMembers } from '../../lib/members'
 import { berlinTime, longDate, useNow, useToday } from '../../lib/time'
 import { describe, type Weather } from '../clock-weather/weather'
 import { eventsOnDay } from '../calendar/rules'
+import { shiftName, withoutFree } from '../calendar/shifts'
 import { useCalendar } from '../calendar/useCalendar'
 import { useMealsByDay } from '../meals/MealLine'
 import { hm as mealHm } from '../meals/mealStore'
@@ -113,7 +114,8 @@ export function MorningBriefing({ weather, onClose }: { weather: Weather | null;
 
   const nowIso = now.toISOString()
   // laut im Raum: nie Kalender zeigen, die im Besuchsmodus verschwinden
-  const dayEvents = eventsOnDay(events ?? [], today)
+  // freie Tage aus dem Schichtkalender sind keine Termine
+  const dayEvents = withoutFree(eventsOnDay(events ?? [], today))
     .filter((e) => !e.hideInVisit && (e.allDay || e.end > nowIso))
     .slice(0, 4)
   // Dringend: als dringend markierte Todos (heute, überfällig oder ohne Tag) und liegengebliebene Putzaufgaben (Entscheidung Jonathan 11.10.2026)
@@ -235,7 +237,7 @@ export function MorningBriefing({ weather, onClose }: { weather: Weather | null;
                   {dayEvents.map((e) => (
                     <li key={e.id} className="hb-brief-event" style={{ '--dot': dotColor(e.color) } as CSSProperties}>
                       <span className="hb-brief-time">{e.allDay ? 'Ganztags' : berlinHm(e.start)}</span>
-                      <span className="min-w-0 truncate">{e.title}</span>
+                      <span className="min-w-0 truncate">{e.shift ? `${e.who ? `${e.who}: ` : ''}${shiftName(e)}` : e.title}</span>
                     </li>
                   ))}
                 </ul>
