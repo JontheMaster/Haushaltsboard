@@ -90,3 +90,9 @@ Neues Secret, das Jonathan selbst anlegt: `TMDB_API_KEY`. Das ist der „API Rea
 ## Stand (20.10.2026)
 
 Gebaut: Stufe 1 und 2, aus Stufe 3 Wochenrückblick und Jahresliste. Details zur Technik in CLAUDE.md (Abschnitt Filme). Offen aus Stufe 3 (nur nach Rückfrage): Serien-Fortschritt, Smart-Home-Szene, Besuchsmodus „Gäste schauen mit“.
+
+## Vorgemerkt (26.10.2026, Idee Jonathan)
+
+- **Vorschläge** (als Nächstes, Plan folgt): Filme und Serien passend zu euren Sternen und Merkliste-Stimmen (TMDB „Empfehlungen“/„Ähnliche“ der gut bewerteten und „unbedingt“-Filme, gezählt und gewichtet; „lieber nicht“ und schlechte Bewertungen drücken Ähnliches nach unten) plus Neues (neue Filme/Serien/Staffeln, neu bei euren Abo-Diensten). Bekanntes, Gemerktes und Verworfenes fällt raus.
+- **Wischen wie bei Tinder** (später, erst nach Go): Karte mit Poster, Kurzinfo, Trailer auf Antippen; rechts = gefällt mir, links = nicht. Auf die Merkliste nur bei Match (beide rechts) mit kleiner Match-Animation; einseitige Treffer bleiben als „Möglichkeiten“, ohne zu zeigen, wer was gewischt hat; links Gewischtes kommt nicht wieder. Vor allem am Handy.
+
