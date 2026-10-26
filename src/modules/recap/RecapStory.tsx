@@ -172,10 +172,18 @@ export function RecapStory({ recap, week, thisWeek, today, onWeek }: { recap: Re
   const next = addDays(thisWeek, 7)
   const nextEvents = isThisWeek ? (eventsInWeek(events, next) ?? []) : []
   const birthdays = nextEvents.filter((e) => kindOf(e.title)?.label === 'Geburtstag')
-  // Höhepunkte: höchstens ein Termin pro Tag, ohne Arbeit/Büro und ohne Kalender, die bei Besuch versteckt sind (Fokus, Arbeit)
+  // Höhepunkte: höchstens ein Termin pro Tag, ohne Arbeit/Büro und ohne Kalender, die bei Besuch versteckt sind (Fokus);
+  // Arbeitskalender („Arbeit, Termine“, „Arbeit, Schichten“) fallen ganz weg, sonst stünden dort nur Dienste (26.10.2026)
   const seenDays = new Set<string>()
   const highlights = nextEvents
-    .filter((e) => !birthdays.includes(e) && !e.hideInVisit && kindOf(e.title)?.label !== 'Arbeit' && !/homeoffice/i.test(e.title))
+    .filter(
+      (e) =>
+        !birthdays.includes(e) &&
+        !e.hideInVisit &&
+        !/^arbeit\b/i.test(e.label ?? '') &&
+        kindOf(e.title)?.label !== 'Arbeit' &&
+        !/homeoffice/i.test(e.title),
+    )
     .filter((e) => {
       const d = e.start.slice(0, 10)
       if (seenDays.has(d)) return false

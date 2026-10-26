@@ -17,7 +17,7 @@ Supershift selbst liefert vermutlich keine iCal-Adresse. Der Weg geht über eine
 3. **Google-Konto am iPhone:** Unter Einstellungen → Apps → Kalender → Accounts muss das Google-Konto mit „Kalender“ aktiv sein.
 4. **Sync einstellen:** In Supershift die Synchronisation auf den Kalender „Schichten“ (Google) stellen.
 5. **Adresse holen:** In Google Kalender (Web) → Einstellungen von „Schichten“ → „Privatadresse im iCal-Format“ kopieren.
-6. **Secret anlegen:** Jonathan legt das Secret `ICAL_LEVIONA_SCHICHT` an und gibt die Adresse dort ein, nicht im Chat.
+6. **Secret anlegen:** Jonathan legt das Secret `ICAL_LEVIONA_ARBEIT` an und gibt die Adresse dort ein, nicht im Chat. (Erledigt 25.10.2026, Kalender-ID `leviona_arbeit`, Name „Arbeit, Schichten“, Farbe `cal-coral`.)
 
 **Falls Supershift keinen Sync anbietet**, gibt es zwei Auswege:
 

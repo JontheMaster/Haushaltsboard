@@ -132,6 +132,9 @@
 .hb-event.hb-cal-lime {
   --ev-bar: var(--cal-lime);
 }
+.hb-event.hb-cal-coral {
+  --ev-bar: var(--cal-coral);
+}
 .hb-event.is-next {
   box-shadow: none;
 }
@@ -237,6 +240,15 @@
 .hb-cal-lime .hb-event-time {
   color: var(--cal-lime-ink);
 }
+.hb-event.hb-cal-coral {
+  background: var(--cal-coral-soft);
+}
+.hb-event.hb-cal-coral::before {
+  background: var(--cal-coral);
+}
+.hb-cal-coral .hb-event-time {
+  color: var(--cal-coral-ink);
+}
 .hb-event.hb-person-open {
   background: var(--surface-sunken);
 }
@@ -324,6 +336,11 @@
   --tl-soft: var(--cal-lime-soft);
   --tl-bar: var(--cal-lime);
   --tl-ink: var(--cal-lime-ink);
+}
+.hb-tl-event.hb-cal-coral, .hb-tl-allday.hb-cal-coral {
+  --tl-soft: var(--cal-coral-soft);
+  --tl-bar: var(--cal-coral);
+  --tl-ink: var(--cal-coral-ink);
 }
 .hb-tl-event.hb-person-a, .hb-tl-allday.hb-person-a {
   --tl-soft: var(--person-a-soft);

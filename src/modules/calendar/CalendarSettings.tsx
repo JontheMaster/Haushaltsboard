@@ -19,6 +19,7 @@ export const CALENDAR_COLORS: { id: string; label: string; swatch: string }[] = 
   { id: 'purple', label: 'Lila', swatch: 'var(--cal-purple)' },
   { id: 'forest', label: 'Waldgrün', swatch: 'var(--cal-forest)' },
   { id: 'lime', label: 'Limette', swatch: 'var(--cal-lime)' },
+  { id: 'coral', label: 'Koralle', swatch: 'var(--cal-coral)' },
 ]
 
 /** Kalender: Farbe und ob er im Besuchsmodus verschwindet. Änderungen wirken sofort auf dem Board. */

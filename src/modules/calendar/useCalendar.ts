@@ -17,7 +17,7 @@ export type CalendarEvent = {
   label?: string
   who?: string | null
   hideInVisit?: boolean
-  /** Kalenderfarbe: blue, berry, orange, yellow, lilac, purple, forest, lime */
+  /** Kalenderfarbe: blue, berry, orange, yellow, lilac, purple, forest, lime, coral */
   color?: string
   /** Tage, an denen dieser Ganztags-Eintrag ausgeblendet wird (vom Server berechnet) */
   skipDays?: string[]

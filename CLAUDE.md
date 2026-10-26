@@ -39,6 +39,7 @@ Gemeinsames Haushalts-Dashboard von Jonathan und Leviona: ein Android-Tablet an 
 | `ICAL_JONATHAN_FOCUS` | Fokus-Blöcke | ausgeblendet |
 | `ICAL_JONATHAN_ARBEIT_TERMINE` | Arbeit, Termine | ausgeblendet |
 | `ICAL_JONATHAN_ARBEIT_TRAININGS` | Arbeit, Trainings | ausgeblendet |
+| `ICAL_LEVIONA_ARBEIT` | Leviona, Arbeit/Schichten (Supershift über Google) | sichtbar |
 | `BRING_EMAIL`, `BRING_PASSWORD` | Bring!-Login | – |
 
 Pro Kalender in der App einstellbar (Tabelle `calendars`, Felder `hide_in_visit`, `color`). Jeder Kalender hat eine eigene Farbe (Tokens `cal-*`, Zuordnung in design/DESIGN.md), Jonathan privat = Blau, Leviona = Beere.
@@ -70,7 +71,7 @@ Jede Funktion ist ein Modul mit Kachel (Größen s/m/l), Detailseite, Einstellun
 | --- | --- |
 | Uhr und Wetter, Todos, Einkauf (Bring!), Handy-Ansicht | 1 |
 | Kalender + Besuchsmodus, Putzplan, Wochenansicht mit Drag and Drop, Startseite bearbeiten, Alle Funktionen, Nachtmodus | 2 |
-| Erweiterung Kalender: Levionas Schichten aus Supershift (`docs/schichtplan-sync.md`; nur mit ihrer Zustimmung, Secret `ICAL_LEVIONA_SCHICHT` legt Jonathan an) | 2 (Erweiterung, offen) |
+| Erweiterung Kalender: Levionas Schichten aus Supershift (`docs/schichtplan-sync.md`). Stufe 0 erledigt 25./26.10.2026: Kalender `leviona_arbeit` „Arbeit, Schichten“ (Secret `ICAL_LEVIONA_ARBEIT`, Farbe `cal-coral`, im Besuchsmodus sichtbar) lädt als normaler Kalender, im Wochenrückblick-Ausblick ausgeblendet. Schicht-Zeile, `shift_types`, „Wer ist wann da“ noch offen | 2 (Erweiterung, offen) |
 | Alexa-Skill für Todos | 3 |
 | Essensplan mit Zutaten → Bring! | 4 |
 | Abfahrten (VAG `start.vag.de/dm`), Countdown (`#countdown` im Kalendertitel), Wochenrückblick, WLAN-QR im Besuchsmodus, Erinnerungen per Push (Todo mit Uhrzeit, Web Push, Details in der Doku) | 5 |

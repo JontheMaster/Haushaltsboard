@@ -35,6 +35,9 @@
   --cal-lime: #7DB35B;
   --cal-lime-soft: #E7F2DB;
   --cal-lime-ink: #3D6624;
+  --cal-coral: #DB6B5D;
+  --cal-coral-soft: #FBE4DF;
+  --cal-coral-ink: #8E3A2E;
   --highlight: #F7E4AA;
   --highlight-ink: #6E5410;
   --success: #4A7034;
@@ -127,6 +130,9 @@
   --cal-lime: #A8D182;
   --cal-lime-soft: #232F19;
   --cal-lime-ink: #CBE5B0;
+  --cal-coral: #EE9B86;
+  --cal-coral-soft: #3B201B;
+  --cal-coral-ink: #F5C2B4;
   --highlight: #3A3218;
   --highlight-ink: #F0D794;
   --success: #BCD49A;
@@ -229,6 +235,9 @@
   --color-cal-lime: var(--cal-lime);
   --color-cal-lime-soft: var(--cal-lime-soft);
   --color-cal-lime-ink: var(--cal-lime-ink);
+  --color-cal-coral: var(--cal-coral);
+  --color-cal-coral-soft: var(--cal-coral-soft);
+  --color-cal-coral-ink: var(--cal-coral-ink);
   --color-highlight: var(--highlight);
   --color-highlight-ink: var(--highlight-ink);
   --color-success: var(--success);
