@@ -618,6 +618,32 @@ export type Database = {
         Update: { status?: string }
         Relationships: [Rel<'movies_added_by_fkey', 'added_by', 'members'>]
       }
+      movie_suggestions: {
+        Row: {
+          id: string
+          kind: 'movie' | 'tv'
+          tmdb_id: number
+          section: 'neu' | 'passt'
+          title: string
+          year: number | null
+          poster_path: string | null
+          overview: string | null
+          genre_ids: number[]
+          rating_tmdb: number | null
+          reason: string | null
+          score: number
+          created_at: string
+        }
+        Insert: { kind: 'movie' | 'tv'; tmdb_id: number; section: 'neu' | 'passt'; title: string }
+        Update: { reason?: string | null }
+        Relationships: []
+      }
+      movie_dismissed: {
+        Row: { kind: 'movie' | 'tv'; tmdb_id: number; member: string | null; at: string }
+        Insert: { kind: 'movie' | 'tv'; tmdb_id: number; member?: string | null }
+        Update: { member?: string | null }
+        Relationships: []
+      }
       movie_votes: {
         Row: { movie_id: string; member: string; want: string; updated_at: string }
         Insert: { movie_id: string; member: string; want: string; updated_at?: string }

@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase } from '../../lib/supabase'
 import { addDays, berlinAtISO, berlinDay } from '../../lib/time'
 import { useModuleConfig } from '../useModules'
@@ -414,4 +414,86 @@ export function useMovieHints(on: boolean, showToast: (m: string) => void) {
       supabase.removeChannel(channel)
     }
   }, [on, showToast])
+}
+
+// ───────── Vorschläge (26.10.2026) ─────────
+// Rechnet die Function `movies` (montags und auf Wunsch, höchstens alle 6 Std). „Merken“ = wie aus der Suche,
+// „Kein Interesse“ = movie_dismissed (kommt nicht wieder, für beide).
+
+export type Suggestion = {
+  id: string
+  kind: Kind
+  tmdb_id: number
+  section: 'neu' | 'passt'
+  title: string
+  year: number | null
+  poster_path: string | null
+  overview: string | null
+  rating_tmdb: number | null
+  reason: string | null
+  score: number
+  created_at: string
+}
+
+/** wann man die Vorschläge zuletzt angesehen hat (pro Gerät), für „X neue Vorschläge“ */
+const SEEN_KEY = 'hb-film-sugg-seen'
+export const PART_KEY = 'hb-film-part'
+
+export function markSuggestionsSeen() {
+  try {
+    localStorage.setItem(SEEN_KEY, new Date().toISOString())
+  } catch {
+    // nur Komfort
+  }
+}
+
+export function suggestionsSeenAt(): string {
+  try {
+    return localStorage.getItem(SEEN_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function useSuggestions(refresh = false): { list: Suggestion[] | null; reload: () => void; busy: boolean } {
+  const [list, setList] = useState<Suggestion[] | null>(null)
+  const [busy, setBusy] = useState(false)
+  const load = useCallback(async () => {
+    const { data } = await supabase.from('movie_suggestions').select('*').order('score', { ascending: false })
+    setList((data ?? []) as Suggestion[])
+    return (data ?? []).length
+  }, [])
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const n = await load()
+      // Vorschläge-Seite offen: neu rechnen lassen (der Server macht es höchstens alle 6 Std), beim ersten Mal sichtbar warten
+      if (!refresh || !alive) return
+      if (!n) setBusy(true)
+      await call({ action: 'suggest' })
+      if (alive) {
+        await load()
+        setBusy(false)
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [load, refresh])
+  return { list, reload: load, busy }
+}
+
+/** aus den Vorschlägen merken (landet auf der Merkliste, verschwindet aus den Vorschlägen) */
+export async function keepSuggestion(s: Suggestion): Promise<FnResult> {
+  const r = await call({ action: 'add', tmdb_id: s.tmdb_id, kind: s.kind })
+  await loadAll()
+  return r ?? { ok: false, message: 'Merken hat nicht geklappt.' }
+}
+
+/** „Kein Interesse“: kommt nicht wieder (für beide) */
+export async function dismissSuggestion(s: Suggestion, member: string): Promise<boolean> {
+  const { error } = await supabase.from('movie_dismissed').upsert({ kind: s.kind, tmdb_id: s.tmdb_id, member }, { onConflict: 'kind,tmdb_id' })
+  if (error) return false
+  await supabase.from('movie_suggestions').delete().eq('id', s.id)
+  return true
 }

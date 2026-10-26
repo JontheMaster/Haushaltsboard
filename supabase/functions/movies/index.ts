@@ -7,6 +7,7 @@
 //   POST { action: 'refresh', id }       → Daten und Streaming eines Films neu holen
 //   POST { action: 'providers' }         → Streamingdienste in Deutschland (für die Einstellungen)
 //   POST { action: 'tonight' }           → laufender Filmabend mit Angeboten (Fernseh-Launcher, immer JSON)
+//   POST { action: 'suggest' }           → Vorschläge neu rechnen (höchstens alle 6 Std; montags im weekly immer)
 //   POST { action: 'weekly' } + x-cron-key → einmal pro Woche: Streaming prüfen, „jetzt bei …“ melden, alte Daten auffrischen
 // Authorization: Bearer nfc_<Token> (Kurzbefehl) oder die Anmeldung der App. Mit Token kommt die Antwort als Text.
 // Secret TMDB_API_KEY = „API Read Access Token“ von themoviedb.org.
@@ -203,6 +204,8 @@ async function addMovie(member: string, kind: Kind, tmdbId: number, sourceUrl: s
     id = data.id
   }
   await vote(id, member)
+  // aus den Vorschlägen gemerkt: dort verschwindet er
+  await db.from('movie_suggestions').delete().eq('kind', kind).eq('tmdb_id', tmdbId)
   return { ok: true, id, message: `${label(row)} gemerkt` }
 }
 
@@ -468,7 +471,180 @@ async function weekly() {
       })
     }
   }
-  return { checked, refreshed, news: news.length }
+  // Vorschläge gleich mit neu rechnen (eigener Fehler bricht den Streaming-Check nicht ab)
+  const suggested = await suggest(true).catch((e) => {
+    console.error('Vorschläge', e)
+    return null
+  })
+  return { checked, refreshed, news: news.length, suggested }
+}
+
+// ───────── Vorschläge (26.10.2026) ─────────
+// Aus euren Sternen und Merkliste-Stimmen: TMDB-Empfehlungen der Lieblingsfilme sammeln und gewichten („Passt zu euch“),
+// dazu Neues bei euren Diensten und bald im Kino in euren Lieblings-Genres („Neu für euch“). Bekanntes und „Kein Interesse“ fallen raus.
+/** höchstens so oft neu rechnen (App kann es anstoßen; der Montags-Lauf rechnet immer) */
+const SUGGEST_MIN_GAP_MS = 6 * 3600_000
+const MONTHS_DE = ['Jan.', 'Feb.', 'März', 'Apr.', 'Mai', 'Juni', 'Juli', 'Aug.', 'Sept.', 'Okt.', 'Nov.', 'Dez.']
+
+type Pick = { kind: Kind; tmdb_id: number; section: 'neu' | 'passt'; title: string; year: number | null; poster_path: string | null; overview: string; genre_ids: number[]; rating_tmdb: number | null; reason: string; score: number }
+
+function pickOf(r: any, kind: Kind, section: Pick['section'], reason: string, score: number): Pick {
+  return {
+    kind,
+    tmdb_id: r.id,
+    section,
+    title: ((kind === 'tv' ? r.name : r.title) ?? '').slice(0, 200),
+    year: yearOf(kind === 'tv' ? r.first_air_date : r.release_date),
+    poster_path: r.poster_path ?? null,
+    overview: (r.overview ?? '').slice(0, 600),
+    genre_ids: (r.genre_ids ?? []) as number[],
+    rating_tmdb: r.vote_count >= 20 ? Math.round(r.vote_average * 10) / 10 : null,
+    reason,
+    score,
+  }
+}
+
+async function suggest(force = false): Promise<{ passt: number; neu: number; skipped?: boolean }> {
+  const { data: mod } = await db.from('modules').select('config').eq('id', 'filme').maybeSingle()
+  const config = (mod?.config ?? {}) as { services?: string[]; rent_services?: string[]; suggest_at?: string }
+  if (!force && config.suggest_at && Date.now() - Date.parse(config.suggest_at) < SUGGEST_MIN_GAP_MS) return { passt: 0, neu: 0, skipped: true }
+
+  const [{ data: movies }, { data: votes }, { data: watched }, { data: dismissed }, { data: members }] = await Promise.all([
+    db.from('movies').select('id, kind, tmdb_id, title, status, genre_ids').not('tmdb_id', 'is', null),
+    db.from('movie_votes').select('movie_id, want'),
+    db.from('movie_watched').select('movie_id, ratings'),
+    db.from('movie_dismissed').select('kind, tmdb_id'),
+    db.from('members').select('id, is_board'),
+  ])
+  const people = new Set((members ?? []).filter((m) => !m.is_board).map((m) => m.id))
+  const known = new Set([...(movies ?? []).map((m) => `${m.kind}:${m.tmdb_id}`), ...(dismissed ?? []).map((d) => `${d.kind}:${d.tmdb_id}`)])
+
+  // Gewicht pro eigenem Film: Sterne (4–5 = mochten wir, 1–2 = eher nicht), Stimmen, gesehen ohne Sterne = leicht positiv
+  const weight = new Map<string, number>()
+  const add = (id: string, w: number) => weight.set(id, (weight.get(id) ?? 0) + w)
+  for (const w of watched ?? []) {
+    const stars = Object.entries((w.ratings ?? {}) as Record<string, number>)
+      .filter(([m, n]) => people.has(m) && n > 0)
+      .map(([, n]) => n)
+    if (!stars.length) continue
+    const avg = stars.reduce((a, b) => a + b, 0) / stars.length
+    add(w.movie_id, avg >= 4 ? avg - 2.5 : avg <= 2 ? -1.5 : 0)
+  }
+  const WANT: Record<string, number> = { unbedingt: 1.5, gerne: 0.5, egal: 0, lieber_nicht: -1 }
+  for (const v of votes ?? []) add(v.movie_id, WANT[v.want] ?? 0)
+  for (const m of movies ?? []) if (m.status === 'gesehen' && !weight.has(m.id)) add(m.id, 0.5)
+
+  const byId = new Map((movies ?? []).map((m) => [m.id, m]))
+  const seeds = [...weight.entries()]
+    .map(([id, w]) => ({ m: byId.get(id), w }))
+    .filter((x): x is { m: NonNullable<typeof x.m>; w: number } => !!x.m && x.m.status !== 'verworfen' && x.w !== 0)
+  const positive = seeds.filter((x) => x.w > 0).sort((a, b) => b.w - a.w).slice(0, 12)
+  const negative = seeds.filter((x) => x.w < 0).sort((a, b) => a.w - b.w).slice(0, 4)
+
+  // „Passt zu euch“: Empfehlungen der Lieblingsfilme, je öfter und je weiter oben, desto besser
+  const found = new Map<string, { r: any; kind: Kind; score: number; because: { title: string; w: number } | null }>()
+  for (const { m, w } of [...positive, ...negative]) {
+    try {
+      const data = await tmdb(`/${m.kind}/${m.tmdb_id}/recommendations`, { page: '1' })
+      ;(data.results ?? []).slice(0, 20).forEach((r: any, i: number) => {
+        const kind = m.kind as Kind
+        const key = `${kind}:${r.id}`
+        if (known.has(key) || r.adult) return
+        const hit = found.get(key) ?? { r, kind, score: 0, because: null }
+        hit.score += w * (1 - i / 40)
+        if (w > 0 && (!hit.because || w > hit.because.w)) hit.because = { title: m.title, w }
+        found.set(key, hit)
+      })
+    } catch (e) {
+      console.error('Empfehlungen fehlen', m.title, e)
+    }
+  }
+  // Abwechslung: pro Lieblingsfilm höchstens 3 Vorschläge (sonst füllt ein Film mit zwei „unbedingt“ die ganze Liste)
+  const perSeed = new Map<string, number>()
+  const passt: Pick[] = [...found.values()]
+    // bekannt genug (sonst landen obskure alte Filme oben) und nicht schlecht bewertet
+    .filter((h) => h.score > 0.4 && h.because && h.r.vote_count >= 150 && h.r.vote_average >= 6)
+    .sort((a, b) => b.score - a.score)
+    .filter((h) => {
+      const n = (perSeed.get(h.because!.title) ?? 0) + 1
+      perSeed.set(h.because!.title, n)
+      return n <= 3
+    })
+    .slice(0, 24)
+    .map((h) => pickOf(h.r, h.kind, 'passt', `Weil ihr ${h.because!.title} mögt`, Math.round(h.score * 100) / 100))
+
+  // Lieblings-Genres aus den positiven Filmen (für „Neu für euch“)
+  const genreScore = new Map<number, number>()
+  for (const { m, w } of positive) for (const g of (m.genre_ids ?? []) as number[]) genreScore.set(g, (genreScore.get(g) ?? 0) + w)
+  const topGenres = [...genreScore.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([g]) => g)
+
+  // „Neu für euch“: neu bei euren Abo-Diensten (Filme der letzten 6 Monate, Serien aus dem letzten Jahr)
+  // nur Abos: Leihdienste (Einstellung „Zum Leihen“) haben keine Flatrate
+  const rentOnly = new Set((config.rent_services ?? []).map(serviceKey))
+  const services = (config.services ?? []).filter((x) => !rentOnly.has(serviceKey(x)))
+  const neu: Pick[] = []
+  const taken = new Set([...known, ...passt.map((p) => `${p.kind}:${p.tmdb_id}`)])
+  const day = (d: Date) => d.toISOString().slice(0, 10)
+  const now = new Date()
+  try {
+    for (const kind of ['movie', 'tv'] as Kind[]) {
+      const all = await tmdb(`/watch/providers/${kind}`, { watch_region: 'DE' })
+      for (const service of services) {
+        const ids = (all.results ?? []).filter((p: any) => serviceKey(p.provider_name).startsWith(serviceKey(service))).map((p: any) => p.provider_id)
+        if (!ids.length) continue
+        const params: Record<string, string> = {
+          watch_region: 'DE',
+          with_watch_providers: ids.join('|'),
+          with_watch_monetization_types: 'flatrate',
+          sort_by: 'popularity.desc',
+          'vote_count.gte': kind === 'movie' ? '20' : '10',
+          ...(topGenres.length ? { with_genres: topGenres.join('|') } : {}),
+          // Filme der letzten 6 Monate, Serien, die im letzten Jahr gestartet sind (keine neuen Folgen von Dauerbrennern)
+          ...(kind === 'movie'
+            ? { 'primary_release_date.gte': day(new Date(now.getTime() - 180 * 86400000)) }
+            : { 'first_air_date.gte': day(new Date(now.getTime() - 365 * 86400000)), 'first_air_date.lte': day(now) }),
+        }
+        const data = await tmdb(`/discover/${kind}`, params)
+        for (const r of (data.results ?? []).slice(0, 3)) {
+          const key = `${kind}:${r.id}`
+          if (taken.has(key)) continue
+          taken.add(key)
+          neu.push(pickOf(r, kind, 'neu', kind === 'tv' ? `Neue Serie bei ${service}` : `Neu bei ${service}`, Number(r.popularity) || 0))
+        }
+      }
+    }
+    // bald im Kino (Deutschland, nächste 6 Wochen)
+    const cinema = await tmdb('/discover/movie', {
+      region: 'DE',
+      with_release_type: '3|2',
+      'primary_release_date.gte': day(now),
+      'primary_release_date.lte': day(new Date(now.getTime() + 42 * 86400000)),
+      sort_by: 'popularity.desc',
+      ...(topGenres.length ? { with_genres: topGenres.join('|') } : {}),
+    })
+    for (const r of (cinema.results ?? []).slice(0, 6)) {
+      const key = `movie:${r.id}`
+      if (taken.has(key)) continue
+      taken.add(key)
+      const d = r.release_date ? new Date(`${r.release_date}T12:00:00Z`) : null
+      neu.push(pickOf(r, 'movie', 'neu', d ? `Kinostart ${d.getUTCDate()}. ${MONTHS_DE[d.getUTCMonth()]}` : 'Bald im Kino', Number(r.popularity) || 0))
+    }
+  } catch (e) {
+    console.error('Neues nicht geladen', e)
+  }
+
+  // ersetzen: Bestehende behalten ihr created_at (für „X neue Vorschläge“), Weggefallene verschwinden
+  const rows = [...passt, ...neu.sort((a, b) => b.score - a.score).slice(0, 24)].filter((p) => p.title)
+  if (rows.length) {
+    const { error } = await db.from('movie_suggestions').upsert(rows, { onConflict: 'kind,tmdb_id' })
+    if (error) throw error
+  }
+  const keep = new Set(rows.map((r) => `${r.kind}:${r.tmdb_id}`))
+  const { data: old } = await db.from('movie_suggestions').select('id, kind, tmdb_id')
+  const gone = (old ?? []).filter((o) => !keep.has(`${o.kind}:${o.tmdb_id}`)).map((o) => o.id)
+  if (gone.length) await db.from('movie_suggestions').delete().in('id', gone)
+  await db.from('modules').update({ config: { ...(mod?.config ?? {}), suggest_at: new Date().toISOString() } }).eq('id', 'filme')
+  return { passt: passt.length, neu: rows.length - passt.length }
 }
 
 // ───────── Heute Abend (Fernseh-Launcher, 24.10.2026) ─────────
@@ -706,6 +882,10 @@ Deno.serve(async (req) => {
         .update(await details(m.kind as Kind, m.tmdb_id))
         .eq('id', m.id)
       return reply({ ok: true, message: 'Aktualisiert' })
+    }
+    if (action === 'suggest') {
+      // App öffnet „Vorschläge“: neu rechnen, wenn es noch keine gibt oder die letzten älter als 6 Std sind
+      return reply({ ok: true, ...(await suggest(body.force === true)) })
     }
     if (action === 'providers') {
       const data = await tmdb('/watch/providers/movie', { watch_region: 'DE' })

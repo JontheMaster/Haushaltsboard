@@ -7,18 +7,19 @@ import { PageHeader } from '../../components/PageHeader'
 import { useMembers } from '../../lib/members'
 import { AddSheet } from './AddSheet'
 import { MovieSheet } from './MovieSheet'
-import { euro, ourRent, ourServices, useFilmConfig, useMovieStore, type Movie } from './movieStore'
+import { euro, ourRent, ourServices, PART_KEY, useFilmConfig, useMovieStore, type Movie } from './movieStore'
+import { Suggestions } from './Suggestions'
 import { PosterCard } from './Poster'
 import { Roulette } from './Roulette'
 import { YearList } from './YearList'
 
-type Part = 'liste' | 'gesehen'
+type Part = 'liste' | 'vorschlaege' | 'gesehen'
 type Filter = 'ours' | 'both' | 'short' | 'movie' | 'tv'
 
-const PART_KEY = 'hb-film-part'
 const savedPart = (): Part => {
   try {
-    return localStorage.getItem(PART_KEY) === 'gesehen' ? 'gesehen' : 'liste'
+    const v = localStorage.getItem(PART_KEY)
+    return v === 'gesehen' || v === 'vorschlaege' ? v : 'liste'
   } catch {
     return 'liste'
   }
@@ -105,6 +106,14 @@ export function FilmsPage({
           <button type="button" className={part === 'liste' ? 'is-on' : ''} aria-pressed={part === 'liste'} onClick={() => setPart('liste')}>
             Merkliste{list.length ? ` · ${list.length}` : ''}
           </button>
+          <button
+            type="button"
+            className={part === 'vorschlaege' ? 'is-on' : ''}
+            aria-pressed={part === 'vorschlaege'}
+            onClick={() => setPart('vorschlaege')}
+          >
+            Vorschläge
+          </button>
           <button type="button" className={part === 'gesehen' ? 'is-on' : ''} aria-pressed={part === 'gesehen'} onClick={() => setPart('gesehen')}>
             Gesehen
           </button>
@@ -120,6 +129,8 @@ export function FilmsPage({
 
       {part === 'gesehen' ? (
         <YearList onOpen={setOpen} wall={wall} />
+      ) : part === 'vorschlaege' ? (
+        <Suggestions wall={wall} showToast={showToast} onOpenMovie={setOpen} />
       ) : (
         <>
           {check.length > 0 && (
