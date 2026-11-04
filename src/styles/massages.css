@@ -1,0 +1,204 @@
+/* Massagen-Konto (src/modules/massages/MassagesTile.tsx): zwei Karten in den Personenfarben, große Zahl */
+.hb-massage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.hb-massage-card {
+  --m-color: var(--ink-muted);
+  --m-soft: var(--surface-sunken);
+  --m-ink: var(--ink);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--m-soft);
+  color: var(--m-ink);
+  overflow: hidden;
+}
+.hb-massage-card.hb-person-a {
+  --m-color: var(--person-a);
+  --m-soft: var(--person-a-soft);
+  --m-ink: var(--person-a-ink);
+}
+.hb-massage-card.hb-person-b {
+  --m-color: var(--person-b);
+  --m-soft: var(--person-b-soft);
+  --m-ink: var(--person-b-ink);
+}
+.hb-massage-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.hb-massage-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--m-color);
+  color: var(--surface-raised);
+  font-size: 12px;
+  font-weight: 700;
+}
+.hb-massage-count {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-height: 44px;
+}
+.hb-massage-num {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 44px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.hb-massage-num.is-pop {
+  animation: hb-massage-pop var(--dur-slow) var(--ease-spring) both;
+}
+.hb-massage-unit {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  opacity: 0.85;
+}
+/* drei kleine Herzen steigen einmal auf, wenn eine Massage dazukommt */
+.hb-massage-hearts {
+  position: absolute;
+  left: 4px;
+  bottom: 8px;
+  display: flex;
+  gap: 6px;
+  color: var(--m-color);
+  pointer-events: none;
+}
+.hb-massage-hearts svg {
+  fill: currentColor;
+  animation: hb-massage-float 1.4s var(--ease-out) both;
+}
+.hb-massage-hearts svg:nth-child(2) {
+  animation-delay: 120ms;
+}
+.hb-massage-hearts svg:nth-child(3) {
+  animation-delay: 240ms;
+}
+.hb-massage-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.hb-massage-plus,
+.hb-massage-redeem,
+.hb-massage-undo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: 40px;
+  border-radius: var(--radius-full);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.hb-massage-plus:active,
+.hb-massage-redeem:active,
+.hb-massage-undo:active {
+  transform: scale(0.95);
+}
+.hb-massage-plus:focus-visible,
+.hb-massage-redeem:focus-visible,
+.hb-massage-undo:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring);
+}
+.hb-massage-plus {
+  flex: none;
+  width: 40px;
+  border: 0;
+  background: var(--m-color);
+  color: var(--surface-raised);
+}
+.hb-massage-redeem {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--m-color);
+  background: transparent;
+  color: var(--m-ink);
+}
+.hb-massage-redeem:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.hb-massage-undo {
+  width: 100%;
+  border: 0;
+  background: var(--surface-raised);
+  color: var(--m-ink);
+  animation: hb-fade-in var(--dur-base) var(--ease-out) both;
+}
+.hb-massage-log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.hb-massage-log li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink);
+}
+.hb-massage-log li svg {
+  flex: none;
+  color: var(--ink-muted);
+}
+@keyframes hb-massage-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes hb-massage-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-36px) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-massage-num.is-pop,
+  .hb-massage-hearts svg {
+    animation: none;
+  }
+  .hb-massage-hearts {
+    display: none;
+  }
+}

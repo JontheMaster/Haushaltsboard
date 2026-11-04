@@ -103,8 +103,26 @@ export type Database = {
         Relationships: [Rel<'fin_profiles_member_fkey', 'member', 'members'>]
       }
       fin_categories: {
-        Row: { id: string; name: string; icon: string; color: string; kind: 'expense' | 'income' | 'transfer'; household_default: boolean; monthly_budget: number | null; sort: number }
-        Insert: { id: string; name: string; icon: string; color: string; kind?: 'expense' | 'income' | 'transfer'; household_default?: boolean; monthly_budget?: number | null; sort?: number }
+        Row: {
+          id: string
+          name: string
+          icon: string
+          color: string
+          kind: 'expense' | 'income' | 'transfer'
+          household_default: boolean
+          monthly_budget: number | null
+          sort: number
+        }
+        Insert: {
+          id: string
+          name: string
+          icon: string
+          color: string
+          kind?: 'expense' | 'income' | 'transfer'
+          household_default?: boolean
+          monthly_budget?: number | null
+          sort?: number
+        }
         Update: { monthly_budget?: number | null; household_default?: boolean }
         Relationships: []
       }
@@ -120,7 +138,14 @@ export type Database = {
           created_from: 'seed' | 'manual'
           created_at: string
         }
-        Insert: { pattern: string; field?: 'counterparty' | 'purpose' | 'kind'; category: string; household?: boolean | null; owner: string; created_from?: 'manual' }
+        Insert: {
+          pattern: string
+          field?: 'counterparty' | 'purpose' | 'kind'
+          category: string
+          household?: boolean | null
+          owner: string
+          created_from?: 'manual'
+        }
         Update: { pattern?: string; category?: string; household?: boolean | null }
         Relationships: [Rel<'fin_rules_category_fkey', 'category', 'fin_categories'>, Rel<'fin_rules_owner_fkey', 'owner', 'members'>]
       }
@@ -235,8 +260,23 @@ export type Database = {
           sort: number
           created_at: string
         }
-        Insert: { owner: string; name: string; target_amount: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean; manual_amount?: number }
-        Update: { name?: string; target_amount?: number; source?: 'depot' | 'konto' | 'beides'; deadline?: string | null; household?: boolean; manual_amount?: number }
+        Insert: {
+          owner: string
+          name: string
+          target_amount: number
+          source?: 'depot' | 'konto' | 'beides'
+          deadline?: string | null
+          household?: boolean
+          manual_amount?: number
+        }
+        Update: {
+          name?: string
+          target_amount?: number
+          source?: 'depot' | 'konto' | 'beides'
+          deadline?: string | null
+          household?: boolean
+          manual_amount?: number
+        }
         Relationships: [Rel<'fin_goals_owner_fkey', 'owner', 'members'>]
       }
       fin_hints: {
@@ -270,13 +310,50 @@ export type Database = {
         Relationships: []
       }
       weather_radar: {
-        Row: { id: number; fetched_at: string; first_at: string; now_at: string; step_min: number; width: number; height: number; frame_count: number; frames: string; home_x: number | null; home_y: number | null; nowcast: Json | null }
-        Insert: { id: number; fetched_at: string; first_at: string; now_at: string; step_min?: number; width: number; height: number; frame_count: number; frames: string; home_x?: number | null; home_y?: number | null; nowcast?: Json | null }
+        Row: {
+          id: number
+          fetched_at: string
+          first_at: string
+          now_at: string
+          step_min: number
+          width: number
+          height: number
+          frame_count: number
+          frames: string
+          home_x: number | null
+          home_y: number | null
+          nowcast: Json | null
+        }
+        Insert: {
+          id: number
+          fetched_at: string
+          first_at: string
+          now_at: string
+          step_min?: number
+          width: number
+          height: number
+          frame_count: number
+          frames: string
+          home_x?: number | null
+          home_y?: number | null
+          nowcast?: Json | null
+        }
         Update: Record<string, never>
         Relationships: []
       }
       fin_imports: {
-        Row: { id: string; owner: string; file_name: string | null; account: string | null; from: string | null; to: string | null; rows_total: number; rows_new: number; rows_duplicate: number; at: string }
+        Row: {
+          id: string
+          owner: string
+          file_name: string | null
+          account: string | null
+          from: string | null
+          to: string | null
+          rows_total: number
+          rows_new: number
+          rows_duplicate: number
+          at: string
+        }
         Insert: { owner: string }
         Update: Record<string, never>
         Relationships: [Rel<'fin_imports_owner_fkey', 'owner', 'members'>]
@@ -544,7 +621,16 @@ export type Database = {
           started_by: string | null
           todo_title: string | null
         }
-        Insert: { ends_at: string; label: string; icon?: string; started_at?: string; started_by?: string | null; action_id?: string | null; done_text?: string; todo_title?: string | null }
+        Insert: {
+          ends_at: string
+          label: string
+          icon?: string
+          started_at?: string
+          started_by?: string | null
+          action_id?: string | null
+          done_text?: string
+          todo_title?: string | null
+        }
         Update: { cancelled_at?: string | null; finished_at?: string | null }
         Relationships: [Rel<'timers_started_by_fkey', 'started_by', 'members'>]
       }
@@ -581,10 +667,7 @@ export type Database = {
           urgent?: boolean
         }
         Update: Partial<Database['public']['Tables']['todos']['Row']>
-        Relationships: [
-          Rel<'todos_assignee_fkey', 'assignee', 'members'>,
-          Rel<'todos_done_by_fkey', 'done_by', 'members'>,
-        ]
+        Relationships: [Rel<'todos_assignee_fkey', 'assignee', 'members'>, Rel<'todos_done_by_fkey', 'done_by', 'members'>]
       }
       // Filme (docs/filme-modul.md); Daten von TMDB, schreibt meist die Edge Function `movies`
       movies: {
@@ -637,6 +720,12 @@ export type Database = {
         Insert: { kind: 'movie' | 'tv'; tmdb_id: number; section: 'neu' | 'passt'; title: string }
         Update: { reason?: string | null }
         Relationships: []
+      }
+      massage_log: {
+        Row: { id: string; member: string; delta: number; note: string | null; created_by: string | null; source: string; created_at: string }
+        Insert: { member: string; delta: number; note?: string | null; created_by?: string | null; source?: string }
+        Update: { note?: string | null }
+        Relationships: [Rel<'massage_log_member_fkey', 'member', 'members'>]
       }
       movie_dismissed: {
         Row: { kind: 'movie' | 'tv'; tmdb_id: number; member: string | null; at: string }

@@ -207,6 +207,71 @@
           ]
         },
         {
+          "name": "MassageGewonnen",
+          "slots": [
+            {
+              "name": "person",
+              "type": "MASSAGE_PERSON"
+            }
+          ],
+          "samples": [
+            "{person} hat eine massage gewonnen",
+            "{person} hat die wette gewonnen",
+            "{person} hat gewonnen",
+            "{person} bekommt eine massage",
+            "{person} kriegt eine massage",
+            "{person} hat eine massage gut",
+            "eine massage für {person}",
+            "trag eine massage für {person} ein",
+            "schreib {person} eine massage gut",
+            "gib {person} eine massage",
+            "massage für {person}",
+            "{person} hat sich eine massage verdient"
+          ]
+        },
+        {
+          "name": "MassageEinloesen",
+          "slots": [
+            {
+              "name": "person",
+              "type": "MASSAGE_PERSON"
+            }
+          ],
+          "samples": [
+            "{person} hat eine massage eingelöst",
+            "{person} löst eine massage ein",
+            "{person} hat eine massage bekommen",
+            "{person} hat seine massage bekommen",
+            "{person} hat ihre massage bekommen",
+            "{person} will eine massage einlösen",
+            "zieh {person} eine massage ab",
+            "eine massage für {person} einlösen",
+            "{person} hat die massage bekommen",
+            "massage von {person} einlösen"
+          ]
+        },
+        {
+          "name": "MassagenStand",
+          "slots": [
+            {
+              "name": "person",
+              "type": "MASSAGE_PERSON"
+            }
+          ],
+          "samples": [
+            "wie viele massagen hat {person} gut",
+            "wie viele massagen hat {person} noch",
+            "wie viele massagen bekommt {person} noch",
+            "wie viele massagen haben wir gut",
+            "wie viele massagen haben wir noch",
+            "wer hat noch massagen gut",
+            "wie ist der massagen stand",
+            "wie steht es mit den massagen",
+            "massagen stand",
+            "wie viele massagen sind offen"
+          ]
+        },
+        {
           "name": "AMAZON.HelpIntent",
           "samples": [
             "was kann ich sagen",
@@ -286,6 +351,23 @@
                   "ausgegangen",
                   "abgeschaltet"
                 ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MASSAGE_PERSON",
+          "values": [
+            {
+              "name": {
+                "value": "Jonathan",
+                "synonyms": []
+              }
+            },
+            {
+              "name": {
+                "value": "Leviona",
+                "synonyms": []
               }
             }
           ]

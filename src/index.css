@@ -9,6 +9,7 @@
 @import './styles/radar.css';
 @import './styles/movies.css';
 @import './styles/ast.css';
+@import './styles/massages.css';
 
 @utility shadow-tile {
   box-shadow: var(--shadow-tile);

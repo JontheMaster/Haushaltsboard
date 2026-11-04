@@ -308,6 +308,57 @@ async function setAst(slots: Record<string, Slot> | undefined): Promise<Response
   return speak('Okay.')
 }
 
+// ───────── Massagen (Wetten, Wunsch Jonathan 4.11.2026) ─────────
+
+const massageWord = (n: number) => (n === 1 ? 'eine Massage' : `${n} Massagen`)
+
+async function massagePeople(): Promise<{ id: string; name: string }[]> {
+  const { data } = await db.from('members').select('id, name, is_board').eq('is_board', false)
+  return (data ?? []).map((m) => ({ id: m.id, name: m.name }))
+}
+
+async function massageBalance(member: string): Promise<number> {
+  const { data } = await db.from('massage_log').select('delta').eq('member', member)
+  return Math.max(
+    0,
+    (data ?? []).reduce((sum, r) => sum + r.delta, 0),
+  )
+}
+
+/** „Leviona hat eine Massage gewonnen“ (+1) bzw. „… eingelöst“ (-1); ohne Namen fragt Alexa nach */
+async function bookMassage(slots: Record<string, Slot> | undefined, delta: 1 | -1): Promise<Response> {
+  const people = await massagePeople()
+  const said = slotText(slots?.person).toLowerCase()
+  const who = people.find((p) => p.name.toLowerCase() === said) ?? people.find((p) => said && p.name.toLowerCase().startsWith(said.slice(0, 3)))
+  if (!who) {
+    const ask = delta > 0 ? 'Wer hat gewonnen' : 'Wer löst eine Massage ein'
+    const names = people.map((p) => p.name).join(' oder ')
+    return speak(`${ask}, ${names}?`, { end: false, reprompt: `Sag zum Beispiel: ${people[0]?.name ?? 'Jonathan'} hat eine Massage gewonnen.` })
+  }
+  const before = await massageBalance(who.id)
+  if (delta < 0 && before === 0) return speak(`${who.name} hat gerade keine Massage gut.`)
+  const { error } = await db.from('massage_log').insert({ member: who.id, delta, source: 'alexa' })
+  if (error) return speak('Das hat nicht geklappt. Versuch es bitte gleich noch einmal.')
+  const now = before + delta
+  return delta > 0
+    ? speak(`Glückwunsch, ${who.name}! Jetzt ${now === 1 ? 'eine Massage' : `${now} Massagen`} gut.`)
+    : speak(`Okay, eingelöst. ${who.name} hat ${now === 0 ? 'jetzt keine mehr' : `noch ${massageWord(now)}`} gut.`)
+}
+
+/** „Wie viele Massagen hat Leviona gut?“ bzw. ohne Namen für beide */
+async function massageStatus(slots: Record<string, Slot> | undefined): Promise<Response> {
+  const people = await massagePeople()
+  const said = slotText(slots?.person).toLowerCase()
+  const asked = people.filter((p) => !said || p.name.toLowerCase() === said)
+  const parts = await Promise.all(
+    (asked.length ? asked : people).map(async (p) => {
+      const n = await massageBalance(p.id)
+      return `${p.name} hat ${n === 0 ? 'keine Massage' : massageWord(n)} gut`
+    }),
+  )
+  return speak(`${parts.join(', ')}.`)
+}
+
 // ───────── Handler ─────────
 
 Deno.serve(async (req) => {
@@ -354,6 +405,12 @@ Deno.serve(async (req) => {
         return await setAst(r.intent.slots)
       case 'EinkaufHinzufuegen':
         return await addShopping(r.intent.slots?.artikel?.value)
+      case 'MassageGewonnen':
+        return await bookMassage(r.intent.slots, 1)
+      case 'MassageEinloesen':
+        return await bookMassage(r.intent.slots, -1)
+      case 'MassagenStand':
+        return await massageStatus(r.intent.slots)
       case 'AMAZON.HelpIntent':
         return speak(
           'Sag einfach, was ansteht, zum Beispiel: wir müssen morgen den Müll rausbringen. Oder was fehlt: wir brauchen Milch. Oder frag: was steht heute an?',

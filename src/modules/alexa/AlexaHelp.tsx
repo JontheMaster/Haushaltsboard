@@ -10,7 +10,10 @@ type Intent = { name: string; samples?: string[] }
 type SlotType = { name: string; values: { name: { value: string; synonyms?: string[] } }[] }
 
 const lm = model.interactionModel.languageModel as { invocationName: string; intents: Intent[]; types?: SlotType[] }
-const samplesOf = (intent: string) => lm.intents.find((i) => i.name === intent)?.samples ?? []
+const samplesOf = (intent: string) =>
+  intent === 'MassageGewonnen'
+    ? ['MassageGewonnen', 'MassageEinloesen', 'MassagenStand'].flatMap((n) => lm.intents.find((i) => i.name === n)?.samples ?? [])
+    : (lm.intents.find((i) => i.name === intent)?.samples ?? [])
 const timerTypes = lm.types?.find((t) => t.name === 'TIMER_ART')?.values ?? []
 
 // Immer „Alexa, sag unserem Haushalt, …“ davor (Aufrufname des Skills, Entscheidung Jonathan 7.10.2026; mit Alexa+ geht der Skill nicht, siehe CLAUDE.md); danach geht fast jede natürliche Formulierung
@@ -60,6 +63,16 @@ const GROUPS: { title: string; intent: string; hint?: string; examples: Example[
       { say: 'die Waschmaschine läuft', does: 'Alexa fragt, welche Wäsche' },
     ],
   },
+  {
+    title: 'Massagen',
+    intent: 'MassageGewonnen',
+    hint: 'Zählt im Massagen-Konto am Handy mit (Kachel „Massagen“). Immer mit Namen, Alexa weiß nicht, wer spricht.',
+    examples: [
+      { say: 'Leviona hat eine Massage gewonnen', does: 'Leviona bekommt eine Massage gut' },
+      { say: 'Jonathan hat eine Massage eingelöst', does: 'Eine Massage von Jonathan abziehen' },
+      { say: 'wie viele Massagen haben wir gut', does: 'Stand für beide' },
+    ],
+  },
 ]
 
 /** Alexa: was man sagen kann, mit allen eingestellten Sätzen. Ein- und ausschalten geht über die Alexa-App. */
@@ -105,6 +118,7 @@ function AllSamples({ samples }: { samples: string[] }) {
       .replace(/\{titel\}/g, '[Aufgabe]')
       .replace(/\{artikel\}/g, '[Artikel]')
       .replace(/\{art\}/g, '[Timer]')
+      .replace(/\{person\}/g, '[Name]')
   return (
     <div className="flex flex-col gap-2">
       <button
