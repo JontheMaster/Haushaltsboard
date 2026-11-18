@@ -1,0 +1,318 @@
+{
+ "source": "blakevanlan/KingdomCreator@7887e37e739c",
+ "license": "MIT",
+ "sets": [
+  {
+   "id": "baseset",
+   "name_de": "Dominion",
+   "boxes": [
+    {
+     "id": "baseset",
+     "name_de": "Dominion",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 25
+    },
+    {
+     "id": "baseset2",
+     "name_de": "Dominion II",
+     "edition": 2,
+     "update_pack": false,
+     "cards": 26
+    },
+    {
+     "id": "baseset2add",
+     "name_de": "Dominion Updatepack",
+     "edition": 2,
+     "update_pack": true,
+     "cards": 7
+    }
+   ]
+  },
+  {
+   "id": "intrigue",
+   "name_de": "Die Intrige",
+   "boxes": [
+    {
+     "id": "intrigue",
+     "name_de": "Die Intrige",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 25
+    },
+    {
+     "id": "intrigue2",
+     "name_de": "Die Intrige II",
+     "edition": 2,
+     "update_pack": false,
+     "cards": 26
+    },
+    {
+     "id": "intrigue2add",
+     "name_de": "Die Intrige Updatepack",
+     "edition": 2,
+     "update_pack": true,
+     "cards": 7
+    }
+   ]
+  },
+  {
+   "id": "seaside",
+   "name_de": "Seaside",
+   "boxes": [
+    {
+     "id": "seaside",
+     "name_de": "Seaside",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 26
+    },
+    {
+     "id": "seaside2",
+     "name_de": "Seaside II",
+     "edition": 2,
+     "update_pack": false,
+     "cards": 27
+    },
+    {
+     "id": "seaside2add",
+     "name_de": "Seaside Updatepack",
+     "edition": 2,
+     "update_pack": true,
+     "cards": 9
+    }
+   ]
+  },
+  {
+   "id": "alchemy",
+   "name_de": "Die Alchemisten",
+   "boxes": [
+    {
+     "id": "alchemy",
+     "name_de": "Die Alchemisten",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 12
+    }
+   ]
+  },
+  {
+   "id": "prosperity",
+   "name_de": "Blütezeit",
+   "boxes": [
+    {
+     "id": "prosperity",
+     "name_de": "Blütezeit",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 25
+    },
+    {
+     "id": "prosperity2",
+     "name_de": "Blütezeit II",
+     "edition": 2,
+     "update_pack": false,
+     "cards": 25
+    },
+    {
+     "id": "prosperity2add",
+     "name_de": "Blütezeit updatepack",
+     "edition": 2,
+     "update_pack": true,
+     "cards": 9
+    }
+   ]
+  },
+  {
+   "id": "guildscornucopia",
+   "name_de": "Die Gilden / Reiche Ernte",
+   "boxes": [
+    {
+     "id": "cornucopia",
+     "name_de": "Reiche Ernte",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 13
+    },
+    {
+     "id": "guilds",
+     "name_de": "Die Gilden",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 13
+    },
+    {
+     "id": "guildscornucopia2",
+     "name_de": "Die Gilden / Reiche Ernte II",
+     "edition": 2,
+     "update_pack": false,
+     "cards": 26
+    },
+    {
+     "id": "guildscornucopia2add",
+     "name_de": "Die Gilden / Reiche Ernte Updatepack",
+     "edition": 2,
+     "update_pack": true,
+     "cards": 8
+    }
+   ]
+  },
+  {
+   "id": "hinterlands",
+   "name_de": "Hinterland",
+   "boxes": [
+    {
+     "id": "hinterlands",
+     "name_de": "Hinterland",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 26
+    },
+    {
+     "id": "hinterlands2",
+     "name_de": "Hinterland II",
+     "edition": 2,
+     "update_pack": false,
+     "cards": 26
+    },
+    {
+     "id": "hinterlands2add",
+     "name_de": "Hinterland Updatepack",
+     "edition": 2,
+     "update_pack": true,
+     "cards": 9
+    }
+   ]
+  },
+  {
+   "id": "darkages",
+   "name_de": "Dark Ages",
+   "boxes": [
+    {
+     "id": "darkages",
+     "name_de": "Dark Ages",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 35
+    }
+   ]
+  },
+  {
+   "id": "adventures",
+   "name_de": "Abenteuer",
+   "boxes": [
+    {
+     "id": "adventures",
+     "name_de": "Abenteuer",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 50
+    }
+   ]
+  },
+  {
+   "id": "empires",
+   "name_de": "Empires",
+   "boxes": [
+    {
+     "id": "empires",
+     "name_de": "Empires",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 58
+    }
+   ]
+  },
+  {
+   "id": "nocturne",
+   "name_de": "Nocturne",
+   "boxes": [
+    {
+     "id": "nocturne",
+     "name_de": "Nocturne",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 33
+    }
+   ]
+  },
+  {
+   "id": "renaissance",
+   "name_de": "Renaissance",
+   "boxes": [
+    {
+     "id": "renaissance",
+     "name_de": "Renaissance",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 45
+    }
+   ]
+  },
+  {
+   "id": "menagerie",
+   "name_de": "Menagerie",
+   "boxes": [
+    {
+     "id": "menagerie",
+     "name_de": "Menagerie",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 70
+    }
+   ]
+  },
+  {
+   "id": "allies",
+   "name_de": "Verbündete",
+   "boxes": [
+    {
+     "id": "allies",
+     "name_de": "Verbündete",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 54
+    }
+   ]
+  },
+  {
+   "id": "plunder",
+   "name_de": "Plünderer",
+   "boxes": [
+    {
+     "id": "plunder",
+     "name_de": "Plünderer",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 70
+    }
+   ]
+  },
+  {
+   "id": "risingsun",
+   "name_de": null,
+   "boxes": [
+    {
+     "id": "risingsun",
+     "name_de": null,
+     "edition": 1,
+     "update_pack": false,
+     "cards": 50
+    }
+   ]
+  },
+  {
+   "id": "promos",
+   "name_de": "Promos",
+   "boxes": [
+    {
+     "id": "promos",
+     "name_de": "Promos",
+     "edition": 1,
+     "update_pack": false,
+     "cards": 12
+    }
+   ]
+  }
+ ]
+}

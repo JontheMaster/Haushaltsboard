@@ -1,0 +1,17 @@
+{
+  "names_de": {},
+  "sets_de": {},
+  "cards": {
+    "adventures_event_seaway": { "cost": { "coins": 5 }, "cost_note": "KingdomCreator hat 3, richtig ist 5" },
+    "risingsun_event_gather": { "cost": { "coins": 7 }, "cost_note": "KingdomCreator hat 3, richtig ist 7" }
+  },
+  "review": {
+    "empires_event_windfall": "Tippfehler? „Glücksfall“",
+    "renaissance_project_citadel": "Tippfehler? „Zitadelle“",
+    "promos_captain": "Eigenname statt Übersetzung, stimmt das so auf der Karte?",
+    "promos_church": "Eigenname statt Übersetzung, stimmt das so auf der Karte?",
+    "allies_ally_coastalhaven": "„Höhle“ für „Coastal“ (Küste)?",
+    "intrigue_harem": "heißt in der 2. Edition englisch „Farm“, deutscher Name der 2. Edition?",
+    "guildscornucopia_ferryman": "Kosten: KingdomCreator nennt einmal 3, einmal 5 Münzen; übernommen 5 (zweite Quelle sagt auch 5)"
+  }
+}

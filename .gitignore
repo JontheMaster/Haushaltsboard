@@ -21,3 +21,6 @@ supabase/.env
 .DS_Store
 Thumbs.db
 *.log
+
+# Dominion-Quelldaten (Cache des Build-Scripts)
+scripts/dominion/.cache
