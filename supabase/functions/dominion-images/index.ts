@@ -43,8 +43,46 @@ async function copy(admin: ReturnType<typeof adminClient>, raw: string, from: st
   return !error
 }
 
+async function sha256Hex(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** Hochladen dürfen der Cron-Schlüssel oder ein gültiger Token einer Person (nicht das Tablet) */
+async function uploadAllowed(admin: ReturnType<typeof adminClient>, req: Request): Promise<boolean> {
+  const cronKey = req.headers.get('x-cron-key')
+  if (cronKey) {
+    const { data } = await admin.from('push_config').select('cron_key').eq('id', 1).single()
+    return !!data && cronKey === data.cron_key
+  }
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim()
+  if (!/^nfc_[0-9a-f]{48}$/.test(token)) return false
+  const { data } = await admin.from('member_tokens').select('member').eq('token_hash', await sha256Hex(token)).eq('revoked', false).maybeSingle()
+  if (!data) return false
+  const { data: m } = await admin.from('members').select('is_board').eq('id', data.member).maybeSingle()
+  return !!m && !m.is_board
+}
+
+/**
+ * Eigene Bilder ablegen (z. B. deutsche Karten aus scripts/dominion/karten-de, 18.11.2026): PUT ?path=card/<id>.jpg,
+ * Bild als Body, Schutz über x-cron-key (push_config.cron_key) oder einen Kurzbefehl-Token `Bearer nfc_…` (member_tokens). Vorhandene Bilder werden überschrieben; die automatische
+ * Ablage oben füllt nur Fehlendes auf und überschreibt sie nicht wieder.
+ */
+async function putImage(req: Request): Promise<Response> {
+  const admin = adminClient()
+  if (!(await uploadAllowed(admin, req))) return new Response('Nicht erlaubt', { status: 403 })
+  const path = new URL(req.url).searchParams.get('path') ?? ''
+  if (!/^(card|art)\/[a-z0-9_]+\.jpg$/.test(path)) return new Response('Pfad ungültig', { status: 400 })
+  const body = new Uint8Array(await req.arrayBuffer())
+  if (!body.length || body.length > 5_000_000) return new Response('Bild fehlt oder zu groß', { status: 400 })
+  const contentType = req.headers.get('content-type') === 'image/png' ? 'image/png' : 'image/jpeg'
+  const { error } = await admin.storage.from(BUCKET).upload(path, body, { contentType, upsert: true })
+  return error ? new Response(error.message, { status: 500 }) : Response.json({ ok: true, path })
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
+  if (req.method === 'PUT') return await putImage(req)
   const denied = await requireMember(req)
   if (denied) return denied
 
