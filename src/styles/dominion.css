@@ -384,7 +384,8 @@
   touch-action: pan-y;
 }
 .hb-dom-viewer-card {
-  width: min(100%, 360px);
+  /* passt mit Kopf und Knöpfen ohne Scrollen ins Fenster (Kartenformat 296 × 473) */
+  width: min(100%, 360px, calc((92dvh - 250px) * 0.626));
   aspect-ratio: 296 / 473;
   border-radius: var(--radius-md);
   overflow: hidden;

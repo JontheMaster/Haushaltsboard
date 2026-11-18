@@ -70,9 +70,13 @@ export function syncImages(force = false): Promise<void> {
       const { data, error } = await supabase.functions.invoke<{ done: number; remaining: number }>('dominion-images', { body: {} })
       if (error || !data) break
       if (data.done > 0) {
-        for (const [p, v] of cache) if (!v.url) cache.delete(p)
-        for (const p of cache.keys()) pending.add(p)
-        if (!timer) timer = setTimeout(flush, 30)
+        // bisher fehlende Bilder neu anfragen
+        const missing = [...cache].filter(([, v]) => !v.url).map(([p]) => p)
+        for (const p of missing) {
+          cache.delete(p)
+          pending.add(p)
+        }
+        if (missing.length && !timer) timer = setTimeout(flush, 30)
       }
       if (!data.remaining || !data.done) break
     }
