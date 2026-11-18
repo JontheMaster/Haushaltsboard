@@ -1,0 +1,264 @@
+[
+ {
+  "id": "copper",
+  "name_de": "Kupfer",
+  "name_en": "Copper",
+  "set": "baseset",
+  "boxes": [
+   "baseset2",
+   "baseset"
+  ]
+ },
+ {
+  "id": "silver",
+  "name_de": "Silber",
+  "name_en": "Silver",
+  "set": "baseset",
+  "boxes": [
+   "baseset2",
+   "baseset"
+  ]
+ },
+ {
+  "id": "gold",
+  "name_de": "Gold",
+  "name_en": "Gold",
+  "set": "baseset",
+  "boxes": [
+   "baseset2",
+   "baseset"
+  ]
+ },
+ {
+  "id": "estate",
+  "name_de": "Anwesen",
+  "name_en": "Estate",
+  "set": "baseset",
+  "boxes": [
+   "baseset2",
+   "baseset"
+  ]
+ },
+ {
+  "id": "duchy",
+  "name_de": "Herzogtum",
+  "name_en": "Duchy",
+  "set": "baseset",
+  "boxes": [
+   "baseset2",
+   "baseset"
+  ]
+ },
+ {
+  "id": "province",
+  "name_de": "Provinz",
+  "name_en": "Province",
+  "set": "baseset",
+  "boxes": [
+   "baseset2",
+   "baseset"
+  ]
+ },
+ {
+  "id": "curse",
+  "name_de": "Fluch",
+  "name_en": "Curse",
+  "set": "baseset",
+  "boxes": [
+   "baseset2",
+   "baseset"
+  ]
+ },
+ {
+  "id": "potion",
+  "name_de": "Trank",
+  "name_en": "Potion",
+  "set": "alchemy",
+  "boxes": [
+   "alchemy"
+  ]
+ },
+ {
+  "id": "platinum",
+  "name_de": "Platin",
+  "name_en": "Platinum",
+  "set": "prosperity",
+  "boxes": [
+   "prosperity",
+   "prosperity2"
+  ]
+ },
+ {
+  "id": "colony",
+  "name_de": "Kolonie",
+  "name_en": "Colony",
+  "set": "prosperity",
+  "boxes": [
+   "prosperity",
+   "prosperity2"
+  ]
+ },
+ {
+  "id": "trade_route_mat",
+  "name_de": null,
+  "name_en": "Trade Route mat",
+  "set": "prosperity",
+  "boxes": [
+   "prosperity"
+  ]
+ },
+ {
+  "id": "vp_tokens",
+  "name_de": null,
+  "name_en": "VP tokens",
+  "set": "prosperity",
+  "boxes": [
+   "prosperity"
+  ]
+ },
+ {
+  "id": "coin_tokens",
+  "name_de": null,
+  "name_en": "Coin tokens",
+  "set": "prosperity",
+  "boxes": [
+   "prosperity",
+   "seaside"
+  ]
+ },
+ {
+  "id": "island_mat",
+  "name_de": null,
+  "name_en": "Island mat",
+  "set": "seaside",
+  "boxes": [
+   "seaside"
+  ]
+ },
+ {
+  "id": "native_village_mat",
+  "name_de": null,
+  "name_en": "Native Village mat",
+  "set": "seaside",
+  "boxes": [
+   "seaside"
+  ]
+ },
+ {
+  "id": "pirate_ship_mat",
+  "name_de": null,
+  "name_en": "Pirate Ship mat",
+  "set": "seaside",
+  "boxes": [
+   "seaside"
+  ]
+ },
+ {
+  "id": "embargo_tokens",
+  "name_de": null,
+  "name_en": "Embargo tokens",
+  "set": "seaside",
+  "boxes": [
+   "seaside"
+  ]
+ },
+ {
+  "id": "abandonedmine",
+  "name_de": null,
+  "name_en": "Abandoned Mine",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "ruinedlibrary",
+  "name_de": null,
+  "name_en": "Ruined Library",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "ruinedmarket",
+  "name_de": null,
+  "name_en": "Ruined Market",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "ruinedvillage",
+  "name_de": null,
+  "name_en": "Ruined Village",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "survivors",
+  "name_de": null,
+  "name_en": "Survivors",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "hovel",
+  "name_de": null,
+  "name_en": "Hovel",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "necropolis",
+  "name_de": null,
+  "name_en": "Necropolis",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "overgrownestate",
+  "name_de": null,
+  "name_en": "Overgrown Estate",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "spoils",
+  "name_de": null,
+  "name_en": "Spoils",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "madman",
+  "name_de": null,
+  "name_en": "Madman",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ },
+ {
+  "id": "mercenary",
+  "name_de": null,
+  "name_en": "Mercenary",
+  "set": "darkages",
+  "boxes": [
+   "darkages"
+  ]
+ }
+]

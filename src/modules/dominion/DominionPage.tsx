@@ -24,6 +24,7 @@ import {
 import { ALL_CARDS, CARD_BY_ID, costValue, generateKingdom, isOwned, kingdomFromSaved, newSeed, ownedSets, swapCard } from './generator'
 import { History } from './History'
 import { syncImages, useCardImages } from './images'
+import { Setup } from './Setup'
 import { Stats } from './Stats'
 import type { Attacks, Card, Difficulty, GenOptions, LandscapeCount, Mix } from './types'
 
@@ -319,16 +320,7 @@ export default function DominionPage({ startTab = 'set', onClose }: { startTab?:
                   </div>
                 )}
 
-                {k.extras.length > 0 && (
-                  <Chips title="Zusätzlich brauchst du">
-                    {k.extras.map((e) => (
-                      <span key={e.id} className="hb-badge">
-                        <Icon icon={Package} size={14} />
-                        {e.label}
-                      </span>
-                    ))}
-                  </Chips>
-                )}
+                <Setup k={k} onOpen={(list, i) => setViewer({ cards: list, i, inSet: false })} />
 
                 {k.reasons.length > 0 && (
                   <Chips title="Warum es passt">
@@ -376,11 +368,15 @@ function Hero({ owned, playedIds, neverCount }: { owned: Card[]; playedIds: Set<
   const picks = useMemo(() => {
     const pool = owned.filter((c) => !playedIds.has(c.id))
     const from = pool.length >= 3 ? pool : owned
-    const out: Card[] = []
-    for (let i = 0; out.length < 3 && i < 12 && from.length; i++) {
-      const c = from[(day * (i + 7) * 31) % from.length]
-      if (!out.includes(c)) out.push(c)
+    // gemischt mit dem Tag als Startwert: jeden Tag andere, verschiedene Karten
+    const list = [...from]
+    let seed = day
+    for (let i = list.length - 1; i > 0; i--) {
+      seed = (seed * 1103515245 + 12345) % 2147483648
+      const j = seed % (i + 1)
+      ;[list[i], list[j]] = [list[j], list[i]]
     }
+    const out = list.slice(0, 3)
     return out
   }, [owned, playedIds, day])
   const arts = useCardImages(

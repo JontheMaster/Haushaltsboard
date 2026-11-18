@@ -24,8 +24,17 @@ export function Stats({ games, owned, onOpenCard }: { games: DominionGame[]; own
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
       .map(([id, n]) => ({ card: CARD_BY_ID.get(id)!, n }))
-    const perSet = ownedSets(owned).map((set) => ({ set, n: played.filter((g) => g.kingdom.some((id) => CARD_BY_ID.get(id)?.set === set)).length }))
-    perSet.sort((a, b) => b.n - a.n)
+    // pro Erweiterung: wie viele ihrer Karten schon gespielt wurden und in wie vielen Partien sie dabei war
+    const perSet = ownedSets(owned).map((set) => {
+      const inSet = mine.filter((c) => c.set === set)
+      return {
+        set,
+        total: inSet.length,
+        seen: inSet.filter((c) => counts.has(c.id)).length,
+        games: played.filter((g) => g.kingdom.some((id) => CARD_BY_ID.get(id)?.set === set)).length,
+      }
+    })
+    perSet.sort((a, b) => b.seen / b.total - a.seen / a.total || a.set.localeCompare(b.set))
     const good = played.filter((g) => g.rating === 'gut').length
     const meh = played.filter((g) => g.rating === 'naja').length
     return { mine, never, top, perSet, good, meh, seen: mine.length - never.length }
@@ -33,8 +42,7 @@ export function Stats({ games, owned, onOpenCard }: { games: DominionGame[]; own
 
   const neverShown = allNever ? s.never : s.never.slice(0, 9)
   const arts = useCardImages([...neverShown.map((c) => c.id), ...s.top.map((t) => t.card.id)], 'art')
-  const maxSet = Math.max(1, ...s.perSet.map((p) => p.n))
-
+  
   return (
     <div className="flex flex-col gap-4">
       <div className="hb-dom-stats-head">
@@ -101,20 +109,24 @@ export function Stats({ games, owned, onOpenCard }: { games: DominionGame[]; own
         </section>
       )}
 
-      {played.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h4 className="hb-dom-sub">Erweiterungen</h4>
-          {s.perSet.map((p) => (
-            <div key={p.set} className="hb-dom-bar-row">
-              <span className="w-[112px] shrink-0 truncate text-label text-ink">{setName(p.set)}</span>
-              <span className="hb-dom-bar">
-                <span style={{ width: `${(p.n / maxSet) * 100}%` }} />
+      <section className="flex flex-col gap-3">
+        <h4 className="hb-dom-sub">So weit seid ihr pro Erweiterung</h4>
+        {s.perSet.map((p) => (
+          <div key={p.set} className="hb-dom-set-progress">
+            <div className="flex items-baseline gap-2">
+              <span className="min-w-0 flex-1 truncate font-semibold text-ink">{setName(p.set)}</span>
+              <span className="text-label text-ink-muted">
+                {p.seen} von {p.total} Karten{p.seen === p.total && p.total > 0 ? ' · alle gespielt' : ''}
               </span>
-              <span className="w-[32px] text-right text-label text-ink-muted">{p.n}</span>
             </div>
-          ))}
-        </section>
-      )}
+            <span className={`hb-dom-bar ${p.seen === p.total && p.total > 0 ? 'is-done' : ''}`} role="img" aria-label={`${setName(p.set)}: ${p.seen} von ${p.total} Karten gespielt`}>
+              <span style={{ width: `${p.total ? (p.seen / p.total) * 100 : 0}%` }} />
+            </span>
+            <span className="text-label text-ink-muted">{p.games === 1 ? 'in 1 Partie dabei' : `in ${p.games} Partien dabei`}</span>
+          </div>
+        ))}
+      </section>
+
       {!played.length && <p className="text-body text-ink-muted">Sobald ihr Sets spielt, steht hier, was ihr schon kennt und was noch wartet.</p>}
     </div>
   )

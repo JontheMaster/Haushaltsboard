@@ -374,46 +374,58 @@
   cursor: default;
 }
 
-/* Große Karte zum Lesen */
+/* Große Karte zum Lesen: eigenes Vollbild, Kopf oben, Karte füllt die Mitte, Knöpfe unten (nichts überlappt) */
 .hb-dom-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  overscroll-behavior: contain;
+  touch-action: pan-x;
+  animation: hb-dom-in var(--dur-base) var(--ease-out);
+}
+.hb-dom-viewer-head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  padding: calc(var(--space-3) + env(safe-area-inset-top)) var(--space-4) var(--space-2);
+}
+.hb-dom-viewer-name {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hb-dom-viewer-stage {
   position: relative;
   display: flex;
+  flex: 1;
+  min-height: 0;
   align-items: center;
   justify-content: center;
-  min-height: 0;
-  touch-action: pan-y;
+  padding: var(--space-2) var(--space-4);
 }
-.hb-dom-viewer-card {
-  /* passt mit Kopf und Knöpfen ohne Scrollen ins Fenster (Kartenformat 296 × 473) */
-  width: min(100%, 360px, calc((92dvh - 250px) * 0.626));
-  aspect-ratio: 296 / 473;
+.hb-dom-viewer-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
   border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--surface-sunken);
   box-shadow: var(--shadow-lift), 0 0 0 3px var(--dom-frame, var(--dom-action));
   animation: hb-dom-in var(--dur-base) var(--ease-out);
 }
-.hb-dom-viewer-card.is-landscape {
-  width: 100%;
-  aspect-ratio: 473 / 296;
-}
-.hb-dom-viewer-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
 .hb-dom-viewer-empty {
   display: flex;
-  height: 100%;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: var(--space-2);
   color: var(--ink-muted);
 }
 .hb-dom-viewer-nav {
   position: absolute;
-  z-index: 1;
   top: 50%;
   width: 44px;
   height: 44px;
@@ -422,10 +434,19 @@
   box-shadow: var(--shadow-tile);
 }
 .hb-dom-viewer-nav.is-prev {
-  left: 0;
+  left: var(--space-1);
 }
 .hb-dom-viewer-nav.is-next {
-  right: 0;
+  right: var(--space-1);
+}
+.hb-dom-viewer-foot {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
 }
 
 /* Bewerten */
@@ -637,6 +658,82 @@
   background: var(--accent);
   transform-origin: left;
   animation: hb-dom-grow var(--dur-calm) var(--ease-out) both;
+}
+
+.hb-dom-set-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+}
+.hb-dom-bar.is-done > span {
+  background: var(--success-fill);
+}
+
+.hb-dom-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+}
+/* kleine Karten nebeneinander, seitlich wischen */
+.hb-dom-thumbs {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0 calc(var(--space-3) * -1);
+  padding: 0 var(--space-3) var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hb-dom-thumbs::-webkit-scrollbar {
+  display: none;
+}
+.hb-dom-thumb {
+  display: flex;
+  width: 64px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.hb-dom-thumb.is-plain {
+  cursor: default;
+}
+.hb-dom-thumb-img {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 102px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  box-shadow: var(--shadow-tile);
+}
+.hb-dom-thumb-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hb-dom-thumb-name {
+  width: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hb-dom-search-row {

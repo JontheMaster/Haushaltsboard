@@ -41,6 +41,7 @@ const TYPE_DE: Record<string, string> = {
   ally: 'Verbündete',
   trait: 'Eigenschaft',
   prophecy: 'Prophezeiung',
+  support: 'Zum Aufbau',
 }
 export const typeWords = (c: Card) => c.types.map((t) => TYPE_DE[t] ?? t).join(' · ')
 

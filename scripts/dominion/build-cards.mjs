@@ -314,6 +314,44 @@ for (const card of cards.values()) {
   if (!Object.keys(byBox).length) missingImg++
   images[c.id] = { boxes: c.boxes, card: byBox, art }
 }
+// Basiskarten und Zusatzmaterial (Aufbau): Bild pro Schachtel, abgelegt wie Karten unter card/sup_<id>.jpg.
+// Deutsche Namen nur, wo sie sicher sind; sonst zeigt die App die Gruppe („Ruinen“) und das Bild.
+const S = (id, name_de, name_en, set, byBox) => ({ id, name_de, name_en, set, byBox })
+const SUPPORT = [
+  ...[
+    ['copper', 'Kupfer', 'Copper'],
+    ['silver', 'Silber', 'Silver'],
+    ['gold', 'Gold', 'Gold'],
+    ['estate', 'Anwesen', 'Estate'],
+    ['duchy', 'Herzogtum', 'Duchy'],
+    ['province', 'Provinz', 'Province'],
+    ['curse', 'Fluch', 'Curse'],
+  ].map(([id, de, en]) => S(id, de, en, 'baseset', { baseset2: `baseset2/baseset2_${id}_2nd.jpg`, baseset: `baseset/baseset_${id}.jpg` })),
+  S('potion', 'Trank', 'Potion', 'alchemy', { alchemy: 'alchemy/alchemy_potion.jpg' }),
+  S('platinum', 'Platin', 'Platinum', 'prosperity', { prosperity: 'prosperity/prosperity_platinum.jpg', prosperity2: 'prosperity/prosperity_platinum_2nd.jpg' }),
+  S('colony', 'Kolonie', 'Colony', 'prosperity', { prosperity: 'prosperity/prosperity_colony.jpg', prosperity2: 'prosperity/prosperity_colony_2nd.jpg' }),
+  S('trade_route_mat', null, 'Trade Route mat', 'prosperity', { prosperity: 'prosperity/prosperity_other_Trade_Route_mat.jpg' }),
+  S('vp_tokens', null, 'VP tokens', 'prosperity', { prosperity: 'prosperity/prosperity_other_VPTokens.jpg' }),
+  S('coin_tokens', null, 'Coin tokens', 'prosperity', { prosperity: 'prosperity/prosperity_other_CoinsTokens.jpg', seaside: 'seaside/seaside_other_CoinsTokens.jpg' }),
+  S('island_mat', null, 'Island mat', 'seaside', { seaside: 'seaside/seaside_other_Island_mat.jpg' }),
+  S('native_village_mat', null, 'Native Village mat', 'seaside', { seaside: 'seaside/seaside_other_Native_Village_mat.jpg' }),
+  S('pirate_ship_mat', null, 'Pirate Ship mat', 'seaside', { seaside: 'seaside/seaside_other_Pirate_Ship_mat.jpg' }),
+  S('embargo_tokens', null, 'Embargo tokens', 'seaside', { seaside: 'seaside/seaside_other_EmbargoTokens.jpg' }),
+  ...['abandonedmine', 'ruinedlibrary', 'ruinedmarket', 'ruinedvillage', 'survivors'].map((id, i) =>
+    S(id, null, ['Abandoned Mine', 'Ruined Library', 'Ruined Market', 'Ruined Village', 'Survivors'][i], 'darkages', { darkages: `darkages/darkages_${id}.jpg` }),
+  ),
+  ...['hovel', 'necropolis', 'overgrownestate'].map((id, i) => S(id, null, ['Hovel', 'Necropolis', 'Overgrown Estate'][i], 'darkages', { darkages: `darkages/darkages_${id}.jpg` })),
+  ...['spoils', 'madman', 'mercenary'].map((id, i) => S(id, null, ['Spoils', 'Madman', 'Mercenary'][i], 'darkages', { darkages: `darkages/darkages_${id}.jpg` })),
+]
+const support = []
+for (const sup of SUPPORT) {
+  const byBox = {}
+  for (const [box, rel] of Object.entries(sup.byBox)) if (cardImgs.has(`docs/img/cards/${rel}`)) byBox[box] = `docs/img/cards/${rel}`
+  if (!Object.keys(byBox).length) console.warn(`Kein Bild für ${sup.id}`)
+  images[`sup_${sup.id}`] = { boxes: Object.keys(sup.byBox), card: byBox, art: null }
+  support.push({ id: sup.id, name_de: sup.name_de, name_en: sup.name_en, set: sup.set, boxes: Object.keys(sup.byBox) })
+}
+writeFileSync(join(OUT, 'support.json'), JSON.stringify(support, null, 1) + '\n')
 writeFileSync(join(ROOT, 'supabase', 'functions', '_shared', 'dominionImages.json'), JSON.stringify({ repo: REPO, commit: COMMIT, images }) + '\n')
 
 // Bericht

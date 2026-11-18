@@ -1,8 +1,8 @@
-import { Ban, ChevronLeft, ChevronRight, Crown, Lock, LockOpen, RefreshCw, Sparkles, Star } from 'lucide-react'
+import { Ban, ChevronLeft, ChevronRight, Crown, Lock, LockOpen, RefreshCw, Sparkles, Star, X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
-import { Sheet } from '../../components/Sheet'
 import { frameStyle, KIND_DE, setShort, typeWords } from './cardInfo'
 import { Cost } from './Cost'
 import { useCardImages } from './images'
@@ -123,51 +123,31 @@ export function CardViewer({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') go(1)
       if (e.key === 'ArrowLeft') go(-1)
+      if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   })
+  // Hintergrund sperren, solange die Karte offen ist (auch die Dominion-Seite darunter scrollt nicht)
+  useEffect(() => {
+    const page = document.querySelector<HTMLElement>('.hb-dom-page')
+    const prev = page?.style.overflow ?? ''
+    if (page) page.style.overflow = 'hidden'
+    return () => {
+      if (page) page.style.overflow = prev
+    }
+  }, [])
 
   if (!card) return null
   const name = card.name_de ?? card.name_en
   const img = images[card.id]
   const isLocked = locked?.includes(card.id)
-  return (
-    <Sheet title={name} onClose={onClose} tall>
-      <div
-        className="hb-dom-viewer"
-        onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
-        onTouchEnd={(e) => {
-          if (touch.current === null) return
-          const dx = e.changedTouches[0].clientX - touch.current
-          touch.current = null
-          if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1)
-        }}
-      >
-        {cards.length > 1 && (
-          <button type="button" className="hb-icon-btn hb-dom-viewer-nav is-prev" aria-label="Vorige Karte" onClick={() => go(-1)}>
-            <Icon icon={ChevronLeft} size={24} />
-          </button>
-        )}
-        <div className={`hb-dom-viewer-card ${card.kind === 'kingdom' ? '' : 'is-landscape'}`} key={card.id} style={frameStyle(card)}>
-          {img ? (
-            <img src={img} alt={`Karte ${name}`} />
-          ) : (
-            <span className="hb-dom-viewer-empty">
-              <Icon icon={Crown} size={36} />
-              <span>Bild wird geladen …</span>
-            </span>
-          )}
-        </div>
-        {cards.length > 1 && (
-          <button type="button" className="hb-icon-btn hb-dom-viewer-nav is-next" aria-label="Nächste Karte" onClick={() => go(1)}>
-            <Icon icon={ChevronRight} size={24} />
-          </button>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
+  return createPortal(
+    <div className="hb-dom-viewer" role="dialog" aria-modal="true" aria-label={name}>
+      <header className="hb-dom-viewer-head">
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-label text-ink-muted">
+          <span className="hb-dom-viewer-name">{name}</span>
+          <span className="truncate text-label text-ink-muted">
             {card.kind === 'kingdom' ? typeWords(card) : KIND_DE[card.kind]} · {setShort(card.set)}
             {card.name_de && card.name_de !== card.name_en ? ` · englisch „${card.name_en}“` : ''}
           </span>
@@ -177,8 +157,42 @@ export function CardViewer({
             {i + 1} / {cards.length}
           </span>
         )}
+        <button type="button" className="hb-icon-btn" aria-label="Schließen" onClick={onClose}>
+          <Icon icon={X} size={24} />
+        </button>
+      </header>
+
+      <div
+        className="hb-dom-viewer-stage"
+        onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
+        onTouchEnd={(e) => {
+          if (touch.current === null) return
+          const dx = e.changedTouches[0].clientX - touch.current
+          touch.current = null
+          if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1)
+        }}
+      >
+        {img ? (
+          <img key={card.id} className="hb-dom-viewer-img" src={img} alt={`Karte ${name}`} style={frameStyle(card)} />
+        ) : (
+          <span className="hb-dom-viewer-empty">
+            <Icon icon={Crown} size={36} />
+            <span>Bild wird geladen …</span>
+          </span>
+        )}
+        {cards.length > 1 && (
+          <>
+            <button type="button" className="hb-icon-btn hb-dom-viewer-nav is-prev" aria-label="Vorige Karte" onClick={() => go(-1)}>
+              <Icon icon={ChevronLeft} size={24} />
+            </button>
+            <button type="button" className="hb-icon-btn hb-dom-viewer-nav is-next" aria-label="Nächste Karte" onClick={() => go(1)}>
+              <Icon icon={ChevronRight} size={24} />
+            </button>
+          </>
+        )}
       </div>
-      <div className="flex flex-wrap gap-2">
+
+      <footer className="hb-dom-viewer-foot">
         {onLock && (
           <Button icon={<Icon icon={isLocked ? Lock : LockOpen} size={18} />} aria-pressed={isLocked} onClick={() => onLock(card.id)}>
             {isLocked ? 'Wird behalten' : 'Behalten'}
@@ -189,14 +203,26 @@ export function CardViewer({
             Tauschen
           </Button>
         )}
-        <Button variant="ghost" icon={<Icon icon={Star} size={18} />} aria-pressed={favorites.includes(card.id)} onClick={() => onFavorite(card.id)}>
-          {favorites.includes(card.id) ? 'Favorit' : 'Als Favorit'}
-        </Button>
-        <Button variant="ghost" icon={<Icon icon={Ban} size={18} />} aria-pressed={banned.includes(card.id)} onClick={() => onBan(card.id)}>
-          {banned.includes(card.id) ? 'Gesperrt' : 'Sperren'}
-        </Button>
-      </div>
-      <span className="text-label text-ink-muted">Kartenbilder aus KingdomCreator, nur für euch gespeichert.</span>
-    </Sheet>
+        <button
+          type="button"
+          className={`hb-icon-btn hb-dom-btn ${favorites.includes(card.id) ? 'is-on' : ''}`}
+          aria-pressed={favorites.includes(card.id)}
+          aria-label={favorites.includes(card.id) ? 'Kein Favorit mehr' : 'Als Favorit'}
+          onClick={() => onFavorite(card.id)}
+        >
+          <Icon icon={Star} size={20} />
+        </button>
+        <button
+          type="button"
+          className={`hb-icon-btn hb-dom-btn ${banned.includes(card.id) ? 'is-banned' : ''}`}
+          aria-pressed={banned.includes(card.id)}
+          aria-label={banned.includes(card.id) ? 'Nicht mehr sperren' : 'Sperren'}
+          onClick={() => onBan(card.id)}
+        >
+          <Icon icon={Ban} size={20} />
+        </button>
+      </footer>
+    </div>,
+    document.body,
   )
 }

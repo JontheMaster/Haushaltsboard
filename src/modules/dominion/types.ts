@@ -14,7 +14,7 @@ export type Tag =
   | 'alt_vp'
   | 'cost_reduce'
 
-export type CardKind = 'kingdom' | 'event' | 'landmark' | 'project' | 'way' | 'ally' | 'trait' | 'prophecy'
+export type CardKind = 'kingdom' | 'event' | 'landmark' | 'project' | 'way' | 'ally' | 'trait' | 'prophecy' | 'support'
 
 export type Card = {
   id: string
