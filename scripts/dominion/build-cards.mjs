@@ -9,6 +9,8 @@
 //   src/modules/dominion/data/cards.json   Königreichkarten und Landschaften (Ereignisse, Projekte, …)
 //   src/modules/dominion/data/sets.json    Erweiterungen mit ihren Schachteln (1./2. Edition, Updatepack)
 //   scripts/dominion/namen-pruefen.md      Karten mit fehlendem oder unsicherem deutschen Namen (für Jonathan)
+//   supabase/functions/_shared/dominionImages.json  wo im Repo von KingdomCreator Kartenbild und Illustration liegen
+//                                          (die Edge Function `dominion-images` legt sie privat in Supabase ab, nie ins Repo)
 //
 // Handkorrekturen (deutsche Namen, Merkmale, Material, Komplexität) stehen in scripts/dominion/card-overrides.json
 // und gewinnen immer gegen die Quelle.
@@ -92,6 +94,17 @@ async function cached(path) {
   if (existsSync(file)) return readFileSync(file, 'utf8')
   const res = await fetch(`${RAW}/${path}`)
   if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`)
+  const text = await res.text()
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, text)
+  return text
+}
+
+async function cachedApi(url, name) {
+  const file = join(CACHE, name)
+  if (existsSync(file)) return readFileSync(file, 'utf8')
+  const res = await fetch(url, { headers: { Accept: 'application/vnd.github+json' } })
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`)
   const text = await res.text()
   mkdirSync(dirname(file), { recursive: true })
   writeFileSync(file, text)
@@ -275,6 +288,34 @@ writeFileSync(
   JSON.stringify({ source: `${REPO}@${COMMIT.slice(0, 12)}`, license: 'MIT', sets }, null, 1) + '\n',
 )
 
+// Bilder: Pfade im KingdomCreator-Repo (docs/img/cards/<schachtel>/<schachtel>_<name>.jpg, docs/img/artworks/…/<Name>Art.jpg)
+const tree = JSON.parse(await cachedApi(`https://api.github.com/repos/${REPO}/git/trees/${COMMIT}?recursive=1`, 'tree.json')).tree.map((t) => t.path)
+const cardImgs = new Set(tree.filter((p) => /^docs\/img\/cards\/[^/]+\/[^/]+\.(jpe?g|png)$/.test(p)))
+const artByKey = new Map()
+for (const p of tree.filter((x) => /^docs\/img\/artworks\/.*Art\.(jpe?g|png)$/i.test(x))) {
+  const key = tokenize(p.split('/').pop().replace(/Art\.(jpe?g|png)$/i, '').replace(/_/g, ' '))
+  // gehashte Ablage (images/x/xy/…) bevorzugen, das sind die vollständigen Illustrationen
+  if (!artByKey.has(key) || p.includes('/images/')) artByKey.set(key, p)
+}
+const images = {}
+let missingImg = 0
+for (const card of cards.values()) {
+  const c = out.find((x) => x.id === card.id)
+  const tok = tokenize(card.name_en)
+  const byBox = {}
+  for (const box of c.boxes) {
+    const rest = c.id.slice(c.set.length + 1) // z. B. „village“ oder „event_alms“
+    for (const ext of ['jpg', 'jpeg', 'png']) {
+      const path = `docs/img/cards/${box}/${box}_${rest}.${ext}`
+      if (cardImgs.has(path)) byBox[box] = path
+    }
+  }
+  const art = artByKey.get(tok) ?? null
+  if (!Object.keys(byBox).length) missingImg++
+  images[c.id] = { boxes: c.boxes, card: byBox, art }
+}
+writeFileSync(join(ROOT, 'supabase', 'functions', '_shared', 'dominionImages.json'), JSON.stringify({ repo: REPO, commit: COMMIT, images }) + '\n')
+
 // Bericht
 const line = (r) => `| ${r.en} | ${r.where} | \`${r.id}\` |`
 const md = [
@@ -324,4 +365,5 @@ const md = [
 writeFileSync(join(HERE, 'namen-pruefen.md'), md)
 
 console.log(`${out.length} Karten → src/modules/dominion/data/cards.json`)
+console.log(`Bilder: ${Object.keys(images).length - missingImg} mit Kartenbild, ${missingImg} ohne, ${Object.values(images).filter((i) => i.art).length} mit Illustration`)
 console.log(`fehlt: ${report.missing.length}, gleich wie englisch: ${report.same.length}, je Edition anders: ${report.differ.length}, Kosten anders: ${report.costDiffer.length}`)
