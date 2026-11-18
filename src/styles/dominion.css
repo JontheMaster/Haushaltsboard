@@ -1,0 +1,162 @@
+/* Dominion (src/modules/dominion/): Vollbild-Seite am Handy, Karten mit Rahmenfarbe wie im Spiel (Tokens dom-*) */
+.hb-dom-page {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  animation: hb-dom-in var(--dur-base) var(--ease-out);
+}
+.hb-dom-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: calc(var(--space-3) + env(safe-area-inset-top)) var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom));
+}
+@keyframes hb-dom-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.hb-dom-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.hb-dom-chip {
+  height: 40px;
+  padding: 0 var(--space-3);
+  font-size: 14px;
+}
+.hb-dom-sub {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+}
+
+/* Karte: Kosten links, Name und Typ, rechts Behalten/Tauschen; Streifen links in der Rahmenfarbe */
+.hb-dom-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: var(--space-2) var(--space-2) var(--space-2) calc(var(--space-3) + 8px);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-tile);
+  overflow: hidden;
+  animation: hb-dom-reveal var(--dur-slow) var(--ease-spring) both;
+}
+.hb-dom-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 8px;
+  background: var(--dom-frame, var(--dom-action));
+}
+:root[data-theme='dark'] .hb-dom-card.is-night::before {
+  box-shadow: inset -1px 0 0 var(--line), inset 0 0 0 1px var(--line);
+}
+.hb-dom-card.is-locked {
+  box-shadow: var(--shadow-tile), inset 0 0 0 2px var(--accent);
+}
+@keyframes hb-dom-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96) rotateX(35deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-dom-card {
+    animation: hb-dom-fade var(--dur-base) var(--ease-out) both;
+  }
+}
+@keyframes hb-dom-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.hb-dom-set {
+  flex-shrink: 0;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Kosten wie auf der Karte: Münze, Trank, Schulden */
+.hb-dom-cost {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  min-width: 52px;
+}
+.hb-dom-coin {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  background: var(--dom-treasure);
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.15);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+:root[data-theme='dark'] .hb-dom-coin {
+  color: var(--surface);
+}
+.hb-dom-potion {
+  display: inline-grid;
+  place-items: center;
+  color: var(--dom-reaction);
+}
+.hb-dom-debt {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%);
+  background: var(--dom-ruins);
+  color: var(--surface-raised);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.hb-dom-btn {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.hb-dom-btn.is-on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.hb-dom-btn.is-banned {
+  background: var(--urgent-soft);
+  color: var(--urgent);
+}
+.hb-dom-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.hb-dom-search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 52px;
+}

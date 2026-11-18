@@ -10,6 +10,7 @@
 @import './styles/movies.css';
 @import './styles/ast.css';
 @import './styles/massages.css';
+@import './styles/dominion.css';
 
 @utility shadow-tile {
   box-shadow: var(--shadow-tile);

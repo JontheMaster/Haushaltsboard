@@ -131,3 +131,21 @@ Gibt der Besitz eine weiche Bedingung nicht her (z. B. nur Basisspiel mit vielen
 - Vitest: 1000 Sets mit verschiedenen Besitz-Kombinationen. Harte Bedingungen sind immer erfüllt, Abhängigkeiten immer aufgelöst, nur besessene Karten, keine Doppelten, gleicher Seed ergibt das gleiche Set.
 - Funktioniert auch, wenn nur das Basisspiel eingetragen ist.
 - Jonathan prüft die Liste der unsicheren deutschen Namen, bevor das Modul live geht.
+
+---
+
+## Umsetzung Stufe 1 (18.11.2026)
+
+Entscheidungen Jonathan:
+- Nur am Handy (wie das Massagen-Konto). Zusatzkachel `dominion.set` über „Startseite anpassen“, nicht von selbst auf der Startseite. Antippen öffnet Dominion im Vollbild über allem (Portal, Zurück-Taste schließt). Das Tablet (5 × 2-Raster) kommt später.
+- Typfarben aus dem Spiel: Tokens `dom-*` (design/tokens.json, DESIGN.md), abgeleitet aus Grundrahmen und Typ-Faktoren des offenen Kartengenerators von shardofhonor.
+- Kartenbilder: nicht eingebaut (urheberrechtlich geschützt, Repo und Seite sind öffentlich).
+- Unsichere deutsche Namen in Jonathans Erweiterungen prüft er später (Mine, Navigator, Embargo, Bank, Talisman, Alchemist, Golem, Altar; Venture „Abenteuer“, Loan „Lohn“). Korrekturen in `scripts/dominion/card-overrides.json` → `names_de`, dann Script neu laufen lassen.
+
+Umsetzung:
+- Kartendaten: `scripts/dominion/build-cards.mjs` (README mit Lizenzen), Ergebnis `src/modules/dominion/data/`. Besitz läuft über **Schachteln** statt `{set, edition, update_pack}`: `owned.boxes` (z. B. `baseset2`, `seaside`, `prosperity2add`) und `owned.promos` (Karten-IDs). Merkmale für Basis, Seaside, Blütezeit, Alchemisten und Dark Ages von Hand gepflegt (Overrides `tags`), sonst aus KingdomCreator abgeleitet.
+- `modules.config` von `dominion`: `owned`, `banned`, `favorites`, `last` (zuletzt genutzte Optionen). Vorbelegt: Basisspiel 2. Ed., Seaside, Blütezeit, Alchemisten, Dark Ages.
+- Tabelle `dominion_games` (Migration `20261118154655_dominion`), Realtime. Gespeichert wird erst bei „Das spielen wir“ (`played = true`); das angefangene Set liegt pro Gerät in localStorage `hb-dominion-current`.
+- Generator `src/modules/dominion/generator.ts` (Stellschrauben oben), Tests `generator.test.ts` (`npm test`, Vitest). Tauschen = alle anderen Karten behalten, die getauschte kommt nicht wieder. Locker = nur Komplexität 1, keine Tränke/Schulden/Nacht. Alchemie dabei → 3–5 Alchemie-Karten. Blütezeit → Platin und Kolonie, Dark Ages → Unterschlüpfe, jeweils mit dem Anteil der Karten. Ruinen, Beute, Söldner, Verrückter, Tableaus und Marker aus `requires`.
+- Code: `DominionTile.tsx` (Kachel, Overlay, Einstellungsseite), `DominionPage.tsx` (Vollbild), `DominionSettings.tsx` (Meine Erweiterungen, Promos, Favoriten/Sperren), `dominionStore.ts`, `cardInfo.ts`, `Cost.tsx`, Styles `src/styles/dominion.css`. Kartendaten und Seite laden erst beim Öffnen (eigenes Paket).
+- Bezeichnungen für Zusatzmaterial (`EXTRA_LABELS` im Generator, z. B. „Beute“, „Söldner“, „Verrückter“, „Wirtshaustableau“) sind noch nicht an den echten Karten geprüft.

@@ -19,7 +19,10 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "draw",
+   "terminal_draw"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -44,7 +47,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "gain"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -71,7 +76,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "gain"
   ],
   "requires": [],
   "complexity": 1
@@ -100,7 +106,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "gain"
   ],
   "requires": [],
   "complexity": 1
@@ -128,8 +135,7 @@
    "action"
   ],
   "tags": [
-   "draw",
-   "terminal_draw"
+   "cantrip"
   ],
   "requires": [],
   "complexity": 1
@@ -154,7 +160,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -236,7 +244,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "gain"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -263,6 +273,7 @@
    "action"
   ],
   "tags": [
+   "payload",
    "plus_buy",
    "village"
   ],
@@ -319,7 +330,7 @@
    "action"
   ],
   "tags": [
-   "draw"
+   "cantrip"
   ],
   "requires": [],
   "complexity": 1
@@ -347,8 +358,8 @@
    "action"
   ],
   "tags": [
-   "draw",
-   "terminal_draw"
+   "cantrip",
+   "draw"
   ],
   "requires": [],
   "complexity": 1
@@ -404,7 +415,11 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip",
+   "payload",
+   "plus_buy"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -430,7 +445,8 @@
    "action"
   ],
   "tags": [
-   "draw"
+   "cantrip",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -459,7 +475,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -487,6 +504,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "trash"
   ],
   "requires": [],
@@ -516,6 +534,7 @@
    "reaction"
   ],
   "tags": [
+   "defense",
    "draw",
    "terminal_draw"
   ],
@@ -545,6 +564,7 @@
    "action"
   ],
   "tags": [
+   "payload",
    "trash"
   ],
   "requires": [],
@@ -572,7 +592,8 @@
    "action"
   ],
   "tags": [
-   "draw"
+   "cantrip",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -600,6 +621,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "trash"
   ],
   "requires": [],
@@ -627,7 +649,7 @@
    "action"
   ],
   "tags": [
-   "draw",
+   "cantrip",
    "trash"
   ],
   "requires": [],
@@ -684,7 +706,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "cantrip"
   ],
   "requires": [],
   "complexity": 1
@@ -764,7 +787,7 @@
    "action"
   ],
   "tags": [
-   "draw"
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -849,6 +872,7 @@
    "action"
   ],
   "tags": [
+   "payload",
    "plus_buy"
   ],
   "requires": [],
@@ -876,7 +900,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "gain"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -1803,7 +1829,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "trash"
   ],
   "requires": [],
   "complexity": 1
@@ -1830,7 +1857,10 @@
    "treasure",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "payload",
+   "plus_buy"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -1857,6 +1887,7 @@
    "action"
   ],
   "tags": [
+   "payload",
    "village"
   ],
   "requires": [],
@@ -1886,7 +1917,8 @@
    "duration"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "gain"
   ],
   "requires": [],
   "complexity": 2
@@ -1914,7 +1946,10 @@
    "action",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip",
+   "draw"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -1942,7 +1977,8 @@
    "duration"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "payload"
   ],
   "requires": [],
   "complexity": 2
@@ -1971,7 +2007,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -1996,9 +2033,13 @@
   "types": [
    "action"
   ],
-  "tags": [],
-  "requires": [],
-  "complexity": 1
+  "tags": [
+   "payload"
+  ],
+  "requires": [
+   "embargo_tokens"
+  ],
+  "complexity": 2
  },
  {
   "id": "seaside_explorer",
@@ -2020,7 +2061,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "gain"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -2048,6 +2091,7 @@
    "duration"
   ],
   "tags": [
+   "payload",
    "village"
   ],
   "requires": [],
@@ -2105,7 +2149,9 @@
    "action",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -2135,8 +2181,10 @@
   "tags": [
    "alt_vp"
   ],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "island_mat"
+  ],
+  "complexity": 2
  },
  {
   "id": "seaside_lighthouse",
@@ -2161,7 +2209,11 @@
    "action",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip",
+   "defense",
+   "payload"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -2216,7 +2268,9 @@
    "action",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -2242,7 +2296,9 @@
    "action",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "draw"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -2271,8 +2327,10 @@
   "tags": [
    "village"
   ],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "native_village_mat"
+  ],
+  "complexity": 2
  },
  {
   "id": "seaside_navigator",
@@ -2294,7 +2352,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -2345,7 +2405,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -2372,7 +2434,9 @@
    "reaction",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "gain"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -2398,10 +2462,13 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "payload"
   ],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "pirate_ship_mat"
+  ],
+  "complexity": 2
  },
  {
   "id": "seaside_sailor",
@@ -2425,7 +2492,10 @@
    "action",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip",
+   "trash"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -2452,6 +2522,7 @@
    "action"
   ],
   "tags": [
+   "payload",
    "plus_buy",
    "trash"
   ],
@@ -2479,7 +2550,10 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip",
+   "draw"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -2534,7 +2608,9 @@
    "duration"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "draw",
+   "terminal_draw"
   ],
   "requires": [],
   "complexity": 2
@@ -2561,7 +2637,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "gain"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -2590,8 +2668,7 @@
   ],
   "tags": [
    "draw",
-   "plus_buy",
-   "terminal_draw"
+   "plus_buy"
   ],
   "requires": [],
   "complexity": 2
@@ -2618,7 +2695,9 @@
    "action",
    "duration"
   ],
-  "tags": [],
+  "tags": [
+   "draw"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -2644,7 +2723,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -2670,7 +2751,10 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip",
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -2697,8 +2781,7 @@
    "action"
   ],
   "tags": [
-   "draw",
-   "terminal_draw"
+   "cantrip"
   ],
   "requires": [],
   "complexity": 1
@@ -2755,8 +2838,7 @@
    "action"
   ],
   "tags": [
-   "draw",
-   "terminal_draw"
+   "draw"
   ],
   "requires": [
    "potion"
@@ -2783,7 +2865,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip"
+  ],
   "requires": [
    "potion"
   ],
@@ -2839,7 +2923,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "cantrip"
   ],
   "requires": [
    "potion"
@@ -2893,6 +2978,7 @@
    "action"
   ],
   "tags": [
+   "payload",
    "plus_buy"
   ],
   "requires": [],
@@ -2918,7 +3004,9 @@
   "types": [
    "treasure"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [
    "potion"
   ],
@@ -2972,7 +3060,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "draw"
   ],
   "requires": [
    "potion"
@@ -3000,6 +3089,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "trash"
   ],
   "requires": [
@@ -3028,6 +3118,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "village"
   ],
   "requires": [
@@ -3085,7 +3176,8 @@
    "treasure"
   ],
   "tags": [
-   "trash"
+   "gain",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -3112,7 +3204,9 @@
   "types": [
    "treasure"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -3139,10 +3233,13 @@
    "action"
   ],
   "tags": [
+   "payload",
    "trash"
   ],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "vp_tokens"
+  ],
+  "complexity": 2
  },
  {
   "id": "prosperity_charlatan",
@@ -3167,7 +3264,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -3196,6 +3294,7 @@
   ],
   "tags": [
    "draw",
+   "payload",
    "plus_buy",
    "village"
   ],
@@ -3226,7 +3325,8 @@
    "reaction"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -3253,6 +3353,7 @@
    "treasure"
   ],
   "tags": [
+   "payload",
    "plus_buy"
   ],
   "requires": [],
@@ -3279,6 +3380,7 @@
    "treasure"
   ],
   "tags": [
+   "payload",
    "plus_buy"
   ],
   "requires": [],
@@ -3304,7 +3406,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -3330,6 +3434,7 @@
    "treasure"
   ],
   "tags": [
+   "payload",
    "trash"
   ],
   "requires": [],
@@ -3358,6 +3463,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "trash"
   ],
   "requires": [],
@@ -3386,6 +3492,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "trash"
   ],
   "requires": [],
@@ -3414,10 +3521,13 @@
   ],
   "tags": [
    "attack",
+   "payload",
    "plus_buy"
   ],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "vp_tokens"
+  ],
+  "complexity": 2
  },
  {
   "id": "prosperity_grandmarket",
@@ -3442,6 +3552,8 @@
    "action"
   ],
   "tags": [
+   "cantrip",
+   "payload",
    "plus_buy"
   ],
   "requires": [],
@@ -3469,7 +3581,10 @@
   "types": [
    "treasure"
   ],
-  "tags": [],
+  "tags": [
+   "gain",
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -3495,6 +3610,7 @@
    "treasure"
   ],
   "tags": [
+   "payload",
    "trash"
   ],
   "requires": [],
@@ -3547,6 +3663,7 @@
    "treasure"
   ],
   "tags": [
+   "payload",
    "trash"
   ],
   "requires": [],
@@ -3602,7 +3719,10 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "gain",
+   "trash"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -3628,9 +3748,13 @@
   "types": [
    "action"
   ],
-  "tags": [],
-  "requires": [],
-  "complexity": 1
+  "tags": [
+   "payload"
+  ],
+  "requires": [
+   "vp_tokens"
+  ],
+  "complexity": 2
  },
  {
   "id": "prosperity_mountebank",
@@ -3654,7 +3778,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -3682,7 +3807,8 @@
    "action"
   ],
   "tags": [
-   "draw"
+   "cantrip",
+   "payload"
   ],
   "requires": [],
   "complexity": 1
@@ -3709,7 +3835,10 @@
   "types": [
    "treasure"
   ],
-  "tags": [],
+  "tags": [
+   "cost_reduce",
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -3764,7 +3893,9 @@
   "types": [
    "treasure"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -3788,7 +3919,10 @@
   "types": [
    "treasure"
   ],
-  "tags": [],
+  "tags": [
+   "gain",
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -3840,11 +3974,14 @@
    "action"
   ],
   "tags": [
+   "payload",
    "plus_buy",
    "trash"
   ],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "trade_route_mat"
+  ],
+  "complexity": 2
  },
  {
   "id": "prosperity_vault",
@@ -3870,6 +4007,7 @@
   ],
   "tags": [
    "draw",
+   "payload",
    "terminal_draw"
   ],
   "requires": [],
@@ -3895,7 +4033,9 @@
   "types": [
    "treasure"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -3920,7 +4060,10 @@
   "types": [
    "treasure"
   ],
-  "tags": [],
+  "tags": [
+   "gain",
+   "payload"
+  ],
   "requires": [],
   "complexity": 1
  },
@@ -4611,8 +4754,10 @@
   "tags": [
    "draw"
   ],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "rewards"
+  ],
+  "complexity": 2
  },
  {
   "id": "guildscornucopia_masterpiece",
@@ -4884,8 +5029,10 @@
    "action"
   ],
   "tags": [],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "prizes"
+  ],
+  "complexity": 2
  },
  {
   "id": "guildscornucopia_youngwitch",
@@ -4915,8 +5062,10 @@
    "draw",
    "terminal_draw"
   ],
-  "requires": [],
-  "complexity": 1
+  "requires": [
+   "bane"
+  ],
+  "complexity": 2
  },
  {
   "id": "hinterlands_berserker",
@@ -5894,6 +6043,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "trash"
   ],
   "requires": [],
@@ -5919,7 +6069,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "gain"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -5944,9 +6096,12 @@
    "action"
   ],
   "tags": [
+   "gain",
    "village"
   ],
-  "requires": [],
+  "requires": [
+   "spoils"
+  ],
   "complexity": 2
  },
  {
@@ -5994,7 +6149,10 @@
    "action",
    "reaction"
   ],
-  "tags": [],
+  "tags": [
+   "defense",
+   "payload"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -6046,6 +6204,8 @@
    "action"
   ],
   "tags": [
+   "gain",
+   "payload",
    "trash"
   ],
   "requires": [],
@@ -6072,7 +6232,9 @@
    "treasure"
   ],
   "tags": [
-   "plus_buy"
+   "payload",
+   "plus_buy",
+   "trash"
   ],
   "requires": [],
   "complexity": 2
@@ -6103,7 +6265,9 @@
    "draw",
    "terminal_draw"
   ],
-  "requires": [],
+  "requires": [
+   "ruins"
+  ],
   "complexity": 2
  },
  {
@@ -6127,9 +6291,12 @@
    "action"
   ],
   "tags": [
+   "payload",
    "trash"
   ],
-  "requires": [],
+  "requires": [
+   "ruins"
+  ],
   "complexity": 2
  },
  {
@@ -6179,7 +6346,9 @@
    "action"
   ],
   "tags": [
-   "plus_buy"
+   "payload",
+   "plus_buy",
+   "trash"
   ],
   "requires": [],
   "complexity": 2
@@ -6231,6 +6400,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "trash"
   ],
   "requires": [],
@@ -6257,11 +6427,12 @@
    "action"
   ],
   "tags": [
-   "draw",
-   "terminal_draw",
+   "gain",
    "trash"
   ],
-  "requires": [],
+  "requires": [
+   "madman"
+  ],
   "complexity": 2
  },
  {
@@ -6284,7 +6455,10 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "draw",
+   "terminal_draw"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -6308,7 +6482,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -6332,7 +6508,11 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip",
+   "payload",
+   "trash"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -6358,7 +6538,8 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "trash"
   ],
   "requires": [],
   "complexity": 2
@@ -6385,9 +6566,13 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "gain"
   ],
-  "requires": [],
+  "requires": [
+   "ruins",
+   "spoils"
+  ],
   "complexity": 2
  },
  {
@@ -6412,6 +6597,7 @@
    "reaction"
   ],
   "tags": [
+   "cantrip",
    "plus_buy"
   ],
   "requires": [],
@@ -6437,7 +6623,10 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip",
+   "payload"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -6465,7 +6654,9 @@
   "tags": [
    "attack"
   ],
-  "requires": [],
+  "requires": [
+   "spoils"
+  ],
   "complexity": 2
  },
  {
@@ -6488,7 +6679,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -6512,9 +6705,7 @@
   "types": [
    "action"
   ],
-  "tags": [
-   "trash"
-  ],
+  "tags": [],
   "requires": [],
   "complexity": 2
  },
@@ -6539,6 +6730,7 @@
    "action"
   ],
   "tags": [
+   "cantrip",
    "trash"
   ],
   "requires": [],
@@ -6565,6 +6757,7 @@
    "action"
   ],
   "tags": [
+   "gain",
    "trash"
   ],
   "requires": [],
@@ -6592,7 +6785,9 @@
    "attack"
   ],
   "tags": [
-   "attack"
+   "attack",
+   "gain",
+   "payload"
   ],
   "requires": [],
   "complexity": 2
@@ -6617,7 +6812,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "cantrip"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -6641,7 +6838,9 @@
   "types": [
    "action"
   ],
-  "tags": [],
+  "tags": [
+   "payload"
+  ],
   "requires": [],
   "complexity": 2
  },
@@ -6666,6 +6865,7 @@
    "action"
   ],
   "tags": [
+   "payload",
    "plus_buy",
    "village"
   ],
@@ -6693,9 +6893,7 @@
    "action"
   ],
   "tags": [
-   "draw",
-   "plus_buy",
-   "terminal_draw"
+   "plus_buy"
   ],
   "requires": [],
   "complexity": 2
@@ -6723,10 +6921,11 @@
   ],
   "tags": [
    "attack",
-   "draw",
-   "terminal_draw"
+   "cantrip"
   ],
-  "requires": [],
+  "requires": [
+   "mercenary"
+  ],
   "complexity": 2
  },
  {
@@ -6750,8 +6949,7 @@
    "action"
   ],
   "tags": [
-   "draw",
-   "terminal_draw"
+   "cantrip"
   ],
   "requires": [],
   "complexity": 2
@@ -6777,6 +6975,7 @@
    "action"
   ],
   "tags": [
+   "draw",
    "village"
   ],
   "requires": [],
@@ -9717,7 +9916,10 @@
    "alt_vp",
    "trash"
   ],
-  "requires": [],
+  "requires": [
+   "ghost",
+   "heirloom"
+  ],
   "complexity": 2
  },
  {
@@ -9896,7 +10098,9 @@
    "night"
   ],
   "tags": [],
-  "requires": [],
+  "requires": [
+   "imp"
+  ],
   "complexity": 2
  },
  {
@@ -9951,7 +10155,11 @@
   "tags": [
    "trash"
   ],
-  "requires": [],
+  "requires": [
+   "ghost",
+   "imp",
+   "wisp"
+  ],
   "complexity": 2
  },
  {
@@ -10005,7 +10213,8 @@
   ],
   "tags": [],
   "requires": [
-   "boons"
+   "boons",
+   "heirloom"
   ],
   "complexity": 3
  },
@@ -10116,7 +10325,8 @@
   ],
   "tags": [],
   "requires": [
-   "hexes"
+   "hexes",
+   "wish"
   ],
   "complexity": 3
  },
@@ -10168,7 +10378,9 @@
    "draw",
    "terminal_draw"
   ],
-  "requires": [],
+  "requires": [
+   "zombies"
+  ],
   "complexity": 2
  },
  {
@@ -10220,7 +10432,8 @@
    "draw"
   ],
   "requires": [
-   "boons"
+   "boons",
+   "heirloom"
   ],
   "complexity": 3
  },
@@ -10249,7 +10462,9 @@
    "terminal_draw",
    "trash"
   ],
-  "requires": [],
+  "requires": [
+   "heirloom"
+  ],
   "complexity": 2
  },
  {
@@ -10334,7 +10549,10 @@
   "tags": [
    "draw"
   ],
-  "requires": [],
+  "requires": [
+   "heirloom",
+   "wish"
+  ],
   "complexity": 2
  },
  {
@@ -10361,7 +10579,9 @@
    "draw",
    "terminal_draw"
   ],
-  "requires": [],
+  "requires": [
+   "heirloom"
+  ],
   "complexity": 2
  },
  {
@@ -10422,7 +10642,8 @@
    "draw"
   ],
   "requires": [
-   "hexes"
+   "hexes",
+   "imp"
   ],
   "complexity": 3
  },
@@ -10449,7 +10670,8 @@
   ],
   "tags": [],
   "requires": [
-   "boons"
+   "boons",
+   "heirloom"
   ],
   "complexity": 3
  },
@@ -10507,6 +10729,7 @@
    "attack"
   ],
   "requires": [
+   "bat",
    "hexes"
   ],
   "complexity": 3

@@ -79,6 +79,8 @@ const TYPE_FLAGS = [
   ['isGathering', 'gathering'],
 ]
 
+const TAGS = ['village', 'draw', 'terminal_draw', 'cantrip', 'plus_buy', 'trash', 'gain', 'attack', 'defense', 'payload', 'alt_vp', 'cost_reduce']
+
 /** Familien, deren Karten schon für sich mehr Regelwissen brauchen (Grundwert der Komplexität 2) */
 const ADVANCED_FAMILIES = new Set(['alchemy', 'darkages', 'adventures', 'empires', 'nocturne', 'renaissance', 'menagerie', 'allies', 'plunder', 'risingsun'])
 
@@ -189,9 +191,10 @@ const nameFix = overrides.names_de ?? {}
 const out = []
 for (const card of cards.values()) {
   const types = typesOf(card)
-  const tags = tagsOf(card)
-  const requires = requiresOf(card)
   const o = overrides.cards?.[card.id] ?? {}
+  // `tags` in den Overrides ersetzt die abgeleiteten Merkmale ganz (von Hand gepflegt für die Erweiterungen, die wir haben)
+  const tags = o.tags ? new Set(o.tags) : tagsOf(card)
+  const requires = requiresOf(card)
   for (const t of o.tags_add ?? []) tags.add(t)
   for (const t of o.tags_remove ?? []) tags.delete(t)
   for (const r of o.requires_add ?? []) requires.add(r)
@@ -200,8 +203,10 @@ for (const card of cards.values()) {
     report.costFixed.push({ id: card.id, name: card.name_en, from: card.cost, to: { ...card.cost, ...o.cost }, note: o.cost_note })
     card.cost = { ...card.cost, ...o.cost }
   }
-  // Ein Dorf zieht nicht „terminal“; Verteidigung gibt es nur gegen Angriffe
+  // Ein Dorf zieht nicht „terminal“
   if (tags.has('village')) tags.delete('terminal_draw')
+  const unknownTag = [...tags].find((t) => !TAGS.includes(t))
+  if (unknownTag) throw new Error(`${card.id}: unbekanntes Merkmal ${unknownTag}`)
 
   // deutscher Name: Korrektur > 2. Edition > 1. Edition
   const distinct = [...new Set(card.names.map((n) => n.name))]

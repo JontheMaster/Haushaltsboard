@@ -721,6 +721,36 @@ export type Database = {
         Update: { reason?: string | null }
         Relationships: []
       }
+      dominion_games: {
+        Row: {
+          id: string
+          created_at: string
+          created_by: string | null
+          seed: number
+          options: Json
+          kingdom: string[]
+          landscapes: string[]
+          extras: string[]
+          bane: string | null
+          played: boolean
+          played_on: string | null
+          rating: 'gut' | 'naja' | null
+          note: string | null
+        }
+        Insert: {
+          seed: number
+          kingdom: string[]
+          options?: Json
+          landscapes?: string[]
+          extras?: string[]
+          bane?: string | null
+          played?: boolean
+          played_on?: string | null
+          created_by?: string | null
+        }
+        Update: { played?: boolean; played_on?: string | null; rating?: 'gut' | 'naja' | null; note?: string | null }
+        Relationships: [Rel<'dominion_games_created_by_fkey', 'created_by', 'members'>]
+      }
       massage_log: {
         Row: { id: string; member: string; delta: number; note: string | null; created_by: string | null; source: string; created_at: string }
         Insert: { member: string; delta: number; note?: string | null; created_by?: string | null; source?: string }

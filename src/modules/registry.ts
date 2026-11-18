@@ -1,4 +1,5 @@
 import {
+  Crown,
   HandHeart,
   TreeDeciduous,
   Clapperboard,
@@ -33,6 +34,7 @@ import { WidgetSettings } from './widget/WidgetSettings'
 import { FilmHeader } from './movies/FilmHeader'
 import { AstSettings } from './ast/Ast'
 import { MassagesTile } from './massages/MassagesTile'
+import { DominionSettings, DominionTile } from './dominion/DominionTile'
 import { FilmSettings } from './movies/FilmSettings'
 import { FilmsTile } from './movies/FilmsTile'
 import { FinanceSettings } from './finance/FinanceSettings'
@@ -264,6 +266,17 @@ export const MODULES: ModuleDef[] = [
     phase: 7,
     sizes: [],
     phoneTiles: [{ id: 'konto', title: 'Massagen', description: 'Wer wie viele Massagen gut hat, gewinnen und einlösen', icon: HandHeart, Tile: MassagesTile }],
+  },
+  // Dominion (docs/dominion-modul.md, Stufe 1): Set-Generator nur am Handy, Kachel über „Startseite anpassen“, öffnet im Vollbild
+  {
+    id: 'dominion',
+    title: 'Dominion',
+    description: 'Stimmige Königreiche aus euren Erweiterungen, nur am Handy',
+    icon: Crown,
+    phase: 7,
+    sizes: [],
+    Settings: DominionSettings,
+    phoneTiles: [{ id: 'set', title: 'Dominion', description: 'Neues Set erstellen, zuletzt gespielt', icon: Crown, Tile: DominionTile }],
   },
   {
     id: 'ast',

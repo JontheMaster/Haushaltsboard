@@ -26,6 +26,982 @@
         "coins": 7
       },
       "cost_note": "KingdomCreator hat 3, richtig ist 7"
+    },
+    "baseset_adventurer": {
+      "tags": [
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "baseset_artisan": {
+      "tags": [
+        "gain"
+      ]
+    },
+    "baseset_bandit": {
+      "tags": [
+        "attack",
+        "gain"
+      ]
+    },
+    "baseset_bureaucrat": {
+      "tags": [
+        "attack",
+        "gain"
+      ]
+    },
+    "baseset_cellar": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "baseset_chancellor": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "baseset_chapel": {
+      "tags": [
+        "trash"
+      ]
+    },
+    "baseset_councilroom": {
+      "tags": [
+        "draw",
+        "terminal_draw",
+        "plus_buy"
+      ]
+    },
+    "baseset_feast": {
+      "tags": [
+        "gain"
+      ]
+    },
+    "baseset_festival": {
+      "tags": [
+        "village",
+        "plus_buy",
+        "payload"
+      ]
+    },
+    "baseset_gardens": {
+      "tags": [
+        "alt_vp"
+      ]
+    },
+    "baseset_harbinger": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "baseset_laboratory": {
+      "tags": [
+        "draw",
+        "cantrip"
+      ]
+    },
+    "baseset_library": {
+      "tags": [
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "baseset_market": {
+      "tags": [
+        "cantrip",
+        "plus_buy",
+        "payload"
+      ]
+    },
+    "baseset_merchant": {
+      "tags": [
+        "cantrip",
+        "payload"
+      ]
+    },
+    "baseset_militia": {
+      "tags": [
+        "attack",
+        "payload"
+      ]
+    },
+    "baseset_mine": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "baseset_moat": {
+      "tags": [
+        "draw",
+        "terminal_draw",
+        "defense"
+      ]
+    },
+    "baseset_moneylender": {
+      "tags": [
+        "trash",
+        "payload"
+      ]
+    },
+    "baseset_poacher": {
+      "tags": [
+        "cantrip",
+        "payload"
+      ]
+    },
+    "baseset_remodel": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "baseset_sentry": {
+      "tags": [
+        "cantrip",
+        "trash"
+      ]
+    },
+    "baseset_smithy": {
+      "tags": [
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "baseset_spy": {
+      "tags": [
+        "attack",
+        "cantrip"
+      ]
+    },
+    "baseset_thief": {
+      "tags": [
+        "attack"
+      ]
+    },
+    "baseset_throneroom": {
+      "tags": []
+    },
+    "baseset_vassal": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "baseset_village": {
+      "tags": [
+        "village"
+      ]
+    },
+    "baseset_witch": {
+      "tags": [
+        "attack",
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "baseset_woodcutter": {
+      "tags": [
+        "plus_buy",
+        "payload"
+      ]
+    },
+    "baseset_workshop": {
+      "tags": [
+        "gain"
+      ]
+    },
+    "seaside_ambassador": {
+      "tags": [
+        "attack",
+        "trash"
+      ]
+    },
+    "seaside_astrolabe": {
+      "tags": [
+        "plus_buy",
+        "payload"
+      ]
+    },
+    "seaside_bazaar": {
+      "tags": [
+        "village",
+        "payload"
+      ]
+    },
+    "seaside_blockade": {
+      "tags": [
+        "attack",
+        "gain"
+      ]
+    },
+    "seaside_caravan": {
+      "tags": [
+        "cantrip",
+        "draw"
+      ]
+    },
+    "seaside_corsair": {
+      "tags": [
+        "attack",
+        "payload"
+      ]
+    },
+    "seaside_cutpurse": {
+      "tags": [
+        "attack",
+        "payload"
+      ]
+    },
+    "seaside_embargo": {
+      "tags": [
+        "payload"
+      ],
+      "requires_add": [
+        "embargo_tokens"
+      ]
+    },
+    "seaside_explorer": {
+      "tags": [
+        "gain"
+      ]
+    },
+    "seaside_fishingvillage": {
+      "tags": [
+        "village",
+        "payload"
+      ]
+    },
+    "seaside_ghostship": {
+      "tags": [
+        "attack",
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "seaside_haven": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "seaside_island": {
+      "tags": [
+        "alt_vp"
+      ],
+      "requires_add": [
+        "island_mat"
+      ]
+    },
+    "seaside_lighthouse": {
+      "tags": [
+        "cantrip",
+        "payload",
+        "defense"
+      ]
+    },
+    "seaside_lookout": {
+      "tags": [
+        "trash"
+      ]
+    },
+    "seaside_merchantship": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "seaside_monkey": {
+      "tags": [
+        "draw"
+      ]
+    },
+    "seaside_nativevillage": {
+      "tags": [
+        "village"
+      ],
+      "requires_add": [
+        "native_village_mat"
+      ]
+    },
+    "seaside_navigator": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "seaside_outpost": {
+      "tags": []
+    },
+    "seaside_pearldiver": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "seaside_pirate": {
+      "tags": [
+        "gain"
+      ]
+    },
+    "seaside_pirateship": {
+      "tags": [
+        "attack",
+        "payload"
+      ],
+      "requires_add": [
+        "pirate_ship_mat"
+      ]
+    },
+    "seaside_sailor": {
+      "tags": [
+        "cantrip",
+        "trash"
+      ]
+    },
+    "seaside_salvager": {
+      "tags": [
+        "plus_buy",
+        "trash",
+        "payload"
+      ]
+    },
+    "seaside_seachart": {
+      "tags": [
+        "cantrip",
+        "draw"
+      ]
+    },
+    "seaside_seahag": {
+      "tags": [
+        "attack"
+      ]
+    },
+    "seaside_seawitch": {
+      "tags": [
+        "attack",
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "seaside_smugglers": {
+      "tags": [
+        "gain"
+      ]
+    },
+    "seaside_tactician": {
+      "tags": [
+        "draw",
+        "plus_buy"
+      ]
+    },
+    "seaside_tidepools": {
+      "tags": [
+        "draw"
+      ]
+    },
+    "seaside_treasuremap": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "seaside_treasury": {
+      "tags": [
+        "cantrip",
+        "payload"
+      ]
+    },
+    "seaside_warehouse": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "seaside_wharf": {
+      "tags": [
+        "draw",
+        "terminal_draw",
+        "plus_buy"
+      ]
+    },
+    "prosperity_anvil": {
+      "tags": [
+        "payload",
+        "gain"
+      ]
+    },
+    "prosperity_bank": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "prosperity_bishop": {
+      "tags": [
+        "trash",
+        "payload"
+      ],
+      "requires_add": [
+        "vp_tokens"
+      ]
+    },
+    "prosperity_charlatan": {
+      "tags": [
+        "attack",
+        "payload"
+      ]
+    },
+    "prosperity_city": {
+      "tags": [
+        "village",
+        "draw",
+        "plus_buy",
+        "payload"
+      ]
+    },
+    "prosperity_clerk": {
+      "tags": [
+        "attack",
+        "payload"
+      ]
+    },
+    "prosperity_collection": {
+      "tags": [
+        "payload",
+        "plus_buy"
+      ]
+    },
+    "prosperity_contraband": {
+      "tags": [
+        "payload",
+        "plus_buy"
+      ]
+    },
+    "prosperity_countinghouse": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "prosperity_crystalball": {
+      "tags": [
+        "payload",
+        "trash"
+      ]
+    },
+    "prosperity_expand": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "prosperity_forge": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "prosperity_goons": {
+      "tags": [
+        "attack",
+        "plus_buy",
+        "payload"
+      ],
+      "requires_add": [
+        "vp_tokens"
+      ]
+    },
+    "prosperity_grandmarket": {
+      "tags": [
+        "cantrip",
+        "plus_buy",
+        "payload"
+      ]
+    },
+    "prosperity_hoard": {
+      "tags": [
+        "payload",
+        "gain"
+      ]
+    },
+    "prosperity_investment": {
+      "tags": [
+        "trash",
+        "payload"
+      ]
+    },
+    "prosperity_kingscourt": {
+      "tags": []
+    },
+    "prosperity_loan": {
+      "tags": [
+        "trash",
+        "payload"
+      ]
+    },
+    "prosperity_magnate": {
+      "tags": [
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "prosperity_mint": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "prosperity_monument": {
+      "tags": [
+        "payload"
+      ],
+      "requires_add": [
+        "vp_tokens"
+      ]
+    },
+    "prosperity_mountebank": {
+      "tags": [
+        "attack",
+        "payload"
+      ]
+    },
+    "prosperity_peddler": {
+      "tags": [
+        "cantrip",
+        "payload"
+      ]
+    },
+    "prosperity_quarry": {
+      "tags": [
+        "payload",
+        "cost_reduce"
+      ]
+    },
+    "prosperity_rabble": {
+      "tags": [
+        "attack",
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "prosperity_royalseal": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "prosperity_talisman": {
+      "tags": [
+        "payload",
+        "gain"
+      ]
+    },
+    "prosperity_tiara": {
+      "tags": [
+        "plus_buy"
+      ]
+    },
+    "prosperity_traderoute": {
+      "tags": [
+        "plus_buy",
+        "trash",
+        "payload"
+      ],
+      "requires_add": [
+        "trade_route_mat"
+      ]
+    },
+    "prosperity_vault": {
+      "tags": [
+        "draw",
+        "terminal_draw",
+        "payload"
+      ]
+    },
+    "prosperity_venture": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "prosperity_warchest": {
+      "tags": [
+        "payload",
+        "gain"
+      ]
+    },
+    "prosperity_watchtower": {
+      "tags": [
+        "draw",
+        "terminal_draw",
+        "trash"
+      ]
+    },
+    "prosperity_workersvillage": {
+      "tags": [
+        "village",
+        "plus_buy"
+      ]
+    },
+    "alchemy_alchemist": {
+      "tags": [
+        "draw"
+      ]
+    },
+    "alchemy_apothecary": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "alchemy_apprentice": {
+      "tags": [
+        "draw",
+        "terminal_draw",
+        "trash"
+      ]
+    },
+    "alchemy_familiar": {
+      "tags": [
+        "attack",
+        "cantrip"
+      ]
+    },
+    "alchemy_golem": {
+      "tags": []
+    },
+    "alchemy_herbalist": {
+      "tags": [
+        "plus_buy",
+        "payload"
+      ]
+    },
+    "alchemy_philosophersstone": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "alchemy_possession": {
+      "tags": []
+    },
+    "alchemy_scryingpool": {
+      "tags": [
+        "attack",
+        "draw"
+      ]
+    },
+    "alchemy_transmute": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "alchemy_university": {
+      "tags": [
+        "village",
+        "gain"
+      ]
+    },
+    "alchemy_vineyard": {
+      "tags": [
+        "alt_vp"
+      ]
+    },
+    "darkages_altar": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "darkages_armory": {
+      "tags": [
+        "gain"
+      ]
+    },
+    "darkages_banditcamp": {
+      "tags": [
+        "village",
+        "gain"
+      ],
+      "requires_add": [
+        "spoils"
+      ]
+    },
+    "darkages_bandofmisfits": {
+      "tags": []
+    },
+    "darkages_beggar": {
+      "tags": [
+        "payload",
+        "defense"
+      ]
+    },
+    "darkages_catacombs": {
+      "tags": [
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "darkages_count": {
+      "tags": [
+        "trash",
+        "gain",
+        "payload"
+      ]
+    },
+    "darkages_counterfeit": {
+      "tags": [
+        "plus_buy",
+        "payload",
+        "trash"
+      ]
+    },
+    "darkages_cultist": {
+      "tags": [
+        "attack",
+        "draw",
+        "terminal_draw"
+      ],
+      "requires_add": [
+        "ruins"
+      ]
+    },
+    "darkages_deathcart": {
+      "tags": [
+        "trash",
+        "payload"
+      ],
+      "requires_add": [
+        "ruins"
+      ]
+    },
+    "darkages_feodum": {
+      "tags": [
+        "alt_vp"
+      ]
+    },
+    "darkages_forager": {
+      "tags": [
+        "plus_buy",
+        "trash",
+        "payload"
+      ]
+    },
+    "darkages_fortress": {
+      "tags": [
+        "village"
+      ]
+    },
+    "darkages_graverobber": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "darkages_hermit": {
+      "tags": [
+        "trash",
+        "gain"
+      ],
+      "requires_add": [
+        "madman"
+      ]
+    },
+    "darkages_huntinggrounds": {
+      "tags": [
+        "draw",
+        "terminal_draw"
+      ]
+    },
+    "darkages_ironmonger": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "darkages_junkdealer": {
+      "tags": [
+        "cantrip",
+        "trash",
+        "payload"
+      ]
+    },
+    "darkages_knights": {
+      "tags": [
+        "attack",
+        "trash"
+      ]
+    },
+    "darkages_marauder": {
+      "tags": [
+        "attack",
+        "gain"
+      ],
+      "requires_add": [
+        "ruins",
+        "spoils"
+      ]
+    },
+    "darkages_marketsquare": {
+      "tags": [
+        "cantrip",
+        "plus_buy"
+      ]
+    },
+    "darkages_mystic": {
+      "tags": [
+        "cantrip",
+        "payload"
+      ]
+    },
+    "darkages_pillage": {
+      "tags": [
+        "attack"
+      ],
+      "requires_add": [
+        "spoils"
+      ]
+    },
+    "darkages_poorhouse": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "darkages_procession": {
+      "tags": []
+    },
+    "darkages_rats": {
+      "tags": [
+        "cantrip",
+        "trash"
+      ]
+    },
+    "darkages_rebuild": {
+      "tags": [
+        "trash",
+        "gain"
+      ]
+    },
+    "darkages_rogue": {
+      "tags": [
+        "attack",
+        "payload",
+        "gain"
+      ]
+    },
+    "darkages_sage": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "darkages_scavenger": {
+      "tags": [
+        "payload"
+      ]
+    },
+    "darkages_squire": {
+      "tags": [
+        "village",
+        "plus_buy",
+        "payload"
+      ]
+    },
+    "darkages_storeroom": {
+      "tags": [
+        "plus_buy"
+      ]
+    },
+    "darkages_urchin": {
+      "tags": [
+        "attack",
+        "cantrip"
+      ],
+      "requires_add": [
+        "mercenary"
+      ]
+    },
+    "darkages_vagrant": {
+      "tags": [
+        "cantrip"
+      ]
+    },
+    "darkages_wanderingminstrel": {
+      "tags": [
+        "village",
+        "draw"
+      ]
+    },
+    "guildscornucopia_youngwitch": {
+      "requires_add": [
+        "bane"
+      ]
+    },
+    "guildscornucopia_tournament": {
+      "requires_add": [
+        "prizes"
+      ]
+    },
+    "guildscornucopia_joust": {
+      "requires_add": [
+        "rewards"
+      ]
+    },
+    "nocturne_fool": {
+      "requires_add": [
+        "heirloom"
+      ]
+    },
+    "nocturne_pixie": {
+      "requires_add": [
+        "heirloom"
+      ]
+    },
+    "nocturne_tracker": {
+      "requires_add": [
+        "heirloom"
+      ]
+    },
+    "nocturne_cemetery": {
+      "requires_add": [
+        "heirloom",
+        "ghost"
+      ]
+    },
+    "nocturne_shepherd": {
+      "requires_add": [
+        "heirloom"
+      ]
+    },
+    "nocturne_secretcave": {
+      "requires_add": [
+        "heirloom",
+        "wish"
+      ]
+    },
+    "nocturne_pooka": {
+      "requires_add": [
+        "heirloom"
+      ]
+    },
+    "nocturne_leprechaun": {
+      "requires_add": [
+        "wish"
+      ]
+    },
+    "nocturne_devilsworkshop": {
+      "requires_add": [
+        "imp"
+      ]
+    },
+    "nocturne_tormentor": {
+      "requires_add": [
+        "imp"
+      ]
+    },
+    "nocturne_exorcist": {
+      "requires_add": [
+        "imp",
+        "ghost",
+        "wisp"
+      ]
+    },
+    "nocturne_necromancer": {
+      "requires_add": [
+        "zombies"
+      ]
+    },
+    "nocturne_vampire": {
+      "requires_add": [
+        "bat"
+      ]
     }
   },
   "review": {
