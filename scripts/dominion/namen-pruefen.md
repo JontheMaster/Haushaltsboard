@@ -67,20 +67,10 @@ Korrekturen trägt Claude in `scripts/dominion/card-overrides.json` unter `names
 | Sickness | risingsun · prophecy | `risingsun_prophecy_sickness` |
 | Marchland | promos | `promos_marchland` |
 
-## Auffällig, bitte prüfen (15)
+## Auffällig, bitte prüfen (5)
 
 | Deutsch (Quelle) | Englisch | Erweiterung | Warum | id |
 | --- | --- | --- | --- | --- |
-| Grosse Halle | Great Hall | intrigue | Schweizer „ss“, auf Deutsch eher „ß“? | `intrigue_greathall` |
-| Aussenposten | Outpost | seaside | Schweizer „ss“, auf Deutsch eher „ß“? | `seaside_outpost` |
-| Grosser Markt | Grand Market | prosperity | Schweizer „ss“, auf Deutsch eher „ß“? | `prosperity_grandmarket` |
-| Fernstrasse | Highway | hinterlands | Schweizer „ss“, auf Deutsch eher „ß“? | `hinterlands_highway` |
-| Seidenstrasse | Silk Road | hinterlands | Schweizer „ss“, auf Deutsch eher „ß“? | `hinterlands_silkroad` |
-| Strassennetz | Road Network | renaissance | Schweizer „ss“, auf Deutsch eher „ß“? | `renaissance_project_roadnetwork` |
-| Vergrößerung[ß] | Enlarge | plunder | Sonderzeichen im Namen | `plunder_enlarge` |
-| Bergbaustraße[ß] | Mining Road | plunder | Sonderzeichen im Namen | `plunder_miningroad` |
-| Glüksfall | Windfall | empires | Tippfehler? „Glücksfall“ | `empires_event_windfall` |
-| Zitdelle | Citadel | renaissance | Tippfehler? „Zitadelle“ | `renaissance_project_citadel` |
 | Kapitän Tobias | Captain | promos | Eigenname statt Übersetzung, stimmt das so auf der Karte? | `promos_captain` |
 | Schweriner Dom | Church | promos | Eigenname statt Übersetzung, stimmt das so auf der Karte? | `promos_church` |
 | Höhlenhafen | Coastal Haven | allies | „Höhle“ für „Coastal“ (Küste)? | `allies_ally_coastalhaven` |

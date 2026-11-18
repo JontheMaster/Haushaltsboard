@@ -1,13 +1,34 @@
 {
-  "names_de": {},
-  "sets_de": {},
+  "names_de": {
+    "intrigue_greathall": "Große Halle",
+    "seaside_outpost": "Außenposten",
+    "prosperity_grandmarket": "Großer Markt",
+    "hinterlands_highway": "Fernstraße",
+    "hinterlands_silkroad": "Seidenstraße",
+    "renaissance_project_roadnetwork": "Straßennetz",
+    "plunder_enlarge": "Vergrößerung",
+    "plunder_miningroad": "Bergbaustraße",
+    "empires_event_windfall": "Glücksfall",
+    "renaissance_project_citadel": "Zitadelle"
+  },
+  "sets_de": {
+    "prosperity2add": "Blütezeit Updatepack"
+  },
   "cards": {
-    "adventures_event_seaway": { "cost": { "coins": 5 }, "cost_note": "KingdomCreator hat 3, richtig ist 5" },
-    "risingsun_event_gather": { "cost": { "coins": 7 }, "cost_note": "KingdomCreator hat 3, richtig ist 7" }
+    "adventures_event_seaway": {
+      "cost": {
+        "coins": 5
+      },
+      "cost_note": "KingdomCreator hat 3, richtig ist 5"
+    },
+    "risingsun_event_gather": {
+      "cost": {
+        "coins": 7
+      },
+      "cost_note": "KingdomCreator hat 3, richtig ist 7"
+    }
   },
   "review": {
-    "empires_event_windfall": "Tippfehler? „Glücksfall“",
-    "renaissance_project_citadel": "Tippfehler? „Zitadelle“",
     "promos_captain": "Eigenname statt Übersetzung, stimmt das so auf der Karte?",
     "promos_church": "Eigenname statt Übersetzung, stimmt das so auf der Karte?",
     "allies_ally_coastalhaven": "„Höhle“ für „Coastal“ (Küste)?",

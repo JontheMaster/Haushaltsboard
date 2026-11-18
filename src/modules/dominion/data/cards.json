@@ -1102,7 +1102,7 @@
  },
  {
   "id": "intrigue_greathall",
-  "name_de": "Grosse Halle",
+  "name_de": "Große Halle",
   "name_en": "Great Hall",
   "set": "intrigue",
   "boxes": [
@@ -2300,7 +2300,7 @@
  },
  {
   "id": "seaside_outpost",
-  "name_de": "Aussenposten",
+  "name_de": "Außenposten",
   "name_en": "Outpost",
   "set": "seaside",
   "boxes": [
@@ -3421,7 +3421,7 @@
  },
  {
   "id": "prosperity_grandmarket",
-  "name_de": "Grosser Markt",
+  "name_de": "Großer Markt",
   "name_en": "Grand Market",
   "set": "prosperity",
   "boxes": [
@@ -5273,7 +5273,7 @@
  },
  {
   "id": "hinterlands_highway",
-  "name_de": "Fernstrasse",
+  "name_de": "Fernstraße",
   "name_en": "Highway",
   "set": "hinterlands",
   "boxes": [
@@ -5598,7 +5598,7 @@
  },
  {
   "id": "hinterlands_silkroad",
-  "name_de": "Seidenstrasse",
+  "name_de": "Seidenstraße",
   "name_en": "Silk Road",
   "set": "hinterlands",
   "boxes": [
@@ -8422,7 +8422,7 @@
  },
  {
   "id": "empires_event_windfall",
-  "name_de": "Glüksfall",
+  "name_de": "Glücksfall",
   "name_en": "Windfall",
   "set": "empires",
   "boxes": [
@@ -11336,7 +11336,7 @@
  },
  {
   "id": "renaissance_project_citadel",
-  "name_de": "Zitdelle",
+  "name_de": "Zitadelle",
   "name_en": "Citadel",
   "set": "renaissance",
   "boxes": [
@@ -11576,7 +11576,7 @@
  },
  {
   "id": "renaissance_project_roadnetwork",
-  "name_de": "Strassennetz",
+  "name_de": "Straßennetz",
   "name_en": "Road Network",
   "set": "renaissance",
   "boxes": [
@@ -15461,7 +15461,7 @@
  },
  {
   "id": "plunder_enlarge",
-  "name_de": "Vergrößerung[ß]",
+  "name_de": "Vergrößerung",
   "name_en": "Enlarge",
   "set": "plunder",
   "boxes": [
@@ -15863,7 +15863,7 @@
  },
  {
   "id": "plunder_miningroad",
-  "name_de": "Bergbaustraße[ß]",
+  "name_de": "Bergbaustraße",
   "name_en": "Mining Road",
   "set": "plunder",
   "boxes": [
