@@ -33,10 +33,10 @@ function supportCard(id: string): Card {
 const BASE = ['copper', 'silver', 'gold', 'estate', 'duchy', 'province', 'curse']
 
 /** Zusatzmaterial aus dem Generator → Karten/Tableaus mit Bild und ein kurzer Hinweis zum Aufbau */
-const EXTRA: Record<string, { ids: string[]; note?: string }> = {
+const EXTRA: Record<string, { ids: string[]; note?: string; label?: string }> = {
   potion: { ids: ['potion'], note: 'als eigener Stapel im Vorrat' },
   platinum_colony: { ids: ['platinum', 'colony'], note: 'beide zusätzlich in den Vorrat, das Spiel endet auch, wenn die Kolonien leer sind' },
-  shelters: { ids: ['hovel', 'necropolis', 'overgrownestate'], note: 'jede Person startet damit statt mit 3 Anwesen' },
+  shelters: { label: 'Unterschlüpfe', ids: ['hovel', 'necropolis', 'overgrownestate'], note: 'jede Person startet damit statt mit 3 Anwesen' },
   ruins: { ids: ['abandonedmine', 'ruinedlibrary', 'ruinedmarket', 'ruinedvillage', 'survivors'], note: 'gemischt als verdeckter Stapel, nur die oberste Karte offen' },
   spoils: { ids: ['spoils'], note: 'neben den Vorrat legen' },
   madman: { ids: ['madman'], note: 'neben den Vorrat legen' },
@@ -63,7 +63,7 @@ export function Setup({ k, onOpen }: { k: Kingdom; onOpen: (cards: Card[], i: nu
       (ids[0] && SUPPORT_BY_ID.get(ids[0])!.set) ||
       k.kingdom.map((id) => CARD_BY_ID.get(id)).find((c) => c?.requires.includes(e.id))?.set ||
       (e.id === 'bane' ? CARD_BY_ID.get(k.bane ?? '')?.set : undefined)
-    return { id: e.id, label: e.label || EXTRA_LABELS[e.id] || e.id, note: def?.note, from, cards: ids.map(supportCard) }
+    return { id: e.id, label: def?.label ?? (e.label || EXTRA_LABELS[e.id] || e.id), note: def?.note, from, cards: ids.map(supportCard) }
   })
   const base = BASE.map(supportCard)
   const all = [...base, ...groups.flatMap((g) => g.cards)]

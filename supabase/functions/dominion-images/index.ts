@@ -16,7 +16,7 @@ const BATCH = 30
 let mapCache: { at: number; map: ImageMap } | null = null
 
 async function imageMap(): Promise<ImageMap> {
-  if (mapCache && Date.now() - mapCache.at < 3600_000) return mapCache.map
+  if (mapCache && Date.now() - mapCache.at < 600_000) return mapCache.map
   const res = await fetch(MAP_URL)
   if (!res.ok) throw new Error(`Zuordnung: HTTP ${res.status}`)
   mapCache = { at: Date.now(), map: (await res.json()) as ImageMap }
