@@ -31,6 +31,9 @@ export const W_RECENT = 0.25 // lag in einem der letzten RECENT_GAMES gespielten
 export const RECENT_GAMES = 3
 export const W_NEVER_PLAYED = 1.5
 export const W_FAVORITE = 1.3
+/** Bewertungen (Stufe 2): Karten aus „gut“ bewerteten Sets etwas öfter, aus „naja“ etwas seltener */
+export const W_RATED_GOOD = 1.25
+export const W_RATED_MEH = 0.75
 /** Alchemie: wenn dabei, dann 3–5 Alchemie-Karten (Empfehlung der Anleitung) */
 export const ALCHEMY_MIN = 3
 export const ALCHEMY_MAX = 5
@@ -196,7 +199,12 @@ export function generateKingdom(options: GenOptions, owned: Owned, history: Hist
   const played = history.filter((h) => h.played)
   const recent = new Set(played.slice(0, RECENT_GAMES).flatMap((h) => h.kingdom))
   const ever = new Set(played.flatMap((h) => h.kingdom))
-  const weight = (c: Card) => (recent.has(c.id) ? W_RECENT : ever.has(c.id) || !played.length ? 1 : W_NEVER_PLAYED) * (favorites.has(c.id) ? W_FAVORITE : 1)
+  // Bewertung: das letzte bewertete Set mit der Karte zählt
+  const rated = new Map<string, 'gut' | 'naja'>()
+  for (const h of played) if (h.rating) for (const id of h.kingdom) if (!rated.has(id)) rated.set(id, h.rating)
+  const ratingWeight = (id: string) => (rated.get(id) === 'gut' ? W_RATED_GOOD : rated.get(id) === 'naja' ? W_RATED_MEH : 1)
+  const weight = (c: Card) =>
+    (recent.has(c.id) ? W_RECENT : ever.has(c.id) || !played.length ? 1 : W_NEVER_PLAYED) * (favorites.has(c.id) ? W_FAVORITE : 1) * ratingWeight(c.id)
 
   // Erweiterungen für dieses Set
   const poolSets = [...new Set(pool.map((c) => c.set))]
@@ -388,7 +396,21 @@ export function generateKingdom(options: GenOptions, owned: Owned, history: Hist
   for (const c of [...picked, ...landscapes, ...(bane ? [bane] : [])]) for (const r of c.requires) if (r !== 'ally' && r !== 'prophecy') addExtra(r)
   if (bane) addExtra('bane')
 
-  // „Warum es passt“
+  const reasons = reasonsFor(picked)
+
+  return {
+    seed,
+    kingdom: picked.map((c) => c.id),
+    landscapes: landscapes.map((c) => c.id),
+    bane: bane?.id ?? null,
+    extras,
+    reasons,
+    sets: [...new Set([...kingdomSets, ...landscapes.map((c) => c.set)])],
+  }
+}
+
+/** „Warum es passt“: z. B. „Dorf: Fischerdorf“, „+Kauf: Markt“ */
+export function reasonsFor(picked: Card[]): string[] {
   const reasons: string[] = []
   const reason = (label: string, t: Tag) => {
     const list = picked.filter((c) => has(c, t))
@@ -400,15 +422,20 @@ export function generateKingdom(options: GenOptions, owned: Owned, history: Hist
   reason('Entsorgen', 'trash')
   if (picked.some((c) => has(c, 'attack'))) reason('Abwehr', 'defense')
   reason('Andere Punkte', 'alt_vp')
+  return reasons
+}
 
+/** Ein gespeichertes Set (dominion_games) wieder als Kingdom, z. B. für „Nochmal spielen“ */
+export function kingdomFromSaved(g: { seed: number; kingdom: string[]; landscapes: string[]; extras: string[]; bane: string | null }): Kingdom {
+  const picked = g.kingdom.map((id) => CARD_BY_ID.get(id)).filter((c): c is Card => !!c)
   return {
-    seed,
-    kingdom: picked.map((c) => c.id),
-    landscapes: landscapes.map((c) => c.id),
-    bane: bane?.id ?? null,
-    extras,
-    reasons,
-    sets: [...new Set([...kingdomSets, ...landscapes.map((c) => c.set)])],
+    seed: g.seed,
+    kingdom: g.kingdom,
+    landscapes: g.landscapes,
+    bane: g.bane,
+    extras: g.extras.map((id) => ({ id, label: EXTRA_LABELS[id] ?? id })),
+    reasons: reasonsFor(picked),
+    sets: [...new Set([...picked.map((c) => c.set), ...g.landscapes.map((id) => CARD_BY_ID.get(id)?.set ?? '')])].filter(Boolean),
   }
 }
 

@@ -34,7 +34,7 @@ import { WidgetSettings } from './widget/WidgetSettings'
 import { FilmHeader } from './movies/FilmHeader'
 import { AstSettings } from './ast/Ast'
 import { MassagesTile } from './massages/MassagesTile'
-import { DominionSettings, DominionTile } from './dominion/DominionTile'
+import { DominionHeader, DominionSettings, DominionTile } from './dominion/DominionTile'
 import { FilmSettings } from './movies/FilmSettings'
 import { FilmsTile } from './movies/FilmsTile'
 import { FinanceSettings } from './finance/FinanceSettings'
@@ -276,6 +276,8 @@ export const MODULES: ModuleDef[] = [
     phase: 7,
     sizes: [],
     Settings: DominionSettings,
+    // nur Handy: „Wie war euer Dominion-Set?“ und Öffnen aus der Mitteilung
+    Header: DominionHeader,
     phoneTiles: [{ id: 'set', title: 'Dominion', description: 'Neues Set erstellen, zuletzt gespielt', icon: Crown, Tile: DominionTile }],
   },
   {

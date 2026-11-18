@@ -14,6 +14,8 @@ export type DominionConfig = {
   banned: string[]
   favorites: string[]
   last?: Partial<GenOptions>
+  /** wer per Push ans Bewerten erinnert werden will (Mitglieder-IDs) */
+  push_rating?: string[]
 }
 
 const DEFAULTS: DominionConfig = { owned: { boxes: [], promos: [] }, banned: [], favorites: [] }
@@ -90,6 +92,37 @@ export async function savePlayed(k: Kingdom, options: GenOptions): Promise<boole
   return true
 }
 
+/** Bewerten (Stufe 2): gut / naja / zurücknehmen */
+export async function rateGame(id: string, rating: 'gut' | 'naja' | null): Promise<boolean> {
+  set({ ...state, games: state.games.map((g) => (g.id === id ? { ...g, rating } : g)) })
+  const { error } = await supabase.from('dominion_games').update({ rating }).eq('id', id)
+  if (error) load()
+  return !error
+}
+
+export async function noteGame(id: string, note: string): Promise<boolean> {
+  const clean = note.trim().slice(0, 500) || null
+  set({ ...state, games: state.games.map((g) => (g.id === id ? { ...g, note: clean } : g)) })
+  const { error } = await supabase.from('dominion_games').update({ note: clean }).eq('id', id)
+  if (error) load()
+  return !error
+}
+
+export async function deleteGame(id: string): Promise<boolean> {
+  set({ ...state, games: state.games.filter((g) => g.id !== id) })
+  const { error } = await supabase.from('dominion_games').delete().eq('id', id)
+  if (error) load()
+  return !error
+}
+
+/** Das letzte gespielte, noch nicht bewertete Set, sobald die Erinnerung fällig ist (höchstens 3 Tage) */
+export function ratingDue(games: DominionGame[], now = Date.now()): DominionGame | null {
+  const g = games.find((x) => x.played)
+  if (!g || g.rating || !g.remind_at) return null
+  const at = Date.parse(g.remind_at)
+  return at <= now && now - Date.parse(g.created_at) < 3 * 86_400_000 ? g : null
+}
+
 // ── Set auf diesem Gerät ────────────────────────────────────────────────────────────────────────
 const CURRENT_KEY = 'hb-dominion-current'
 
@@ -113,14 +146,15 @@ export function saveCurrent(c: Current | null) {
   }
 }
 
-// Seite öffnen (aus der Kachel oder Alle Funktionen): ein gemeinsamer Schalter pro Gerät
-let openState = false
+// Seite öffnen (aus der Kachel, Alle Funktionen, Push): ein gemeinsamer Schalter pro Gerät, mit Start-Reiter
+export type DominionTab = 'set' | 'verlauf' | 'statistik'
+let openState: DominionTab | null = null
 const openListeners = new Set<() => void>()
-export function setDominionOpen(open: boolean) {
-  openState = open
+export function setDominionOpen(open: boolean | DominionTab) {
+  openState = open === true ? 'set' : open === false ? null : open
   openListeners.forEach((l) => l())
 }
-export function useDominionOpen(): boolean {
+export function useDominionOpen(): DominionTab | null {
   return useSyncExternalStore(
     (cb) => {
       openListeners.add(cb)

@@ -194,4 +194,21 @@ describe('generateKingdom', () => {
     expect(platinum).toBeGreaterThan(20)
     expect(shelters).toBeGreaterThan(20)
   })
+
+  it('gut bewertete Karten kommen öfter als naja bewertete', () => {
+    const o: GenOptions = { mix: 'querbeet', difficulty: 'alles', attacks: 'egal', landscapes: 0 }
+    const a = generateKingdom(o, JONATHAN, [], 7).kingdom
+    const b = generateKingdom(o, JONATHAN, [], 8).kingdom.filter((id) => !a.includes(id))
+    // ältere Partien (nicht unter den letzten 3), damit nur die Bewertung zählt
+    const filler = Array.from({ length: 3 }, () => ({ kingdom: [] as string[], played: true }))
+    const history = [...filler, { kingdom: a, played: true, rating: 'gut' as const }, { kingdom: b, played: true, rating: 'naja' as const }]
+    let good = 0
+    let meh = 0
+    for (let seed = 1000; seed < 1600; seed++) {
+      const k = generateKingdom(o, JONATHAN, history, seed).kingdom
+      good += k.filter((id) => a.includes(id)).length / a.length
+      meh += k.filter((id) => b.includes(id)).length / Math.max(1, b.length)
+    }
+    expect(good).toBeGreaterThan(meh)
+  })
 })

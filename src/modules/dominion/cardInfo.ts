@@ -1,4 +1,5 @@
 // Anzeige-Hilfen für Dominion-Karten: Typ-Wörter, Rahmenfarben (Tokens dom-*), Kurznamen der Erweiterungen
+import type { CSSProperties } from 'react'
 import setsJson from './data/sets.json'
 import type { Card, DomSet } from './types'
 
@@ -66,3 +67,18 @@ export function frameColors(c: Card): string[] {
 }
 
 export const KIND_DE: Record<string, string> = TYPE_DE
+
+/** Rahmenfarbe als CSS-Variable (--dom-frame), zwei Typen = zwei Hälften */
+export const frameStyle = (card: Card) => {
+  const colors = frameColors(card)
+  return { '--dom-frame': colors.length > 1 ? `linear-gradient(90deg, ${colors[0]} 50%, ${colors[1]} 50%)` : colors[0] } as CSSProperties
+}
+
+/** „Heute“, „Gestern“, sonst „Mi., 18. November“ (Tag im Format JJJJ-MM-TT) */
+export const dayLabel = (iso: string) => {
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' })
+  const yesterday = new Date(Date.now() - 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' })
+  if (iso === today) return 'Heute'
+  if (iso === yesterday) return 'Gestern'
+  return new Date(`${iso}T12:00:00`).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })
+}

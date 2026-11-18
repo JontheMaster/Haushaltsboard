@@ -1,8 +1,13 @@
-import { Ban, Search, Star, X } from 'lucide-react'
+import { Ban, BellRing, Search, Star, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { Toggle } from '../../components/Toggle'
 import { useDevice } from '../../lib/device'
+import { useMembers } from '../../lib/members'
+import { currentSubscription, enablePush, isInstalled, isIOS, pushSupported } from '../../lib/push'
+import { supabase } from '../../lib/supabase'
+import { Button } from '../../components/Button'
+import { syncImages } from './images'
 import { SETS, setName, setShort } from './cardInfo'
 import { saveDominionConfig, useDominionConfig, type DominionConfig } from './dominionStore'
 import { ALL_CARDS, isOwned } from './generator'
@@ -40,17 +45,33 @@ export function DominionSettingsBody() {
     const next = new Set(boxes)
     if (next.has(id)) next.delete(id)
     else next.add(id)
-    update({ owned: { ...config.owned, boxes: [...next] } })
+    update({ owned: { ...config.owned, boxes: [...next] } }).then(() => syncImages(true))
   }
   const togglePromo = (id: string) => {
     const promos = config.owned.promos.includes(id) ? config.owned.promos.filter((x) => x !== id) : [...config.owned.promos, id]
-    update({ owned: { ...config.owned, promos } })
+    update({ owned: { ...config.owned, promos } }).then(() => syncImages(true))
   }
   const toggleIn = (key: 'banned' | 'favorites', id: string) => {
     const list = config[key].includes(id) ? config[key].filter((x) => x !== id) : [...config[key], id]
     // eine Karte ist entweder gesperrt oder Favorit
     const other = key === 'banned' ? 'favorites' : 'banned'
     update({ [key]: list, [other]: config[other].filter((x) => x !== id) })
+  }
+
+  const { me } = useMembers()
+  const pushOn = (config.push_rating ?? []).includes(me.id)
+  async function togglePush(on: boolean) {
+    if (on && !(await currentSubscription())) {
+      // Handy noch nicht für Mitteilungen angemeldet: jetzt anmelden (wie beim Wochenrückblick)
+      if (isIOS() && !isInstalled()) return showToast?.('Am iPhone gehen Mitteilungen nur in der installierten App (Teilen → „Zum Home-Bildschirm“).')
+      const error = pushSupported() ? await enablePush(me.id) : 'Dieser Browser kann keine Mitteilungen.'
+      if (error) return showToast?.(error)
+    }
+    update({ push_rating: on ? [...new Set([...(config.push_rating ?? []), me.id])] : (config.push_rating ?? []).filter((x) => x !== me.id) })
+  }
+  async function testPush() {
+    const { data } = await supabase.functions.invoke<{ sent: number }>('reminders', { body: { action: 'dominion-rate-test' } })
+    showToast?.(data?.sent ? 'Test-Mitteilung geschickt.' : 'Keine Mitteilung verschickt. Ist dieses Handy für Mitteilungen angemeldet?')
   }
 
   const owned = { boxes: config.owned.boxes, promos: config.owned.promos, banned: [], favorites: [] }
@@ -93,6 +114,23 @@ export function DominionSettingsBody() {
           ),
         )}
       </section>
+
+      {!me.is_board && (
+        <section className="hb-tile hb-tile-static gap-3 p-4">
+          <div className="flex flex-col">
+            <h3 className="font-display text-[18px] font-semibold text-ink">Erinnerung zum Bewerten</h3>
+            <span className="text-label text-ink-muted">
+              3 Stunden nach „Das spielen wir“ (nachts erst am nächsten Morgen um 10 Uhr) fragt eine Mitteilung: Wie war das Set? Gilt nur für dein Handy.
+            </span>
+          </div>
+          <Toggle label="Mitteilung an mich" checked={pushOn} onChange={togglePush} />
+          {pushOn && (
+            <Button variant="ghost" icon={<Icon icon={BellRing} size={18} />} onClick={testPush}>
+              Test schicken
+            </Button>
+          )}
+        </section>
+      )}
 
       <section className="hb-tile hb-tile-static gap-3 p-4">
         <div className="flex flex-col">

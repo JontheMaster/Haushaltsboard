@@ -736,6 +736,8 @@ export type Database = {
           played_on: string | null
           rating: 'gut' | 'naja' | null
           note: string | null
+          remind_at: string | null
+          reminded_at: string | null
         }
         Insert: {
           seed: number

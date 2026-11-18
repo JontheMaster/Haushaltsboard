@@ -66,7 +66,7 @@ export type Owned = {
 }
 
 /** frühere Sets, neuestes zuerst */
-export type HistoryEntry = { kingdom: string[]; played: boolean }
+export type HistoryEntry = { kingdom: string[]; played: boolean; rating?: 'gut' | 'naja' | null }
 
 export type Extra = { id: string; label: string }
 
